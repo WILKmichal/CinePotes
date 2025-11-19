@@ -1,4 +1,6 @@
+"use client"
 import Image from "next/image";
+import { Button } from "@repo/ui/src/Button";
 
 export default function Home() {
   return (
@@ -58,6 +60,9 @@ export default function Home() {
           >
             Documentation
           </a>
+            <Button onClick={() => alert("Bouton cliqué !")}>
+              Clique-moi
+            </Button>
         </div>
       </main>
     </div>
