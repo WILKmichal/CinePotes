@@ -23,8 +23,9 @@ export class TmdbService {
    */
   async obtenirDetailsFilm(id: number): Promise<DetailsFilm> {
     const cleCache = `tmdb:film:${id}`;
+    console.log('TMDB_API_KEY =', process.env.TMDB_API_KEY);
 
-    // 📌 Vérification dans Redis
+    //Vérification dans Redis
     const enCache = await this.redisService.get<DetailsFilm>(cleCache);
     // Film trouve dans le cache on fait un return direct
     if (enCache){
@@ -34,8 +35,10 @@ export class TmdbService {
     // Requete TMDB
     try {
       const reponse = await axios.get(`${this.urltmdb}/movie/${id}`, {
-        headers: { Authorization: `Bearer ${process.env.TMDB_API_KEY}` },
-        params: { language: 'fr-FR' },
+        params: {
+          api_key: process.env.TMDB_API_KEY,
+          language: 'fr-FR',
+        },
       });
 
       const film: DetailsFilm = {
@@ -51,8 +54,27 @@ export class TmdbService {
       await this.redisService.set(cleCache, film, 7200);
 
       return film;
-    } catch {
-      throw new HttpException('Film introuvable', HttpStatus.NOT_FOUND);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const status = error.response?.status;
+        const message = error.response?.data?.status_message || 'Erreur TMDB';
+
+        if (status === 404) {
+          throw new HttpException('Film introuvable', HttpStatus.NOT_FOUND);
+        }
+
+        if (status === 401) {
+          throw new HttpException('Clé TMDB invalide', HttpStatus.UNAUTHORIZED);
+        }
+
+        throw new HttpException(message, status || HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+      console.error(error);
+      // Pour toute autre erreur, renvoyer 500
+      throw new HttpException(
+        'Erreur lors de la récupération du film',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 }

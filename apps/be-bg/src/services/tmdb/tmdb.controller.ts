@@ -16,6 +16,14 @@ export class TmdbController {
   */
   @Get(':id')
   getMovie(@Param('id', ParseIntPipe) id: number): Promise<DetailsFilm> {
+    // return new Promise<DetailsFilm>((resolve) => resolve ({
+    //   id: 550,
+    //   titre: "Fight Club",
+    //   resume: "A ticking-time-bomb insomniac and a slippery soap salesman channel perfect murder into a shocking new reality.",
+    //   date_sortie: "1999-10-12",
+    //   affiche_url: null,
+    //   note_moyenne: 8.7
+    // }));
     return this.tmdbService.obtenirDetailsFilm(id);
   }
 }
