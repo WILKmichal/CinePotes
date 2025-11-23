@@ -7,7 +7,7 @@ import { ConfigModule } from '@nestjs/config';
 @Module({
   imports: [RedisModule,ConfigModule.forRoot({
   isGlobal: true,
-  envFilePath: 'C:/Users/Mehdi/OneDrive/Bureau/M1/CinePotes/apps/be-bg/.env',
+  envFilePath: '.env',
 })],
   controllers: [TmdbController],
   providers: [TmdbService],

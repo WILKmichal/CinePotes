@@ -1,4 +1,4 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Query } from '@nestjs/common';
 import { Get } from '@nestjs/common';
 import { Param } from '@nestjs/common';
 import { ParseIntPipe } from '@nestjs/common';
@@ -25,5 +25,16 @@ export class TmdbController {
     //   note_moyenne: 8.7
     // }));
     return this.tmdbService.obtenirDetailsFilm(id);
+  }
+  // Nouveau endpoint pour récupérer plusieurs films
+  @Get('movies')
+  getMovies(@Query('ids') ids: string): Promise<DetailsFilm[]> {
+    const filmIds = ids.split(',').map(id => parseInt(id, 10));
+    return this.tmdbService.obtenirPlusieursFilms(filmIds);
+  }
+  // Ou pour récupérer des films populaires
+  @Get('films/populaires')
+  getPopularMovies(): Promise<DetailsFilm[]> {
+    return this.tmdbService.obtenirFilmsPopulaires();
   }
 }

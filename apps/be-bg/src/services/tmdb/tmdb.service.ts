@@ -70,9 +70,56 @@ export class TmdbService {
         throw new HttpException(message, status || HttpStatus.INTERNAL_SERVER_ERROR);
       }
       console.error(error);
-      // Pour toute autre erreur, renvoyer 500
       throw new HttpException(
         'Erreur lors de la récupération du film',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+  /**
+   * Récupère plusieurs films en parallèle
+   */
+  async obtenirPlusieursFilms(ids: number[]): Promise<DetailsFilm[]> {
+    const promises = ids.map(id => this.obtenirDetailsFilm(id));
+    return Promise.all(promises);
+  }
+  /**
+   * Récupère les films populaires depuis TMDB
+   */
+  async obtenirFilmsPopulaires(): Promise<DetailsFilm[]> {
+    const cleCache = 'tmdb:films:populaires';
+
+    // Vérification dans Redis
+    const enCache = await this.redisService.get<DetailsFilm[]>(cleCache);
+    if (enCache) {
+      return enCache;
+    }
+
+    try {
+      const reponse = await axios.get(`${this.urltmdb}/movie/popular`, {
+        params: {
+          api_key: process.env.TMDB_API_KEY,
+          language: 'fr-FR',
+          page: 1,
+        },
+      });
+
+      const films: DetailsFilm[] = reponse.data.results.map((film) => ({
+        id: film.id,
+        titre: film.title,
+        resume: film.overview,
+        date_sortie: film.release_date,
+        affiche_url: film.poster_path,
+        note_moyenne: film.vote_average,
+      }));
+
+      // Cache pour 2 heure
+      await this.redisService.set(cleCache, films, 7200);
+
+      return films;
+    } catch (error) {
+      throw new HttpException(
+        'Erreur lors de la récupération des films populaires',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

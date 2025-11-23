@@ -11,3 +11,5 @@ export interface DetailsFilm {
   affiche_url: string | null; 
   note_moyenne: number;   
 }
+
+
