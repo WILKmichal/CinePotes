@@ -100,7 +100,7 @@ jobs:
 
     build-and-push:
       runs-on: ubuntu-latest
-      needs: [build-test,linter-test]
+      needs: [build-test,linter-test,check_if_version_exists]
       permissions:
         contents: read
         packages: write
