@@ -1,15 +1,6 @@
 "use client"
 import { useEffect, useState } from "react";
-import { Header, Footer , BarreRecherche} from "../components/utils";
-
-interface DetailsFilm {
-  id: number;
-  titre: string;
-  resume: string;
-  date_sortie: string;
-  affiche_url: string | null;
-  note_moyenne: number;
-}
+import { Header, Footer , BarreRecherche, DetailsFilm, CarteFilms} from "../components/utils";
 export function usefilms() {
   const [films, setFilms] = useState<DetailsFilm[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,49 +37,6 @@ export function usefilms() {
 
   return { films, loading, error };
 }
-export function RechercheFilms(requete: string) {
-  const [resultats, setResultats] = useState<DetailsFilm[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (requete.length < 3) {
-      setResultats([]);
-      return;
-    }
-
-    const timer = setTimeout(async () => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        console.log(`🔍 Recherche: "${requete}"`);
-        
-        const response = await fetch(
-          `http://localhost:3333/tmdb/recherche?query=${encodeURIComponent(requete)}`
-        );
-
-        if (!response.ok) {
-          throw new Error(`Erreur ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log(`${data.length} résultat(s) trouvé(s)`);
-        
-        setResultats(data);
-      } catch (err) {
-        console.error('Erreur recherche:', err);
-        setError(err instanceof Error ? err.message : 'Erreur de recherche');
-      } finally {
-        setLoading(false);
-      }
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [requete]);
-
-  return { resultats, loading, error };
-}
 function paragraphes() {
   return (
     <div className="max-w-2xl mx-auto text-center space-y-4">
@@ -103,31 +51,6 @@ function paragraphes() {
     </div>
   );
 }
-
-function CarteFilms({ id, titre, resume, date_sortie, affiche_url, note_moyenne }: DetailsFilm) {
-  return (
-    <article className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-      <div className="flex gap-4">
-        {affiche_url ? (
-          <img src={affiche_url} alt={titre} className="w-24 h-36 object-cover rounded flex-shrink-0" />
-        ) : (
-          <div className="w-24 h-36 bg-gray-200 rounded flex items-center justify-center text-gray-500 flex-shrink-0">
-            No Image
-          </div>
-        )}
-        <div className="flex-1">
-          <h3 className="text-lg font-semibold text-gray-900">{titre}</h3>
-          <p className="text-sm text-gray-600 mt-1 line-clamp-3">{resume}</p>
-          <div className="mt-3 flex items-center justify-between">
-            <span className="text-sm text-gray-500">{date_sortie ? new Date(date_sortie).toLocaleDateString() : "N/A"}</span>
-            <span className="text-sm font-medium text-yellow-500">{typeof note_moyenne === "number" ? note_moyenne.toFixed(1) : "N/A"}/10</span>
-          </div>
-        </div>
-      </div>
-    </article>
-  );
-}
-
 function Home() {
   const { films, loading, error } = usefilms();
 
