@@ -1,13 +1,5 @@
 // tmdb.controller.ts
-import {
-  Controller,
-  Get,
-  HttpException,
-  HttpStatus,
-  Param,
-  ParseIntPipe,
-  Query,
-} from '@nestjs/common';
+import {Controller, Get, HttpException, HttpStatus, Param, ParseIntPipe,Query,} from '@nestjs/common';
 import { DetailsFilm } from './types/tmdb.types';
 import { TmdbService } from './tmdb.service';
 
@@ -54,7 +46,7 @@ export class TmdbController {
     return this.tmdbService.rechercherFilms(query);
   }
 
-  // ✅ Dynamic route 
+  // Dynamic route 
   @Get(':id')
   getMovie(@Param('id', ParseIntPipe) id: number): Promise<DetailsFilm> {
     return this.tmdbService.obtenirDetailsFilm(id);

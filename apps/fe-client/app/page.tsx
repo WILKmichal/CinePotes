@@ -59,7 +59,7 @@ function Home() {
       <Header />
       
       <main className="flex-grow flex flex-col items-center justify-center px-16 py-32 space-y-8">
-        {BarreRecherche()}
+        <BarreRecherche />
         {paragraphes()}
         <div className="w-full max-w-7xl mt-12">
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">
