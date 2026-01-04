@@ -1,13 +1,5 @@
 "use client";
-
-interface DetailsFilm {
-  id: number;
-  titre: string;
-  resume: string;
-  date_sortie: string;
-  affiche_url: string | null;
-  note_moyenne: number;
-}
+import { DetailsFilm } from "@/components/utils";
 
 export default function DetailsFilms({ film }: { film: DetailsFilm }) {
   return (

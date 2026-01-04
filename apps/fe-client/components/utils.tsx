@@ -9,6 +9,13 @@ export interface DetailsFilm {
   affiche_url: string | null;
   note_moyenne: number;
 }
+export interface FiltresRechercheFilms {
+  titre: string;
+  genre: string;
+  annee: string;
+}
+
+
 
 function Header() {
   return <header className="fixed inset-x-0 top-0 z-30 mx-auto w-full max-w-screen-md border border-gray-100 bg-white/80 py-3 shadow backdrop-blur-lg md:top-6 md:rounded-3xl lg:max-w-screen-lg">
@@ -67,110 +74,201 @@ function Footer() {
 </footer>
   );
 }
+function useRechercheFilms(
+  filtres: FiltresRechercheFilms
+): {
+  resultats: DetailsFilm[];
+  loading: boolean;
+  error: string | null;
+} {
+  const [resultats, setResultats] = useState<DetailsFilm[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const hasCriteria =
+      filtres.titre.trim().length >= 3 ||
+      filtres.genre !== "" ||
+      filtres.annee !== "";
+
+    if (!hasCriteria) {
+      setResultats([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const params = new URLSearchParams();
+
+        if (filtres.titre.trim().length >= 3) {
+          params.append("titre", filtres.titre.trim());
+        }
+        if (filtres.genre) params.append("genre", filtres.genre);
+        if (filtres.annee) params.append("annee", filtres.annee);
+
+        const response = await fetch(
+          `http://localhost:3333/tmdb/recherche/avancee?${params.toString()}`
+        );
+
+        if (!response.ok) {
+          throw new Error();
+        }
+
+        const data: DetailsFilm[] = await response.json();
+        setResultats(data);
+      } catch {
+        setError("Erreur lors de la recherche");
+      } finally {
+        setLoading(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [filtres.titre, filtres.genre, filtres.annee]);
+
+  return { resultats, loading, error };
+}
+
+
 function BarreRecherche() {
   const router = useRouter();
-  const [requete, setQuery] = useState('');
-  const [defilresultat, setShowResults] = useState(false);
-  const { resultats, loading, error } = RechercheFilms(requete);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log('Recherche soumise:', requete);
-  };
+  const [titre, setTitre] = useState<string>("");
+  const [genre, setGenre] = useState<string>("");
+  const [annee, setAnnee] = useState<string>("");
+  const [showResults, setShowResults] = useState<boolean>(false);
+
+  const { resultats, loading, error } = useRechercheFilms({
+    titre,
+    genre,
+    annee,
+  });
+
+  const afficherResultats =
+    showResults &&
+    (titre.trim().length >= 3 || genre !== "" || annee !== "");
 
   return (
-    <div className="flex flex-1 items-center justify-center p-6 relative">
-      <div className="w-full max-w-lg">
-        <form className="mt-5 sm:flex sm:items-center" onSubmit={handleSubmit}>
-          <div className="relative w-full">
-            <input
-              id="q"
-              name="q"
-              className="inline w-full rounded-md border border-gray-300 bg-white py-2 pl-3 pr-3 leading-5 placeholder-gray-500 focus:border-indigo-500 focus:placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm"
-              placeholder="Rechercher un film... (min. 3 lettres)"
-              type="search"
-              autoComplete="off"
-              value={requete}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setShowResults(true);
-              }}
-              onBlur={() => setTimeout(() => setShowResults(false), 200)}
-              onFocus={() => setShowResults(true)}
-            />
+    <div className="relative w-full max-w-lg mx-auto space-y-2">
+      {/* TITRE */}
+      <input
+        type="search"
+        placeholder="Titre du film (min. 3 caractères)"
+        value={titre}
+        onChange={(e) => {
+          setTitre(e.target.value);
+          setShowResults(true);
+        }}
+        onFocus={() => setShowResults(true)}
+        onBlur={() => setTimeout(() => setShowResults(false), 200)}
+        className="
+          relative z-10 w-full rounded-md border border-gray-300 bg-white
+          py-2 px-3 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500
+        "
+      />
 
-            {defilresultat && requete.length >= 3 && (
-              <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-96 overflow-y-auto">
-                {loading && (
-                  <div className="p-4 text-center text-gray-500">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600 mx-auto"></div>
-                    <p className="mt-2 text-sm">Recherche en cours...</p>
-                  </div>
-                )}
+      {/* FILTRES */}
+      <div className="flex gap-2">
+        {/* GENRE */}
+        <select
+          value={genre}
+          onChange={(e) => {
+            setGenre(e.target.value);
+            setShowResults(true);
+          }}
+          className="w-1/2 rounded-md border border-gray-300 bg-white py-2 px-2"
+        >
+          <option value="">Tous les genres</option>
+          <option value="Action">Action</option>
+          <option value="Comédie">Comédie</option>
+          <option value="Drame">Drame</option>
+          <option value="Thriller">Thriller</option>
+          <option value="Animation">Animation</option>
+          <option value="Science-Fiction">Science-Fiction</option>
+        </select>
 
-                {error && (
-                  <div className="p-4 text-center text-red-600">
-                    {error}
-                  </div>
-                )}
-
-                {!loading && !error && resultats.length === 0 && (
-                  <div className="p-4 text-center text-gray-500">
-                    Aucun film trouvé
-                  </div>
-                )}
-
-                {!loading && !error && resultats.length > 0 && (
-                  <ul>
-                    {resultats.map((film) => (
-                      <li
-                        key={film.id}
-                        className="p-3 hover:bg-gray-100 cursor-pointer border-b border-gray-200 last:border-b-0"
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => {
-                          setShowResults(false);
-                          router.push(`/films/${film.id}`);
-                        }}
-                      >
-                        <div className="flex items-center gap-3">
-                          {film.affiche_url ? (
-                            <img
-                              src={film.affiche_url}
-                              alt={film.titre}
-                              className="w-12 h-16 object-cover rounded"
-                            />
-                          ) : (
-                            <div className="w-12 h-16 bg-gray-200 rounded flex items-center justify-center text-xs text-gray-500">
-                              Pas d'image
-                            </div>
-                          )}
-                          <div className="flex-1">
-                            <p className="font-semibold text-gray-900">
-                              {film.titre}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {film.date_sortie ? new Date(film.date_sortie).getFullYear() : 'N/A'}
-                              {' • '}
-                              ⭐ {film.note_moyenne.toFixed(1)}
-                            </p>
-                          </div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )}
-          </div>
-
-          <button
-            type="submit"
-            className="mt-3 inline-flex w-full items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-          >
-            Rechercher
-          </button>
-        </form>
+        {/* ANNÉE */}
+        <input
+          type="number"
+          placeholder="Année"
+          value={annee}
+          onChange={(e) => {
+            setAnnee(e.target.value);
+            setShowResults(true);
+          }}
+          className="w-1/2 rounded-md border border-gray-300 bg-white py-2 px-3"
+        />
       </div>
+
+      {/* RÉSULTATS */}
+      {afficherResultats && (
+        <div
+          className="
+            absolute top-full left-0 mt-1 z-0 w-full
+            bg-white border border-gray-300 rounded-md shadow-lg
+            max-h-96 overflow-y-auto
+          "
+        >
+          {loading && (
+            <div className="p-4 text-center text-gray-500">
+              Recherche en cours...
+            </div>
+          )}
+
+          {error && (
+            <div className="p-4 text-center text-red-600">
+              {error}
+            </div>
+          )}
+
+          {!loading && !error && resultats.length === 0 && (
+            <div className="p-4 text-center text-gray-500">
+              Aucun film trouvé
+            </div>
+          )}
+
+          {!loading && !error && resultats.length > 0 && (
+            <ul>
+              {resultats.map((film) => (
+                <li
+                  key={film.id}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => router.push(`/films/${film.id}`)}
+                  className="
+                    p-3 flex gap-3 items-center cursor-pointer
+                    hover:bg-gray-100 border-b last:border-b-0
+                  "
+                >
+                  {film.affiche_url ? (
+                    <img
+                      src={film.affiche_url}
+                      alt={film.titre}
+                      className="w-10 h-14 object-cover rounded"
+                    />
+                  ) : (
+                    <div className="w-10 h-14 bg-gray-200 rounded flex items-center justify-center text-xs">
+                      N/A
+                    </div>
+                  )}
+
+                  <div>
+                    <p className="font-semibold">{film.titre}</p>
+                    <p className="text-xs text-gray-500">
+                      {film.date_sortie
+                        ? new Date(film.date_sortie).getFullYear()
+                        : "N/A"}{" "}
+                      • ⭐ {film.note_moyenne.toFixed(1)}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
     </div>
   );
 }

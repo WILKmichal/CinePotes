@@ -57,7 +57,46 @@ export class TmdbService {
       HttpStatus.INTERNAL_SERVER_ERROR,
     );
   }
+  private mapperFilmsTmdb(results: any[]): DetailsFilm[] {
+  return results.slice(0, 10).map((film) => ({
+    id: film.id,
+    titre: film.title,
+    resume: film.overview || 'Pas de résumé disponible',
+    date_sortie: film.release_date || '',
+    affiche_url: this.buildPosterUrl(film.poster_path),
+    note_moyenne: film.vote_average || 0,
+  }));
+}
 
+  private async obtenirGenres(): Promise<{ id: number; name: string }[]> {
+    const cleCache = 'tmdb:genres:movie';
+
+    const enCache = await this.redisService.get<{ id: number; name: string }[]>(cleCache);
+    if (enCache) return enCache;
+
+    try {
+      const reponse = await axios.get(`${this.urltmdb}/genre/movie/list`, {
+        params: {
+          api_key: process.env.TMDB_API_KEY,
+          language: 'fr-FR',
+        },
+      });
+
+      const genres = (reponse.data?.genres ?? []) as { id: number; name: string }[];
+      await this.redisService.set(cleCache, genres, 86400); // 24h
+      return genres;
+    } catch (error) {
+      this.handleTmdbError(error);
+    }
+  }
+
+  private async trouverGenreIdParNom(genreNom: string): Promise<number | null> {
+    const genres = await this.obtenirGenres();
+    const g = genres.find(
+      (x) => x.name.toLowerCase() === genreNom.toLowerCase(),
+    );
+    return g ? g.id : null;
+  }
   /**
    * Détails d'un film
    */
@@ -165,6 +204,83 @@ export class TmdbService {
 
       await this.redisService.set(cleCache, films, 3600);
       return films;
+    } catch (error) {
+      this.handleTmdbError(error);
+    }
+  }
+    async rechercherFilmsAvancee(filtres: {titre?: string; annee?: string;genre?: string;}): Promise<DetailsFilm[]> {
+
+    const { titre, annee, genre } = filtres;
+
+    const cleCache = `tmdb:recherche_avancee:${JSON.stringify({
+      titre: titre || '',
+      annee: annee || '',
+      genre: genre || '',
+    })}`;
+
+    const enCache = await this.redisService.get<DetailsFilm[]>(cleCache);
+    if (enCache) return enCache;
+
+    try {
+      // Recherche par titre
+      if (titre) {
+        const response = await axios.get(`${this.urltmdb}/search/movie`, {
+          params: {
+            api_key: process.env.TMDB_API_KEY,
+            language: 'fr-FR',
+            query: titre,
+            page: 1,
+            ...(annee ? { primary_release_year: annee } : {}),
+          },
+        });
+
+        let results = response.data?.results ?? [];
+
+        // filtre genre si fourni
+        if (genre) {
+          const genreId = await this.trouverGenreIdParNom(genre);
+          if (!genreId) {
+            await this.redisService.set(cleCache, [], 600);
+            return [];
+          }
+          results = results.filter((m) =>
+            (m.genre_ids ?? []).includes(genreId),
+          );
+        }
+
+        const films = this.mapperFilmsTmdb(results);
+        await this.redisService.set(cleCache, films, 1800);
+        return films;
+      }
+
+      // Recherche sans titre (genre / année)
+      const params: any = {
+        api_key: process.env.TMDB_API_KEY,
+        language: 'fr-FR',
+        sort_by: 'popularity.desc',
+        page: 1,
+      };
+
+      if (annee) params.primary_release_year = annee;
+
+      if (genre) {
+        const genreId = await this.trouverGenreIdParNom(genre);
+        if (!genreId) {
+          await this.redisService.set(cleCache, [], 600);
+          return [];
+        }
+        params.with_genres = genreId;
+      }
+
+      const response = await axios.get(
+        `${this.urltmdb}/discover/movie`,
+        { params },
+      );
+
+      const films = this.mapperFilmsTmdb(response.data?.results ?? []);
+      await this.redisService.set(cleCache, films, 1800);
+      return films;
+
     } catch (error) {
       this.handleTmdbError(error);
     }

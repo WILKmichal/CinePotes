@@ -45,6 +45,40 @@ export class TmdbController {
     }
     return this.tmdbService.rechercherFilms(query);
   }
+  @Get('recherche/avancee')
+  rechercherFilmsAvancee(
+    @Query('titre') titre?: string,
+    @Query('annee') annee?: string,
+    @Query('genre') genre?: string,
+  ): Promise<DetailsFilm[]> {
+
+    if (!titre && !annee && !genre) {
+      throw new HttpException(
+        'Au moins un critère est requis: titre, annee ou genre',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (titre && titre.trim().length < 2) {
+      throw new HttpException(
+        'Le titre doit contenir au moins 2 caractères',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (annee && !/^\d{4}$/.test(annee.trim())) {
+      throw new HttpException(
+        "L'année doit être au format YYYY (ex: 2019)",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return this.tmdbService.rechercherFilmsAvancee({
+      titre: titre?.trim(),
+      annee: annee?.trim(),
+      genre: genre?.trim(),
+    });
+  }
 
   // Dynamic route 
   @Get(':id')
