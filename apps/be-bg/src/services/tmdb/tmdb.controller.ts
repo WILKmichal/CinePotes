@@ -8,7 +8,6 @@ export class TmdbController {
   constructor(private readonly tmdbService: TmdbService) {}
 
   // Static routes 
-
   // Récupérer plusieurs films par leurs IDs
   @Get('movies')
   getMovies(@Query('ids') ids: string): Promise<DetailsFilm[]> {
@@ -80,7 +79,7 @@ export class TmdbController {
     });
   }
 
-  // Dynamic route 
+  // route Dynamque 
   @Get(':id')
   getMovie(@Param('id', ParseIntPipe) id: number): Promise<DetailsFilm> {
     return this.tmdbService.obtenirDetailsFilm(id);
