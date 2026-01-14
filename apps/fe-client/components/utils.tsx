@@ -14,9 +14,6 @@ export interface FiltresRechercheFilms {
   genre: string;
   annee: string;
 }
-
-
-
 function Header() {
   return <header className="fixed inset-x-0 top-0 z-30 mx-auto w-full max-w-screen-md border border-gray-100 bg-white/80 py-3 shadow backdrop-blur-lg md:top-6 md:rounded-3xl lg:max-w-screen-lg">
             <div className="px-4">
@@ -75,12 +72,11 @@ function Footer() {
   );
 }
 function useRechercheFilms(
-  filtres: FiltresRechercheFilms
-): {
-  resultats: DetailsFilm[];
-  loading: boolean;
-  error: string | null;
-} {
+  filtres: FiltresRechercheFilms): {
+    resultats: DetailsFilm[];
+    loading: boolean;
+    error: string | null;
+  } {
   const [resultats, setResultats] = useState<DetailsFilm[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -131,8 +127,6 @@ function useRechercheFilms(
 
   return { resultats, loading, error };
 }
-
-
 function BarreRecherche() {
   const router = useRouter();
 
