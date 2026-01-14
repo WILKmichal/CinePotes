@@ -1,13 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  Header,
-  Footer,
-  BarreRecherche,
-  CarteFilms,
-  DetailsFilm,
-} from "../components/utils";
+import {Header,Footer,BarreRecherche,CarteFilms,DetailsFilm,} from "../components/utils";
 
 export function usefilms() {
   const [films, setFilms] = useState<DetailsFilm[]>([]);
