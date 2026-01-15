@@ -26,10 +26,12 @@ WORKDIR /app
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
 
-# Copie node_modules et la build
-COPY --from=builder --chown=nodejs:nodejs --chmod=555 /app/dist ./dist
-COPY --from=builder --chown=nodejs:nodejs --chmod=555 /app/node_modules ./node_modules
-COPY --from=builder --chown=nodejs:nodejs --chmod=444 /app/package.json ./package.json
+# Copie avec permissions minimales strictes
+# 0400 = read-only pour owner uniquement (fichiers)
+# 0500 = read+execute pour owner uniquement (dossiers)
+COPY --from=builder --chown=nodejs:nodejs --chmod=0500 /app/dist ./dist
+COPY --from=builder --chown=nodejs:nodejs --chmod=0500 /app/node_modules ./node_modules
+COPY --from=builder --chown=nodejs:nodejs --chmod=0400 /app/package.json ./package.json
 
 # Change vers l'utilisateur non-root
 USER nodejs
