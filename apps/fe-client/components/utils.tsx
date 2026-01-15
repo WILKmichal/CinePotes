@@ -313,10 +313,13 @@ function CarteFilms({ id, titre, resume, date_sortie, affiche_url, note_moyenne 
   const router = useRouter();
 
   return (
-    <article
-      onClick={() => router.push(`/films/${id}`)}
-      className="cursor-pointer bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition"
-    >
+      <article
+        role="button"
+        tabIndex={0}
+        onClick={() => router.push(`/films/${id}`)}
+        onKeyDown={(e) => e.key === 'Enter' && router.push(`/films/${id}`)}
+        className="cursor-pointer bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition"
+      >
       <div className="flex gap-4">
         {affiche_url ? (
           <img src={affiche_url} alt={titre} className="w-24 h-36 object-cover rounded flex-shrink-0" />
