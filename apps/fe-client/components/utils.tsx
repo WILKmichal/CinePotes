@@ -229,6 +229,8 @@ function BarreRecherche() {
               {resultats.map((film) => (
                 <li
                   key={film.id}
+                  role="button"
+                  tabIndex={0}
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => router.push(`/films/${film.id}`)}
                   className="
