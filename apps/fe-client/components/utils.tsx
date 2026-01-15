@@ -48,12 +48,12 @@ function Footer() {
     <footer className="w-full flex justify-center mt-16">
   <div className="flex flex-col items-center w-full bg-white border-t border-gray-200 shadow-lg p-8 space-y-8">
     <nav className="flex justify-center flex-wrap gap-6 text-gray-500 font-medium">
-      <a className="hover:text-gray-900" href="#">Home</a>
-      <a className="hover:text-gray-900" href="#">About</a>
-      <a className="hover:text-gray-900" href="#">Services</a>
-      <a className="hover:text-gray-900" href="#">Media</a>
-      <a className="hover:text-gray-900" href="#">Gallery</a>
-      <a className="hover:text-gray-900" href="#">Contact</a>
+      <a className="hover:text-gray-900" href="/">Home</a>
+      <a className="hover:text-gray-900" href="/About">About</a>
+      <a className="hover:text-gray-900" href="/Service">Services</a>
+      <a className="hover:text-gray-900" href="/Media">Media</a>
+      <a className="hover:text-gray-900" href="/Gallery">Gallery</a>
+      <a className="hover:text-gray-900" href="/Contact">Contact</a>
     </nav>
 
     <div className="flex justify-center space-x-5">
