@@ -311,7 +311,7 @@ function RechercheFilms(requete: string) {
 
   return { resultats, loading, error };
 }
-function CarteFilms({ id, titre, resume, date_sortie, affiche_url, note_moyenne }: DetailsFilm) {
+function CarteFilms({ id, titre, resume, date_sortie, affiche_url, note_moyenne }: Readonly<DetailsFilm>) {
   const router = useRouter();
 
   return (
