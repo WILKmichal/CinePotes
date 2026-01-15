@@ -17,7 +17,7 @@ export class TmdbController {
 
     const filmIds = ids
       .split(',')
-      .map((x) => parseInt(x.trim(), 10))
+      .map((x) => Number.parseInt(x.trim(), 10))
       .filter((n) => Number.isFinite(n));
 
     if (filmIds.length === 0) {
