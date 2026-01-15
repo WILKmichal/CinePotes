@@ -1,7 +1,7 @@
 "use client";
 import { DetailsFilm } from "@/components/utils";
 
-export default function DetailsFilms({ film }: { film: DetailsFilm }) {
+export default function DetailsFilms({ film }: Readonly<{ film: DetailsFilm }>) {
   return (
     <div className="max-w-4xl mx-auto px-6 py-32">
       <div className="flex gap-8">
