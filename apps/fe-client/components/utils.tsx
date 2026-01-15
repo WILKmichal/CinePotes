@@ -57,11 +57,11 @@ function Footer() {
     </nav>
 
     <div className="flex justify-center space-x-5">
-      <a href="https://facebook.com"><img src="https://img.icons8.com/fluent/30/000000/facebook-new.png"/></a>
-      <a href="https://linkedin.com"><img src="https://img.icons8.com/fluent/30/000000/linkedin-2.png"/></a>
-      <a href="https://instagram.com"><img src="https://img.icons8.com/fluent/30/000000/instagram-new.png"/></a>
-      <a href="https://messenger.com"><img src="https://img.icons8.com/fluent/30/000000/facebook-messenger--v2.png"/></a>
-      <a href="https://twitter.com"><img src="https://img.icons8.com/fluent/30/000000/twitter.png"/></a>
+      <a href="https://facebook.com"><img src="https://img.icons8.com/fluent/30/000000/facebook-new.png" alt="Facebook"/></a>
+      <a href="https://linkedin.com"><img src="https://img.icons8.com/fluent/30/000000/linkedin-2.png" alt="LinkedIn"/></a>
+      <a href="https://instagram.com"><img src="https://img.icons8.com/fluent/30/000000/instagram-new.png" alt="Instagram"/></a>
+      <a href="https://messenger.com"><img src="https://img.icons8.com/fluent/30/000000/facebook-messenger--v2.png" alt="Messenger"/></a>
+      <a href="https://twitter.com"><img src="https://img.icons8.com/fluent/30/000000/twitter.png" alt="Twitter"/></a>
     </div>
 
     <p className="text-center text-gray-700 font-medium">
