@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import {Header,Footer,BarreRecherche,CarteFilms,DetailsFilm,} from "../components/utils";
 
-export function usefilms() {
+export function useFilms() {
   const [films, setFilms] = useState<DetailsFilm[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -52,7 +52,7 @@ function paragraphes() {
 }
 
 export default function Home() {
-  const { films, loading, error } = usefilms();
+  const { films, loading, error } = useFilms();
 
   return (
     <div className="min-h-screen flex flex-col bg-white dark:bg-black">
