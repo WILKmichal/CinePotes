@@ -2,32 +2,37 @@
 #   BUILD
 # ---------------------
 FROM node:20-alpine AS builder
-
 WORKDIR /app
 
 # Installe pnpm
 RUN npm install -g pnpm
 
-# Copie l’ensemble du monorepo Turbo
+# Copie tous les fichiers
 COPY . .
 
-# Installation & Build
-RUN pnpm install --recursive
+# Installation (@nestjs/config est déjà dans package.json)
+RUN pnpm install --no-frozen-lockfile
+
+# Build
 RUN pnpm run build
 
 # ---------------------
 #   RUN
 # ---------------------
 FROM node:20-alpine
+WORKDIR /app
 
-WORKDIR /apps/be-bg
+# Crée un utilisateur non-root
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
 
-# Installe pnpm
-RUN npm install -g pnpm
+# Copie node_modules et la build
+COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
+COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nodejs:nodejs /app/package.json ./package.json
 
-# Copie node_modules et la build du backend
-COPY --from=builder /apps/be-bg/dist ./dist
-COPY --from=builder /apps/be-bg/node_modules ./node_modules
+# Change vers l'utilisateur non-root
+USER nodejs
 
 # Expose et start
 EXPOSE 3000
