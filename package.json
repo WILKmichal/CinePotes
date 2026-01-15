@@ -16,13 +16,11 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "next": "16.0.3",
-    "react": "19.2.0",
-    "react-dom": "19.2.0"
-  },
   "devDependencies": {
     "turbo": "2.6.1"
-  }, 
-  "packageManager": "pnpm@10.22.0"
+  },
+  "packageManager": "pnpm@10.22.0",
+  "dependencies": {
+    "@nestjs/config": "^4.0.2"
+  }
 }

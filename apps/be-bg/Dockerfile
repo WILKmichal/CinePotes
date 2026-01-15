@@ -1,26 +1,34 @@
-# Use the official Node.js image as the base image
-FROM node:20
+# ---------------------
+#   BUILD
+# ---------------------
+FROM node:20-alpine AS builder
 
-# Link to the GitHub repository
-LABEL org.opencontainers.image.source="https://github.com/MehdiLazaar/CinePotes"
+WORKDIR /app
 
-# Set the working directory inside the container
-WORKDIR /usr/src/app
+# Installe pnpm
+RUN npm install -g pnpm
 
-# Copy package.json and package-lock.json to the working directory
-COPY package*.json ./
-
-# Install the application dependencies
-RUN npm install
-
-# Copy the rest of the application files
+# Copie l’ensemble du monorepo Turbo
 COPY . .
 
-# Build the NestJS application
-RUN npm run build
+# Installation & Build
+RUN pnpm install --recursive
+RUN pnpm run build
 
-# Expose the application port
+# ---------------------
+#   RUN
+# ---------------------
+FROM node:20-alpine
+
+WORKDIR /apps/be-bg
+
+# Installe pnpm
+RUN npm install -g pnpm
+
+# Copie node_modules et la build du backend
+COPY --from=builder /apps/be-bg/dist ./dist
+COPY --from=builder /apps/be-bg/node_modules ./node_modules
+
+# Expose et start
 EXPOSE 3000
-
-# Command to run the application
-CMD ["node", "dist/main"]
+CMD ["node", "dist/main.js"]
