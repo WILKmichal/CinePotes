@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Header, Footer } from "@/components/utils";
+import { Header, Footer, DetailsFilm } from "@/components/utils";
 import DetailsFilms from "@/components/detailsFilms";
-import { DetailsFilm } from "@/components/utils";
 
 export default function Page() {
   const { id } = useParams<{ id: string }>();
