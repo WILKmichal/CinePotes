@@ -19,7 +19,7 @@ export default function Page() {
         const data = await res.json();
         setFilm(data);
       } catch (e) {
-        setError("Impossible de charger les détails du film");
+        setError(`Impossible de charger les détails du film, ${e}`);
       } finally {
         setLoading(false);
       }
