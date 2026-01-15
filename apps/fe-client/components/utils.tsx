@@ -110,7 +110,7 @@ function useRechercheFilms(
         );
 
         if (!response.ok) {
-          throw new Error();
+          throw new Error('Failed to fetch films');
         }
 
         const data: DetailsFilm[] = await response.json();
