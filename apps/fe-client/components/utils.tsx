@@ -52,12 +52,12 @@ function Footer() {
     <footer className="w-full flex justify-center mt-16">
   <div className="flex flex-col items-center w-full bg-white border-t border-gray-200 shadow-lg p-8 space-y-8">
     <nav className="flex justify-center flex-wrap gap-6 text-gray-500 font-medium">
-      <a className="hover:text-gray-900" href="/">Home</a>
-      <a className="hover:text-gray-900" href="/About">About</a>
-      <a className="hover:text-gray-900" href="/Service">Services</a>
-      <a className="hover:text-gray-900" href="/Media">Media</a>
-      <a className="hover:text-gray-900" href="/Gallery">Gallery</a>
-      <a className="hover:text-gray-900" href="/Contact">Contact</a>
+      <Link className="hover:text-gray-900" href="/">Home</Link>
+      <Link className="hover:text-gray-900" href="/About">About</Link>
+      <Link className="hover:text-gray-900" href="/Service">Services</Link>
+      <Link className="hover:text-gray-900" href="/Media">Media</Link>
+      <Link className="hover:text-gray-900" href="/Gallery">Gallery</Link>
+      <Link className="hover:text-gray-900" href="/Contact">Contact</Link>
     </nav>
     <div className="flex justify-center space-x-5">
       <a href="https://facebook.com"><img src="https://img.icons8.com/fluent/30/000000/facebook-new.png" alt="Facebook"/></a>
