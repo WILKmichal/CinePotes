@@ -42,7 +42,7 @@ function paragraphes() {
         Bienvenue sur CinéPote
       </h2>
       <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
-        Ciné'Pote est une plateforme pour lister ses films vus et organiser des
+        Ciné&apos;Pote est une plateforme pour lister ses films vus et organiser des
         soirées cinéma entre amis. Chaque participant propose une sélection de
         films, les listes sont fusionnées, puis chacun classe la liste finale
         pour dégager un top commun et choisir le film de la soirée.
