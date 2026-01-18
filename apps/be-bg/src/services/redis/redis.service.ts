@@ -8,7 +8,7 @@ export class RedisService implements OnModuleInit{
     private redisClient: Redis | null = null;
     private valable = false;
     // Creation du client redis a l'initialisation du module
-    async onModuleInit() {
+    onModuleInit() {
     try {
       this.redisClient = new Redis({
         host: 'localhost',
@@ -23,11 +23,13 @@ export class RedisService implements OnModuleInit{
       this.redisClient.on('error', (e) => {
         console.error('Redis error:', e);
         this.valable = false;
+        this.redisClient = null;
       });
 
     } catch (e) {
       console.error('Erreur de connexion à Redis:', e);
       this.valable = false;
+      this.redisClient = null;
     }
   }
     
@@ -49,7 +51,7 @@ export class RedisService implements OnModuleInit{
    * @param value - données à enregistrer
    * @param ttl - durée de vie en secondes
    */
-    async set<T>(key: string, value: unknown, ttl =  7200): Promise<void> {
+    async set(key: string, value: unknown, ttl =  7200): Promise<void> {
       if (!this.redisClient) {
         return;
       }
