@@ -1,0 +1,8 @@
+Prochaine tâche à faire dans le code:
+Faire une case de création de compte ou l'on rensigne tous les informations requis pour la 
+bdd.
+En fonction de la page ou l'on se trouve on crée soit un utilisateur admin soit soit un
+utilisateur avec l'option chef ou user
+on se trouve dans la page fe-admin pour créer un admin.
+on se trouve dans la page fe-client et on a un carré avec un rectangle chef et un autre 
+avec un rectangle user si on clique sur le carré ca te crée un compte en chef ou en user
