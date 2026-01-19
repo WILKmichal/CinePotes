@@ -1,7 +1,7 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import axios, { AxiosError } from 'axios';
 import { RedisService } from '../redis/redis.service';
-import { DetailsFilm } from './types/tmdb.types';
+import { DetailsFilm } from '../../../../types/tmdb.types';
 
 /** ===== Types TMDB (locaux au fichier, pas besoin de nouveaux fichiers) ===== */
 type TmdbStatusMessage = { status_message?: string };
@@ -51,7 +51,7 @@ export class TmdbService {
     return `${this.imageBaseUrl}${posterPath}`;
   }
 
-  /** ✅ Mapping centralisé (plus de any[]) */
+  /**Mapping centralisé (plus de any[]) */
   private mapperFilmsTmdb(results: TmdbMovie[]): DetailsFilm[] {
     return results.slice(0, 10).map((film) => ({
       id: film.id,
@@ -63,7 +63,7 @@ export class TmdbService {
     }));
   }
 
-  /** ✅ Erreurs TMDB sans any */
+  /**Erreurs TMDB sans any */
   private handleTmdbError(error: unknown): never {
     if (axios.isAxiosError(error)) {
       const err = error as AxiosError<TmdbStatusMessage>;
@@ -77,10 +77,16 @@ export class TmdbService {
         throw new HttpException('Clé TMDB invalide', HttpStatus.UNAUTHORIZED);
       }
       if (status === 429) {
-        throw new HttpException('Trop de requêtes (rate limit)', HttpStatus.TOO_MANY_REQUESTS);
+        throw new HttpException(
+          'Trop de requêtes (rate limit)',
+          HttpStatus.TOO_MANY_REQUESTS,
+        );
       }
 
-      throw new HttpException(message, status ?? HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        message,
+        status ?? HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
 
     console.error('TMDB unknown error:', error);
@@ -93,16 +99,22 @@ export class TmdbService {
   private async obtenirGenres(): Promise<Array<{ id: number; name: string }>> {
     const cleCache = 'tmdb:genres:movie';
 
-    const enCache = await this.redisService.get<Array<{ id: number; name: string }>>(cleCache);
+    const enCache =
+      await this.redisService.get<Array<{ id: number; name: string }>>(
+        cleCache,
+      );
     if (enCache) return enCache;
 
     try {
-      const reponse = await axios.get<TmdbGenresResponse>(`${this.urltmdb}/genre/movie/list`, {
-        params: {
-          api_key: process.env.TMDB_API_KEY,
-          language: 'fr-FR',
+      const reponse = await axios.get<TmdbGenresResponse>(
+        `${this.urltmdb}/genre/movie/list`,
+        {
+          params: {
+            api_key: process.env.TMDB_API_KEY,
+            language: 'fr-FR',
+          },
         },
-      });
+      );
 
       const genres = reponse.data.genres ?? [];
       await this.redisService.set(cleCache, genres, 86400);
@@ -114,7 +126,9 @@ export class TmdbService {
 
   private async trouverGenreIdParNom(genreNom: string): Promise<number | null> {
     const genres = await this.obtenirGenres();
-    const g = genres.find((x) => x.name.toLowerCase() === genreNom.toLowerCase());
+    const g = genres.find(
+      (x) => x.name.toLowerCase() === genreNom.toLowerCase(),
+    );
     return g ? g.id : null;
   }
 
@@ -125,12 +139,15 @@ export class TmdbService {
     if (enCache) return enCache;
 
     try {
-      const reponse = await axios.get<TmdbMovie>(`${this.urltmdb}/movie/${id}`, {
-        params: {
-          api_key: process.env.TMDB_API_KEY,
-          language: 'fr-FR',
+      const reponse = await axios.get<TmdbMovie>(
+        `${this.urltmdb}/movie/${id}`,
+        {
+          params: {
+            api_key: process.env.TMDB_API_KEY,
+            language: 'fr-FR',
+          },
         },
-      });
+      );
 
       const data = reponse.data;
 
@@ -161,13 +178,16 @@ export class TmdbService {
     if (enCache) return enCache;
 
     try {
-      const reponse = await axios.get<TmdbListResponse<TmdbMovie>>(`${this.urltmdb}/movie/popular`, {
-        params: {
-          api_key: process.env.TMDB_API_KEY,
-          language: 'fr-FR',
-          page: 1,
+      const reponse = await axios.get<TmdbListResponse<TmdbMovie>>(
+        `${this.urltmdb}/movie/popular`,
+        {
+          params: {
+            api_key: process.env.TMDB_API_KEY,
+            language: 'fr-FR',
+            page: 1,
+          },
         },
-      });
+      );
 
       const films = this.mapperFilmsTmdb(reponse.data.results);
       await this.redisService.set(cleCache, films, 7200);
@@ -185,14 +205,17 @@ export class TmdbService {
     if (enCache) return enCache;
 
     try {
-      const reponse = await axios.get<TmdbListResponse<TmdbMovie>>(`${this.urltmdb}/search/movie`, {
-        params: {
-          api_key: process.env.TMDB_API_KEY,
-          language: 'fr-FR',
-          query,
-          page: 1,
+      const reponse = await axios.get<TmdbListResponse<TmdbMovie>>(
+        `${this.urltmdb}/search/movie`,
+        {
+          params: {
+            api_key: process.env.TMDB_API_KEY,
+            language: 'fr-FR',
+            query,
+            page: 1,
+          },
         },
-      });
+      );
 
       const films = this.mapperFilmsTmdb(reponse.data.results);
       await this.redisService.set(cleCache, films, 3600);
@@ -202,7 +225,9 @@ export class TmdbService {
     }
   }
 
-  async rechercherFilmsAvancee(filtres: RechercheAvanceeFiltres): Promise<DetailsFilm[]> {
+  async rechercherFilmsAvancee(
+    filtres: RechercheAvanceeFiltres,
+  ): Promise<DetailsFilm[]> {
     const titre = filtres.titre?.trim();
     const annee = filtres.annee?.trim();
     const genre = filtres.genre?.trim();
@@ -219,15 +244,18 @@ export class TmdbService {
     try {
       // 1) Si on a un titre -> search/movie (+ filtre année côté TMDB)
       if (titre) {
-        const reponse = await axios.get<TmdbListResponse<TmdbMovie>>(`${this.urltmdb}/search/movie`, {
-          params: {
-            api_key: process.env.TMDB_API_KEY,
-            language: 'fr-FR',
-            query: titre,
-            page: 1,
-            ...(annee ? { primary_release_year: annee } : {}),
+        const reponse = await axios.get<TmdbListResponse<TmdbMovie>>(
+          `${this.urltmdb}/search/movie`,
+          {
+            params: {
+              api_key: process.env.TMDB_API_KEY,
+              language: 'fr-FR',
+              query: titre,
+              page: 1,
+              ...(annee ? { primary_release_year: annee } : {}),
+            },
           },
-        });
+        );
 
         let results: TmdbMovie[] = reponse.data.results ?? [];
 
@@ -238,7 +266,9 @@ export class TmdbService {
             await this.redisService.set(cleCache, [], 600);
             return [];
           }
-          results = results.filter((m) => (m.genre_ids ?? []).includes(genreId));
+          results = results.filter((m) =>
+            (m.genre_ids ?? []).includes(genreId),
+          );
         }
 
         const films = this.mapperFilmsTmdb(results);
@@ -265,9 +295,12 @@ export class TmdbService {
         params.with_genres = genreId;
       }
 
-      const reponse = await axios.get<TmdbListResponse<TmdbMovie>>(`${this.urltmdb}/discover/movie`, {
-        params,
-      });
+      const reponse = await axios.get<TmdbListResponse<TmdbMovie>>(
+        `${this.urltmdb}/discover/movie`,
+        {
+          params,
+        },
+      );
 
       const films = this.mapperFilmsTmdb(reponse.data.results ?? []);
       await this.redisService.set(cleCache, films, 1800);
