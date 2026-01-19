@@ -1,19 +1,32 @@
 # Cinépote
 
-## Présentation de l’application
-
-Cette application a pour objectif de faciliter le choix d’un film au sein d’un groupe d’amis, à partir d’une présélection effectuée par chacun d’entre eux.
-
 ## Lancer l’application en mode développement
 
-Installez les dépendances du projet :
-```bash
+### Prérequis
+
+- Docker
+- Docker Compose
+- pnpm
+
+### Installation des dépendances
+
+À la racine du projet, installez les dépendances :
+```
 pnpm install
-````
-
-Puis lancez les différentes applications du projet :
-
-```bash
-pnpm run dev
 ```
 
+### Démarrage des services Docker
+
+Toujours à la racine du projet, lancez les services nécessaires :
+
+```
+docker compose up
+```
+
+### Lancement des applications
+
+Une fois les services Docker démarrés, lancez les applications du projet en mode développement :
+
+```
+pnpm run dev
+```
