@@ -9,10 +9,10 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@repo/ui": "workspace:*",
     "next": "16.0.3",
     "react": "19.2.0",
     "react-dom": "19.2.0",
+    "@repo/ui": "workspace:*",
     "schemas": "workspace:*"
   },
   "devDependencies": {
@@ -20,7 +20,6 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "baseline-browser-mapping": "^2.9.15",
     "eslint": "^9",
     "eslint-config-next": "16.0.3",
     "tailwindcss": "^4",
