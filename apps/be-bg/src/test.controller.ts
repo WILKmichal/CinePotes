@@ -4,7 +4,6 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 @ApiTags('Test')
 @Controller('test')
 export class TestController {
-  
   @Get()
   @ApiOperation({ summary: 'Test simple' })
   @ApiResponse({ status: 200, description: 'Ça marche !' })
