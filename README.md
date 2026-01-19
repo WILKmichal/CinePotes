@@ -14,6 +14,17 @@
 ```
 pnpm install
 ```
+### Ajout variable env 
+
+Dans l'application be-bg, créer un fichier .env avec ces variables la :
+```
+PORT=3001
+REDIS_URL=redis://localhost:6379
+TMDB_API_KEY=
+```
+
+Generez vous même la clé TMDB. 
+
 
 ### Démarrage des services Docker
 
@@ -30,3 +41,4 @@ Une fois les services Docker démarrés, lancez les applications du projet en mo
 ```
 pnpm run dev
 ```
+
