@@ -18,6 +18,9 @@
   "license": "ISC",
   "devDependencies": {
     "turbo": "2.6.1"
-  }, 
-  "packageManager": "pnpm@10.22.0"
+  },
+  "packageManager": "pnpm@10.22.0",
+  "dependencies": {
+    "@nestjs/config": "^4.0.2"
+  }
 }
