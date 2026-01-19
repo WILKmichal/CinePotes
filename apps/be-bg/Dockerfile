@@ -1,26 +1,44 @@
-# Use the official Node.js image as the base image
-FROM node:20
+# ---------------------
+#   BUILD
+# ---------------------
+FROM node:20-alpine AS builder
+WORKDIR /app
 
-# Link to the GitHub repository
-LABEL org.opencontainers.image.source="https://github.com/MehdiLazaar/CinePotes"
+# Installe pnpm
+RUN npm install -g pnpm
 
-# Set the working directory inside the container
-WORKDIR /usr/src/app
-
-# Copy package.json and package-lock.json to the working directory
-COPY package*.json ./
-
-# Install the application dependencies
-RUN npm install
-
-# Copy the rest of the application files
+# Copie tous les fichiers
 COPY . .
 
-# Build the NestJS application
-RUN npm run build
+# Installation (@nestjs/config est déjà dans package.json)
+RUN pnpm install --no-frozen-lockfile
 
-# Expose the application port
+# Build
+RUN pnpm run build
+
+# ---------------------
+#   RUN
+# ---------------------
+FROM node:20-alpine
+WORKDIR /app
+
+# Crée un utilisateur non-root
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
+
+# Copie les fichiers
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
+
+# Change ownership et supprime toutes les permissions d'écriture
+RUN chown -R nodejs:nodejs /app && \
+    find /app -type d -exec chmod 0500 {} \; && \
+    find /app -type f -exec chmod 0400 {} \;
+
+# Change vers l'utilisateur non-root
+USER nodejs
+
+# Expose et start
 EXPOSE 3000
-
-# Command to run the application
-CMD ["node", "dist/main"]
+CMD ["node", "dist/main.js"]
