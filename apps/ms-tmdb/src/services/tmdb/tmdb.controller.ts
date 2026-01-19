@@ -1,3 +1,4 @@
+// tmdb.controller.ts
 import {
   Controller,
   Get,
@@ -8,12 +9,13 @@ import {
   Query,
 } from '@nestjs/common';
 import { DetailsFilm } from '../../../../types/tmdb.types';
-import { TmdbMsClient } from './tmdb-ms.client';
+import { TmdbService } from './tmdb.service';
 
 @Controller('tmdb')
 export class TmdbController {
-  constructor(private readonly tmdbMs: TmdbMsClient) {}
+  constructor(private readonly tmdbService: TmdbService) {}
 
+  // Static routes
   // Récupérer plusieurs films par leurs IDs
   @Get('movies')
   getMovies(@Query('ids') ids: string): Promise<DetailsFilm[]> {
@@ -30,16 +32,13 @@ export class TmdbController {
       throw new HttpException('ids invalide', HttpStatus.BAD_REQUEST);
     }
 
-    // Forward vers ms-tmdb (même route)
-    return this.tmdbMs.get<DetailsFilm[]>('/tmdb/movies', {
-      ids: filmIds.join(','),
-    });
+    return this.tmdbService.obtenirPlusieursFilms(filmIds);
   }
 
   // Films populaires
   @Get('films/populaires')
   getPopularMovies(): Promise<DetailsFilm[]> {
-    return this.tmdbMs.get<DetailsFilm[]>('/tmdb/films/populaires');
+    return this.tmdbService.obtenirFilmsPopulaires();
   }
 
   // Recherche
@@ -51,11 +50,8 @@ export class TmdbController {
         HttpStatus.BAD_REQUEST,
       );
     }
-
-    return this.tmdbMs.get<DetailsFilm[]>('/tmdb/recherche', { query });
+    return this.tmdbService.rechercherFilms(query);
   }
-
-  // Recherche avancée
   @Get('recherche/avancee')
   rechercherFilmsAvancee(
     @Query('titre') titre?: string,
@@ -83,16 +79,16 @@ export class TmdbController {
       );
     }
 
-    return this.tmdbMs.get<DetailsFilm[]>('/tmdb/recherche/avancee', {
+    return this.tmdbService.rechercherFilmsAvancee({
       titre: titre?.trim(),
       annee: annee?.trim(),
       genre: genre?.trim(),
     });
   }
 
-  // route dynamique
+  // route Dynamque
   @Get(':id')
   getMovie(@Param('id', ParseIntPipe) id: number): Promise<DetailsFilm> {
-    return this.tmdbMs.get<DetailsFilm>(`/tmdb/${id}`);
+    return this.tmdbService.obtenirDetailsFilm(id);
   }
 }
