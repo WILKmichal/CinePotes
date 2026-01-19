@@ -7,6 +7,10 @@
     "react": "19.2.0",
     "react-dom": "19.2.0"
   },
+    "peerDependencies": {
+    "react": "*", 
+    "react-dom": "*"
+  },
   "devDependencies": {
     "@types/react": "^19.2.6",
     "@types/react-dom": "^19.2.3"

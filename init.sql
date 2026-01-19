@@ -88,7 +88,7 @@ CREATE INDEX idx_utilisateur_email ON utilisateur(email);
 -- Insertion manuelle de quelques valeurs de tests
 INSERT INTO utilisateur (nom, email, mot_de_passe_hash, role)
 VALUES
-('Admin CinéPote', 'admin@cinepote.fr', '$2b$10$M7sxjSMT2OBvIgGaVxhxpe18gYetRw2Q3xv/gxbn1O5fy9vS4vZtS', 'admin');
+('Admin CinéPote', 'admin@cinepote.fr', '$2b$10$fvYtsMibMSx1GdedFZCnoe6r6eVK1VUUOHwaL9loXZzEqFDvH3DCy', 'admin');
 
 INSERT INTO utilisateur (nom, email, mot_de_passe_hash, role)
 VALUES
