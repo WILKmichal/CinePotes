@@ -7,10 +7,10 @@ import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ 
-      isGlobal: true,       
+    ConfigModule.forRoot({
+      isGlobal: true,
     }),
-    MailModule,                     
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -13,7 +13,7 @@ describe('MailController', () => {
         {
           provide: MailService,
           useValue: {
-            sendEmail: jest.fn(),        
+            sendEmail: jest.fn(),
             verifyConnection: jest.fn(),
           },
         },

@@ -1,11 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ifError } from 'assert';
 import * as nodemailer from 'nodemailer';
 import { Transporter } from 'nodemailer';
-import { type } from 'os';
-import { throwError } from 'rxjs';
-import { types } from 'util';
 
 @Injectable()
 export class MailService {
@@ -22,20 +18,23 @@ export class MailService {
       throw new Error('Missing SMTP configuration');
     }
 
-    this.smtpTransporter = nodemailer.createTransport(
-        {
-        host: smtpHost,
-        port: parseInt(smtpPort),
-        secure: false,
-        auth: {
-          user: smtpUser,
-          pass: smtpPassword,
-        },
-      });
+    this.smtpTransporter = nodemailer.createTransport({
+      host: smtpHost,
+      port: parseInt(smtpPort),
+      secure: false,
+      auth: {
+        user: smtpUser,
+        pass: smtpPassword,
+      },
+    });
   }
 
-  async sendEmail(toEmail: string, subject: string, content: string): Promise<void> {
-    const fromEmail = this.configService.get('SMTP_USER');
+  async sendEmail(
+    toEmail: string,
+    subject: string,
+    content: string,
+  ): Promise<void> {
+    const fromEmail = this.configService.get<string>('SMTP_USER');
 
     const mailOptions = {
       from: fromEmail,
@@ -46,11 +45,15 @@ export class MailService {
     };
 
     try {
-      const info = await this.smtpTransporter.sendMail(mailOptions);
-      this.logger.log(`Email envoyé à ${toEmail}. MessageId: ${info.messageId}`);
+      const info = (await this.smtpTransporter.sendMail(mailOptions)) as {
+        messageId: string;
+      };
+      this.logger.log(
+        `Email envoyé à ${toEmail}. MessageId: ${info.messageId}`,
+      );
     } catch (error) {
       this.logger.error(`Erreur lors de l'envoi à ${toEmail}`, error);
-      throw new Error('Échec de l\'envoi de l\'email');
+      throw new Error("Échec de l'envoi de l'email");
     }
   }
 

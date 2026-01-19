@@ -6,12 +6,12 @@ export class SendMailDto {
     description: 'Adresse email du destinataire',
     example: 'utilisateur@example.com',
   })
-  @IsEmail({}, { message: 'L\'adresse email n\'est pas valide' })
-  @IsNotEmpty({ message: 'L\'adresse email est obligatoire' })
+  @IsEmail({}, { message: "L'adresse email n'est pas valide" })
+  @IsNotEmpty({ message: "L'adresse email est obligatoire" })
   email: string;
 
   @ApiProperty({
-    description: 'Sujet de l\'email',
+    description: "Sujet de l'email",
     example: 'Invitation Cinepote',
   })
   @IsString({ message: 'Le sujet doit être une chaîne de caractères' })
@@ -19,7 +19,7 @@ export class SendMailDto {
   subject: string;
 
   @ApiProperty({
-    description: 'Contenu HTML de l\'email (sans balises html/body)',
+    description: "Contenu HTML de l'email (sans balises html/body)",
     example: `
         <h1>🎉 Vous êtes invité !</h1>
         <p>Bonjour,</p>

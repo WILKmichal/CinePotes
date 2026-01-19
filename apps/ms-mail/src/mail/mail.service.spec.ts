@@ -8,7 +8,10 @@ jest.mock('nodemailer');
 
 describe('MailService', () => {
   let service: MailService;
-  let mockTransporter: any;
+  let mockTransporter: {
+    sendMail: jest.Mock;
+    verify: jest.Mock;
+  };
 
   beforeEach(async () => {
     // Mock du transporter
@@ -27,7 +30,7 @@ describe('MailService', () => {
           provide: ConfigService,
           useValue: {
             get: jest.fn((key: string) => {
-              const config = {
+              const config: Record<string, string> = {
                 SMTP_HOST: 'smtp.example.com',
                 SMTP_PORT: '587',
                 SMTP_USER: 'test@example.com',
@@ -52,7 +55,11 @@ describe('MailService', () => {
   it('doit envoyer un email avec succès', async () => {
     // On simule un succès
     mockTransporter.sendMail.mockResolvedValue({ messageId: '12345' });
-    await service.sendEmail('destinataire@test.com', 'Sujet Test', 'Contenu test');
+    await service.sendEmail(
+      'destinataire@test.com',
+      'Sujet Test',
+      'Contenu test',
+    );
 
     // Vérifie que sendMail a été appelé
     expect(mockTransporter.sendMail).toHaveBeenCalledWith(
@@ -60,19 +67,19 @@ describe('MailService', () => {
         from: 'test@example.com',
         to: 'destinataire@test.com',
         subject: 'Votre lien personnel',
-      })
+      }),
     );
   });
 
   // Test 3: gérer une erreur lors de l'envoi
-  it('doit gérer une erreur lors de l\'envoi d\'email', async () => {
+  it("doit gérer une erreur lors de l'envoi d'email", async () => {
     // On simule une erreur
     mockTransporter.sendMail.mockRejectedValue(new Error('Erreur SMTP'));
 
     // On vérifie que l'erreur est bien lancée
     await expect(
-      service.sendEmail('destinataire@test.com', 'Sujet', 'Contenu')
-    ).rejects.toThrow('Échec de l\'envoi de l\'email');
+      service.sendEmail('destinataire@test.com', 'Sujet', 'Contenu'),
+    ).rejects.toThrow("Échec de l'envoi de l'email");
   });
 
   // Test 4: vérifier la connexion SMTP avec succès
@@ -81,7 +88,6 @@ describe('MailService', () => {
 
     const result = await service.verifyConnection();
 
-     
     expect(result).toBe(true);
     expect(mockTransporter.verify).toHaveBeenCalled();
   });
