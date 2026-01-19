@@ -1,5 +1,13 @@
 // tmdb.controller.ts
-import {Controller, Get, HttpException, HttpStatus, Param, ParseIntPipe,Query,} from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  HttpException,
+  HttpStatus,
+  Param,
+  ParseIntPipe,
+  Query,
+} from '@nestjs/common';
 import { DetailsFilm } from './types/tmdb.types';
 import { TmdbService } from './tmdb.service';
 
@@ -7,7 +15,7 @@ import { TmdbService } from './tmdb.service';
 export class TmdbController {
   constructor(private readonly tmdbService: TmdbService) {}
 
-  // Static routes 
+  // Static routes
   // Récupérer plusieurs films par leurs IDs
   @Get('movies')
   getMovies(@Query('ids') ids: string): Promise<DetailsFilm[]> {
@@ -50,7 +58,6 @@ export class TmdbController {
     @Query('annee') annee?: string,
     @Query('genre') genre?: string,
   ): Promise<DetailsFilm[]> {
-
     if (!titre && !annee && !genre) {
       throw new HttpException(
         'Au moins un critère est requis: titre, annee ou genre',
@@ -79,7 +86,7 @@ export class TmdbController {
     });
   }
 
-  // route Dynamque 
+  // route Dynamque
   @Get(':id')
   getMovie(@Param('id', ParseIntPipe) id: number): Promise<DetailsFilm> {
     return this.tmdbService.obtenirDetailsFilm(id);

@@ -7,7 +7,7 @@ import { RedisModule } from './services/redis/redis.module';
 
 @Module({
   imports: [TmdbModule, RedisModule],
-  controllers: [AppController,TestController],
+  controllers: [AppController, TestController],
   providers: [AppService],
 })
 export class AppModule {}

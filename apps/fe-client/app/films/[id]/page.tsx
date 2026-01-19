@@ -29,7 +29,7 @@ export default function Page() {
   }, [id]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-white dark:bg-black">
+    <div className="min-h-screen flex flex-col bg-white">
       <Header />
       <main className="flex-grow">
         {loading && <p className="text-center mt-20">Chargement...</p>}

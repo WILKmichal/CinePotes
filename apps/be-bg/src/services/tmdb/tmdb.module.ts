@@ -5,10 +5,13 @@ import { RedisModule } from '../redis/redis.module';
 import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [RedisModule,ConfigModule.forRoot({
-  isGlobal: true,
-  envFilePath: '.env',
-})],
+  imports: [
+    RedisModule,
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+    }),
+  ],
   controllers: [TmdbController],
   providers: [TmdbService],
 })

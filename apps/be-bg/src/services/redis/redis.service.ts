@@ -1,14 +1,14 @@
-import { Injectable,OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Redis } from 'ioredis';
 
 /*Etablire la connection a redis
   ansi les operations cache get et set */
 @Injectable()
-export class RedisService implements OnModuleInit{
-    private redisClient: Redis | null = null;
-    private valable = false;
-    // Creation du client redis a l'initialisation du module
-    onModuleInit() {
+export class RedisService implements OnModuleInit {
+  private redisClient: Redis | null = null;
+  private valable = false;
+  // Creation du client redis a l'initialisation du module
+  onModuleInit() {
     try {
       this.redisClient = new Redis({
         host: 'localhost',
@@ -25,15 +25,14 @@ export class RedisService implements OnModuleInit{
         this.valable = false;
         this.redisClient = null;
       });
-
     } catch (e) {
       console.error('Erreur de connexion à Redis:', e);
       this.valable = false;
       this.redisClient = null;
     }
   }
-    
-    /**
+
+  /**
    * Récupère une valeur depuis Redis.
    * @param key - clé du cache
    */
@@ -51,10 +50,10 @@ export class RedisService implements OnModuleInit{
    * @param value - données à enregistrer
    * @param ttl - durée de vie en secondes
    */
-    async set(key: string, value: unknown, ttl =  7200): Promise<void> {
-      if (!this.redisClient) {
-        return;
-      }
-        await this.redisClient.set(key, JSON.stringify(value), 'EX', ttl);
-      } 
+  async set(key: string, value: unknown, ttl = 7200): Promise<void> {
+    if (!this.redisClient) {
+      return;
+    }
+    await this.redisClient.set(key, JSON.stringify(value), 'EX', ttl);
+  }
 }

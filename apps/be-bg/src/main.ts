@@ -12,11 +12,11 @@ async function bootstrap() {
   // Configuration Swagger
   const config = new DocumentBuilder()
     .setTitle('CinePotes API')
-    .setDescription('Documentation de l\'API CinePotes')
+    .setDescription("Documentation de l'API CinePotes")
     .setVersion('1.0')
     .addTag('films')
     .build();
-  
+
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api-docs', app, document);
 
