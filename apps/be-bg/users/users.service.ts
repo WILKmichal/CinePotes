@@ -68,7 +68,6 @@ export class UsersService {
     role = 'user',
   ) {
     const hash = await bcrypt.hash(plainPassword, 10);
-
     const insertQuoted = `
       INSERT INTO "Utilisateur" (nom, email, mot_de_passe_hash, role)
       VALUES ($1, $2, $3, $4)
@@ -79,7 +78,6 @@ export class UsersService {
       VALUES ($1, $2, $3, $4)
       RETURNING id AS "userId", nom, email, role, cree_le
     `;
-
     try {
       const res = await this.pool.query(insertQuoted, [nom, email, hash, role]);
       return res.rows[0];
