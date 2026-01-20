@@ -8,7 +8,7 @@ on:
     branches:
        - main
     paths:
-      - "apps/fe-client/*"
+      - "apps/fe-client/**"
 
 jobs:
     commit-lint:
