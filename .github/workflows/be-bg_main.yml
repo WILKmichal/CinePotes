@@ -1,7 +1,7 @@
 name: Main workflow be-bg
 
 permissions:
-    contents: write
+    contents: write 
 
 on:
   pull_request:

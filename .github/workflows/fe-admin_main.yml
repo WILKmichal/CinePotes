@@ -3,7 +3,7 @@ name: Main workflow fe-admin
 permissions:
     contents: write
 
-on:
+on: 
   pull_request:
     branches:
        - main
