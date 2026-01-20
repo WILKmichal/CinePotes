@@ -28,3 +28,21 @@ SMTP_USER=votre-email@gmail.com
 SMTP_PASSWORD=
 ```
 
+## Tests
+
+```bash
+# Lancer tous les tests
+pnpm test
+
+# Lancer les tests avec couverture
+pnpm test:cov
+
+# Lancer les tests en mode watch
+pnpm test:watch
+
+# Lancer uniquement les tests du service mail
+pnpm test -- mail.service
+
+# Lancer uniquement les tests du controller mail
+pnpm test -- mail.controller
+```
