@@ -6,9 +6,9 @@ permissions:
 on:
   pull_request:
     branches:
-       - develop
+       - develop 
     paths:
-      - "apps/ms-mail/*"
+      - "apps/ms-mail/**"
 
 jobs:
     commit-lint:

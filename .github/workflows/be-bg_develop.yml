@@ -1,14 +1,14 @@
 name: Develop workflow be-bg
 
-permissions:
+permissions: 
     contents: write
 
 on:
   pull_request:
     branches:
-       - develop
+      - develop
     paths:
-      - "apps/be-bg/*"
+      - "apps/be-bg/**"
 
 jobs:
     commit-lint:
