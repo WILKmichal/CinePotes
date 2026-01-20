@@ -15,12 +15,13 @@
 pnpm install
 ```
 ### Ajout variable env 
-
+#### be-bg
 Dans l'application  be-bg, créer un fichier .env avec ces variables la :
 ```
 PORT=3002
 TMDB_MS_URL=http://localhost:3333/
 ```
+#### ms-tmdb
 Dans l'application ms-tmdb, créer un fichier .env avec ces variables la :
 ```
 PORT=3333
@@ -31,12 +32,12 @@ REDIS_PORT=6379
 TMDB_MS_URL=http://localhost:3333/
 ```
 Generez vous même la clé TMDB. 
-
+#### fe-client
 Dans l'application fe-client, créer un fichier .env avec la variable :
 ```
 NEXT_PUBLIC_API_URL=http://localhost:3333/
-### Ajout variable env 
 ```
+#### ms-mail
 Dans l'application ms-mail, créer un fichier .env avec ces variables la :
 ```
 SMTP_HOST=smtp.gmail.com
