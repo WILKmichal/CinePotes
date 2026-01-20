@@ -35,6 +35,15 @@ Generez vous même la clé TMDB.
 Dans l'application fe-client, créer un fichier .env avec la variable :
 ```
 NEXT_PUBLIC_API_URL=http://localhost:3333/
+### Ajout variable env 
+
+Dans l'application ms-mail, créer un fichier .env avec ces variables la :
+```
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=contact.cinepote@gmail.com
+SMTP_PASSWORD=
+USE_ETHEREAL=false
 ```
 
 

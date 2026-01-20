@@ -39,10 +39,10 @@ export function useFilms() {
 function paragraphes() {
   return (
     <div className="max-w-2xl mx-auto text-center space-y-4">
-      <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+      <h2 className="text-3xl font-bold text-gray-900">
         Bienvenue sur CinéPote
       </h2>
-      <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
+      <p className="text-lg text-gray-600 leading-relaxed">
         Ciné&apos;Pote est une plateforme pour lister ses films vus et organiser des
         soirées cinéma entre amis. Chaque participant propose une sélection de
         films, les listes sont fusionnées, puis chacun classe la liste finale
@@ -56,7 +56,7 @@ export default function Home() {
   const { films, loading, error } = useFilms();
 
   return (
-    <div className="min-h-screen flex flex-col bg-white dark:bg-black">
+    <div className="min-h-screen flex flex-col bg-white">
       <Header />
 
       <main className="flex-grow flex flex-col items-center justify-center px-16 py-32 space-y-8">
@@ -64,7 +64,7 @@ export default function Home() {
         {paragraphes()}
 
         <div className="w-full max-w-7xl mt-12">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">
+          <h2 className="text-3xl font-bold text-gray-900 mb-8">
             Films populaires
           </h2>
 
