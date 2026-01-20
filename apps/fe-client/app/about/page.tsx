@@ -38,12 +38,12 @@ export default function AboutPage() {
               </h2>
               <div className="space-y-5 text-gray-700">
                 <p className="text-lg md:text-xl leading-relaxed">
-                  CinePotes est ne d'une idee simple : rendre l'experience cinematographique plus sociale
+                  CinePotes est ne d&apos;une idee simple : rendre l&apos;experience cinematographique plus sociale
                   et interactive. Nous croyons que regarder des films avec des amis, partager ses opinions
-                  et decouvrir de nouvelles oeuvres ensemble enrichit l'experience.
+                  et decouvrir de nouvelles oeuvres ensemble enrichit l&apos;experience.
                 </p>
                 <p className="text-lg md:text-xl leading-relaxed">
-                  Notre plateforme vous permet de creer des sessions de visionnage, d'echanger avec vos amis
+                  Notre plateforme vous permet de creer des sessions de visionnage, d&apos;echanger avec vos amis
                   en temps reel, et de construire votre propre bibliotheque de films tout en decouvrant
                   les recommandations de votre communaute.
                 </p>
@@ -70,11 +70,11 @@ export default function AboutPage() {
                 🎓
               </div>
               <h2 className="text-4xl md:text-5xl font-semibold text-gray-900 tracking-tight">
-                L'Equipe
+                L&apos;Equipe
               </h2>
               <p className="text-lg md:text-xl text-gray-600 leading-relaxed">
                 CinePotes est developpe par une equipe de 5 etudiants passionnes de cinema et de developpement web.
-                Ce projet est ne dans le cadre de notre formation, avec l'ambition de creer une plateforme
+                Ce projet est ne dans le cadre de notre formation, avec l&apos;ambition de creer une plateforme
                 qui combine nos competences techniques et notre amour du septieme art.
               </p>
 
@@ -90,7 +90,7 @@ export default function AboutPage() {
           <div className="px-4">
             <div className="text-center space-y-8 mb-12">
               <h2 className="text-4xl md:text-5xl font-semibold text-gray-900 tracking-tight">
-                Les films préferés de l'équipe
+                Les films préferés de l&apos;équipe
               </h2>
             </div>
 
