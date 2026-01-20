@@ -16,6 +16,7 @@ export interface FiltresRechercheFilms {
   genre: string;
   annee: string;
 }
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3333";
 
 function Header() {
   return <header className="fixed inset-x-0 top-0 z-30 mx-auto w-full max-w-screen-md border border-gray-100 bg-white/80 py-3 shadow backdrop-blur-lg md:top-6 md:rounded-3xl lg:max-w-screen-lg">
@@ -32,9 +33,9 @@ function Header() {
                             className="inline-block rounded-lg px-2 py-1 text-sm font-medium text-gray-900 transition-all duration-200 hover:bg-gray-100 hover:text-gray-900"
                             href="/">Home</Link>
                         <Link className="inline-block rounded-lg px-2 py-1 text-sm font-medium text-gray-900 transition-all duration-200 hover:bg-gray-100 hover:text-gray-900"
-                            href="/Contact">Contact</Link>
+                            href="/lobby">Lobby</Link>
                         <Link className="inline-block rounded-lg px-2 py-1 text-sm font-medium text-gray-900 transition-all duration-200 hover:bg-gray-100 hover:text-gray-900"
-                            href="/About">About us</Link>
+                            href="/about">About us</Link>
                     </div>
                     <div className="flex items-center justify-end gap-3">
                         <Link className="hidden items-center justify-center rounded-xl bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition-all duration-150 hover:bg-gray-50 sm:inline-flex"
@@ -53,21 +54,16 @@ function Footer() {
   <div className="flex flex-col items-center w-full bg-white border-t border-gray-200 shadow-lg p-8 space-y-8">
     <nav className="flex justify-center flex-wrap gap-6 text-gray-500 font-medium">
       <Link className="hover:text-gray-900" href="/">Home</Link>
-      <Link className="hover:text-gray-900" href="/About">About</Link>
+      <Link className="hover:text-gray-900" href="/Lobby">Lobby</Link>
+      <Link className="hover:text-gray-900" href="/about">About</Link>
       <Link className="hover:text-gray-900" href="/Service">Services</Link>
-      <Link className="hover:text-gray-900" href="/Media">Media</Link>
-      <Link className="hover:text-gray-900" href="/Gallery">Gallery</Link>
-      <Link className="hover:text-gray-900" href="/Contact">Contact</Link>
     </nav>
     <div className="flex justify-center space-x-5">
-      <a href="https://facebook.com"><img src="https://img.icons8.com/fluent/30/000000/facebook-new.png" alt="Facebook"/></a>
-      <a href="https://linkedin.com"><img src="https://img.icons8.com/fluent/30/000000/linkedin-2.png" alt="LinkedIn"/></a>
       <a href="https://instagram.com"><img src="https://img.icons8.com/fluent/30/000000/instagram-new.png" alt="Instagram"/></a>
-      <a href="https://messenger.com"><img src="https://img.icons8.com/fluent/30/000000/facebook-messenger--v2.png" alt="Messenger"/></a>
       <a href="https://twitter.com"><img src="https://img.icons8.com/fluent/30/000000/twitter.png" alt="Twitter"/></a>
     </div>
     <p className="text-center text-gray-700 font-medium">
-      &copy; 2022 Company Ltd. All rights reserved.
+      &copy; 2025 Company Ltd. All rights reserved.
     </p>
   </div>
 </footer>
@@ -107,7 +103,7 @@ function useRechercheFilms(
         if (filtres.annee) params.append("annee", filtres.annee);
 
         const response = await fetch(
-          `http://localhost:3333/tmdb/recherche/avancee?${params.toString()}`
+          `${API_URL}/tmdb/recherche/avancee?${params.toString()}`
         );
         if (!response.ok) {
           throw new Error('Failed to fetch films');
@@ -197,7 +193,7 @@ function BarreRecherche() {
       {afficherResultats && (
         <div
           className="
-            absolute top-full left-0 mt-1 z-0 w-full
+            absolute top-full left-0 mt-1 z-50 w-full
             bg-white border border-gray-300 rounded-md shadow-lg
             max-h-96 overflow-y-auto
           "
@@ -223,6 +219,7 @@ function BarreRecherche() {
                 <li key={film.id} className="border-b last:border-b-0">
                   <button
                     type="button"
+                    onMouseDown={(e) => e.preventDefault()}
                     onClick={() => router.push(`/films/${film.id}`)}
                     className="
                       w-full p-3 flex gap-3 items-center cursor-pointer text-left
@@ -278,7 +275,7 @@ function useRechercheFilms2(requete: string) {
         console.log(`🔍 Recherche: "${requete}"`);
         
         const response = await fetch(
-          `http://localhost:3333/tmdb/recherche?query=${encodeURIComponent(requete)}`
+          `${API_URL}/tmdb/recherche?query=${encodeURIComponent(requete)}`
         );
         if (!response.ok) {
           throw new Error(`Erreur ${response.status}`);
