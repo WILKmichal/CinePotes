@@ -16,7 +16,7 @@ pnpm install
 ```
 ### Ajout variable env 
 
-Dans l'application be-bg, créer un fichier .env avec ces variables la :
+Dans l'application  be-bg, créer un fichier .env avec ces variables la :
 ```
 PORT=3001
 REDIS_URL=redis://localhost:6379
