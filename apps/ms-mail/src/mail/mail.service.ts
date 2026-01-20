@@ -6,9 +6,9 @@ import { Transporter } from 'nodemailer';
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
-  private smtpTransporter: Transporter;
+  private readonly smtpTransporter: Transporter;
 
-  constructor(private configService: ConfigService) {
+  constructor(private readonly configService: ConfigService) {
     const smtpHost = this.configService.get<string>('SMTP_HOST');
     const smtpPort = this.configService.get<string>('SMTP_PORT');
     const smtpUser = this.configService.get<string>('SMTP_USER');
@@ -20,7 +20,7 @@ export class MailService {
 
     this.smtpTransporter = nodemailer.createTransport({
       host: smtpHost,
-      port: parseInt(smtpPort),
+      port: Number.parseInt(smtpPort),
       secure: false,
       auth: {
         user: smtpUser,

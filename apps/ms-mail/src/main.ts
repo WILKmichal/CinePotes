@@ -3,17 +3,14 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  const config = new DocumentBuilder()
-    .setTitle('MicroService Email')
-    .setDescription("API pour l'envoi et la gestion des emails de CinePotes")
-    .setVersion('1.0')
-    .build();
+const app = await NestFactory.create(AppModule);
+const config = new DocumentBuilder()
+  .setTitle('MicroService Email')
+  .setDescription("API pour l'envoi et la gestion des emails de CinePotes")
+  .setVersion('1.0')
+  .build();
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api-docs', app, document);
+const document = SwaggerModule.createDocument(app, config);
+SwaggerModule.setup('api-docs', app, document);
 
-  await app.listen(3003);
-}
-void bootstrap();
+await app.listen(3003);
