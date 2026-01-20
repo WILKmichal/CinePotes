@@ -19,47 +19,41 @@ export class UsersService {
 
   /**
    * Trouve un utilisateur par email OU nom.
+   * Retourne undefined si non trouvé (PAS d'exception ici).
    */
   async findOne(usernameOrEmail: string): Promise<User | undefined> {
-    const text = `
-      SELECT id AS "userId", nom, email, mot_de_passe_hash, role
-      FROM "Utilisateur"
-      WHERE email = $1 OR nom = $1
-      LIMIT 1
-    `;
-    try {
-      const res = await this.pool.query(text, [usernameOrEmail]);
-      if (res.rowCount === 0) return undefined;
-      return res.rows[0] as User;
-    } catch (error) {
-      this.logger.debug(
-        'Première requête échouée, tentative sans guillemets (lowercase)',
-      );
+    const queries = [
+      `
+        SELECT id AS "userId", nom, email, mot_de_passe_hash, role
+        FROM "Utilisateur"
+        WHERE email = $1 OR nom = $1
+        LIMIT 1
+      `,
+      `
+        SELECT id AS "userId", nom, email, mot_de_passe_hash, role
+        FROM utilisateur
+        WHERE email = $1 OR nom = $1
+        LIMIT 1
+      `,
+    ];
+
+    for (const query of queries) {
       try {
-        const res2 = await this.pool.query(
-          `
-            SELECT id AS "userId", nom, email, mot_de_passe_hash, role
-            FROM utilisateur
-            WHERE email = $1 OR nom = $1
-            LIMIT 1
-          `,
-          [usernameOrEmail],
-        );
-        if (res2.rowCount === 0) return undefined;
-        return res2.rows[0] as User;
-      } catch (error_) {
-        this.logger.error(
-          "Erreur DB lors de la recherche d'un utilisateur",
-          error_,
-        );
-        throw error_;
+        const res = await this.pool.query(query, [usernameOrEmail]);
+        if (res.rowCount && res.rowCount > 0) {
+          return res.rows[0] as User;
+        }
+      } catch (error) {
+        // Log uniquement, on tente le fallback
+        this.logger.debug('Query failed, trying fallback', error); // NOSONAR
       }
     }
+
+    return undefined;
   }
 
   /**
    * Crée un nouvel utilisateur (hachage du mot de passe).
-   * Retourne l'utilisateur inséré (sans le hash si besoin).
    */
   async createUser(
     nom: string,
@@ -68,28 +62,36 @@ export class UsersService {
     role = 'user',
   ) {
     const hash = await bcrypt.hash(plainPassword, 10);
-    const insertQuoted = `
-      INSERT INTO "Utilisateur" (nom, email, mot_de_passe_hash, role)
-      VALUES ($1, $2, $3, $4)
-      RETURNING id AS "userId", nom, email, role, cree_le
-    `;
-    const insertLower = `
-      INSERT INTO utilisateur (nom, email, mot_de_passe_hash, role)
-      VALUES ($1, $2, $3, $4)
-      RETURNING id AS "userId", nom, email, role, cree_le
-    `;
-    try {
-      const res = await this.pool.query(insertQuoted, [nom, email, hash, role]);
-      return res.rows[0];
-    } catch (error) {
-      this.logger.debug('Insert quoted failed, try lowercase', error?.message ?? error);
+
+    const queries = [
+      `
+        INSERT INTO "Utilisateur" (nom, email, mot_de_passe_hash, role)
+        VALUES ($1, $2, $3, $4)
+        RETURNING id AS "userId", nom, email, role, cree_le
+      `,
+      `
+        INSERT INTO utilisateur (nom, email, mot_de_passe_hash, role)
+        VALUES ($1, $2, $3, $4)
+        RETURNING id AS "userId", nom, email, role, cree_le
+      `,
+    ];
+
+    for (const query of queries) {
       try {
-        const res2 = await this.pool.query(insertLower, [nom, email, hash, role]);
-        return res2.rows[0];
-      } catch (error_) {
-        this.logger.error("Erreur lors de la création d'utilisateur", error_);
-        throw error_;
+        const res = await this.pool.query(query, [
+          nom,
+          email,
+          hash,
+          role,
+        ]);
+        return res.rows[0];
+      } catch (error) {
+        this.logger.debug('Insert failed, trying fallback', error); // NOSONAR
       }
     }
+
+    // Si TOUT échoue → vraie erreur serveur
+    this.logger.error("Impossible de créer l'utilisateur");
+    throw new Error('Database error while creating user');
   }
 }
