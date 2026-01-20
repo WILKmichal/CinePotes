@@ -39,6 +39,7 @@ NEXT_PUBLIC_API_URL=http://localhost:3333
 ```
 #### ms-mail
 Dans l'application ms-mail, créer un fichier .env avec ces variables la :
+
 ```
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
