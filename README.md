@@ -36,7 +36,7 @@ Dans l'application fe-client, créer un fichier .env avec la variable :
 ```
 NEXT_PUBLIC_API_URL=http://localhost:3333/
 ### Ajout variable env 
-
+```
 Dans l'application ms-mail, créer un fichier .env avec ces variables la :
 ```
 SMTP_HOST=smtp.gmail.com
@@ -45,8 +45,6 @@ SMTP_USER=contact.cinepote@gmail.com
 SMTP_PASSWORD=
 USE_ETHEREAL=false
 ```
-
-
 ### Démarrage des services Docker
 
 Toujours à la racine du projet, lancez les services nécessaires :
@@ -54,12 +52,9 @@ Toujours à la racine du projet, lancez les services nécessaires :
 ```
 docker compose up
 ```
-
 ### Lancement des applications
 
 Une fois les services Docker démarrés, lancez les applications du projet en mode développement :
-
 ```
 pnpm run dev
 ```
-
