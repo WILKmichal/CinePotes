@@ -1,7 +1,7 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import axios, { AxiosError } from 'axios';
 import { RedisService } from '../redis/redis.service';
-import { DetailsFilm } from './types/tmdb.types';
+import { DetailsFilm } from '../../../../types/tmdb.types';
 
 /** ===== Types TMDB (locaux au fichier, pas besoin de nouveaux fichiers) ===== */
 type TmdbStatusMessage = { status_message?: string };
@@ -51,7 +51,7 @@ export class TmdbService {
     return `${this.imageBaseUrl}${posterPath}`;
   }
 
-  /** ✅ Mapping centralisé (plus de any[]) */
+  /**Mapping centralisé (plus de any[]) */
   private mapperFilmsTmdb(results: TmdbMovie[]): DetailsFilm[] {
     return results.slice(0, 10).map((film) => ({
       id: film.id,
@@ -63,7 +63,7 @@ export class TmdbService {
     }));
   }
 
-  /** ✅ Erreurs TMDB sans any */
+  /**Erreurs TMDB sans any */
   private handleTmdbError(error: unknown): never {
     if (axios.isAxiosError(error)) {
       const err = error as AxiosError<TmdbStatusMessage>;
