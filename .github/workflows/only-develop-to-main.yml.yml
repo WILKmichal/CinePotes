@@ -5,7 +5,7 @@ on:
     branches:
       - main
 
-jobs:
+jobs: 
   enforce-branch:
     runs-on: ubuntu-latest
     steps:
