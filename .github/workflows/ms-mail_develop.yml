@@ -8,7 +8,7 @@ on:
     branches:
        - develop
     paths:
-      - "apps/ms-mail/*"
+      - "apps/ms-mail/**"
 
 jobs:
     commit-lint:
