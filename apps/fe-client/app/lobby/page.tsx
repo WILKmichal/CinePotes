@@ -23,7 +23,7 @@ export default function LobbyPage() {
   const handleAddUser = (newUser: MockUser) => {
     // Ajoute le nouvel utilisateur à la liste existante
     setLobbyUsers([...lobbyUsers, newUser]);
-    // Cache le formulaire après l'ajout
+    // Cache le formulaire après l'ajou t
     setShowAddForm(false);
   };
 
