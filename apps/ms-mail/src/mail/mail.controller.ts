@@ -14,7 +14,7 @@ import { SendMailDto } from './dto/send-link.dto';
 @Controller('mail')
 export class MailController {
   constructor(private readonly mailService: MailService) {}
-  /* istanbul ignore next */
+
   @Post('send')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Envoyer un email' })
