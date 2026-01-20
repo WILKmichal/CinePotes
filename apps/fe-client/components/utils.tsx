@@ -16,6 +16,7 @@ export interface FiltresRechercheFilms {
   genre: string;
   annee: string;
 }
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3333";
 
 function Header() {
   return <header className="fixed inset-x-0 top-0 z-30 mx-auto w-full max-w-screen-md border border-gray-100 bg-white/80 py-3 shadow backdrop-blur-lg md:top-6 md:rounded-3xl lg:max-w-screen-lg">
@@ -102,7 +103,7 @@ function useRechercheFilms(
         if (filtres.annee) params.append("annee", filtres.annee);
 
         const response = await fetch(
-          `http://localhost:3333/tmdb/recherche/avancee?${params.toString()}`
+          `${API_URL}/tmdb/recherche/avancee?${params.toString()}`
         );
         if (!response.ok) {
           throw new Error('Failed to fetch films');
@@ -192,7 +193,7 @@ function BarreRecherche() {
       {afficherResultats && (
         <div
           className="
-            absolute top-full left-0 mt-1 z-0 w-full
+            absolute top-full left-0 mt-1 z-50 w-full
             bg-white border border-gray-300 rounded-md shadow-lg
             max-h-96 overflow-y-auto
           "
@@ -218,6 +219,7 @@ function BarreRecherche() {
                 <li key={film.id} className="border-b last:border-b-0">
                   <button
                     type="button"
+                    onMouseDown={(e) => e.preventDefault()}
                     onClick={() => router.push(`/films/${film.id}`)}
                     className="
                       w-full p-3 flex gap-3 items-center cursor-pointer text-left
@@ -273,7 +275,7 @@ function useRechercheFilms2(requete: string) {
         console.log(`🔍 Recherche: "${requete}"`);
         
         const response = await fetch(
-          `http://localhost:3333/tmdb/recherche?query=${encodeURIComponent(requete)}`
+          `${API_URL}/tmdb/recherche?query=${encodeURIComponent(requete)}`
         );
         if (!response.ok) {
           throw new Error(`Erreur ${response.status}`);
