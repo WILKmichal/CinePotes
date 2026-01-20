@@ -95,8 +95,10 @@ CREATE INDEX idx_utilisateur_email ON utilisateur(email);
 
 -----------------------------
 -- Insertion de valeurs de test
+-- NOSONAR - Test data for local development only
 INSERT INTO utilisateur (nom, email, mot_de_passe_hash, role)
 VALUES
 ('Admin CinéPote', 'admin@cinepote.fr', '$2b$10$M7sxjSMT2OBvIgGaVxhxpe18gYetRw2Q3xv/gxbn1O5fy9vS4vZtS', 'admin'),
+-- NOSONAR - Test data for local development only
 ('Max Dupont', 'max.chef@cinepote.fr', '$2b$10$nOjGULHNYuWMGteTF7WA.hmRqTECq/Q/7A0EYpt4oMojbrbE.4yUO', 'chef'),
 ('August Martin', 'august.user@cinepote.fr', '$2b$10$W7.emBmUK7QMGFCnH7Dhguz5WZhTwMu8lY3DjUUCJmi7tOXuqqs8e', 'user');

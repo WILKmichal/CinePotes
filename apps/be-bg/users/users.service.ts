@@ -47,12 +47,12 @@ export class UsersService {
         );
         if (res2.rowCount === 0) return undefined;
         return res2.rows[0] as User;
-      } catch (error2) {
+      } catch (error_) {
         this.logger.error(
           "Erreur DB lors de la recherche d'un utilisateur",
-          error2,
+          error_,
         );
-        throw error2;
+        throw error_;
       }
     }
   }
@@ -88,9 +88,9 @@ export class UsersService {
       try {
         const res2 = await this.pool.query(insertLower, [nom, email, hash, role]);
         return res2.rows[0];
-      } catch (error2) {
-        this.logger.error("Erreur lors de la création d'utilisateur", error2);
-        throw error2;
+      } catch (error_) {
+        this.logger.error("Erreur lors de la création d'utilisateur", error_);
+        throw error_;
       }
     }
   }
