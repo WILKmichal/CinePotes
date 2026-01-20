@@ -6,11 +6,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://localhost:3002',
-    ],
+    origin: ['http://localhost:3000', 'http://localhost:3001'],
     credentials: true,
   });
   // Configuration Swagger
@@ -24,7 +20,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api-docs', app, document);
 
-  const port = Number(process.env.PORT ?? 3002);
+  const port = Number(process.env.PORT ?? 3333);
   await app.listen(port);
 }
 bootstrap();
