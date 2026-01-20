@@ -18,12 +18,24 @@ pnpm install
 
 Dans l'application be-bg, créer un fichier .env avec ces variables la :
 ```
-PORT=3001
-REDIS_URL=redis://localhost:6379
-TMDB_API_KEY=
+PORT=3002
+TMDB_MS_URL=http://localhost:3333/
 ```
-
+Dans l'application ms-tmdb, créer un fichier .env avec ces variables la :
+```
+PORT=3333
+TMDB_API_KEY=
+REDIS_URL=redis://localhost:6379
+REDIS_HOST=localhost
+REDIS_PORT=6379
+TMDB_MS_URL=http://localhost:3333/
+```
 Generez vous même la clé TMDB. 
+
+Dans l'application fe-client, créer un fichier .env avec la variable :
+```
+NEXT_PUBLIC_API_URL=http://localhost:3333/
+```
 
 
 ### Démarrage des services Docker

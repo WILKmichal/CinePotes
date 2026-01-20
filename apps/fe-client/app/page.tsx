@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import {Header,Footer,BarreRecherche,CarteFilms,DetailsFilm,} from "../components/utils";
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3333";
 
 export function useFilms() {
   const [films, setFilms] = useState<DetailsFilm[]>([]);
@@ -12,7 +13,7 @@ export function useFilms() {
     const fetchFilms = async () => {
       try {
         const response = await fetch(
-          "http://localhost:3333/tmdb/films/populaires"
+          `${API_URL}/tmdb/films/populaires`
         );
 
         if (!response.ok) {

@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Header, Footer, DetailsFilm } from "@/components/utils";
 import DetailsFilms from "@/components/detailsFilms";
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3333";
+
 
 export default function Page() {
   const { id } = useParams<{ id: string }>();
@@ -14,7 +16,7 @@ export default function Page() {
   useEffect(() => {
     const fetchFilm = async () => {
       try {
-        const res = await fetch(`http://localhost:3333/tmdb/${id}`);
+        const res = await fetch(`${API_URL}/tmdb/${id}`);
         if (!res.ok) throw new Error(`Erreur ${res.status}`);
         const data = await res.json();
         setFilm(data);
