@@ -6,8 +6,8 @@ import * as bcrypt from 'bcryptjs';
 @Injectable()
 export class AuthService {
   constructor(
-    private usersService: UsersService,
-    private jwtService: JwtService,
+    private readonly usersService: UsersService, // ✅ readonly ajouté
+    private readonly jwtService: JwtService,     // ✅ readonly ajouté
   ) {}
 
   async signIn(
@@ -21,6 +21,7 @@ export class AuthService {
 
     const hashed = user.mot_de_passe_hash;
     const passwordMatches = await bcrypt.compare(pass, hashed);
+
     if (!passwordMatches) {
       throw new UnauthorizedException('Mot de passe invalide');
     }
@@ -30,6 +31,7 @@ export class AuthService {
       username: user.email ?? user.nom,
       role: user.role,
     };
+
     return {
       access_token: await this.jwtService.signAsync(payload),
     };

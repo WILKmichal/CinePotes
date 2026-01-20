@@ -10,7 +10,7 @@ import { Request } from 'express';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  constructor(private jwtService: JwtService) {}
+  constructor(private readonly jwtService: JwtService) {} // ✅ ajouter readonly
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
@@ -19,7 +19,7 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException();
     }
     try {
-      //Création de la paylod avec le token
+      // Création du payload avec le token
       const payload = await this.jwtService.verifyAsync(token, {
         secret: jwtConstants.secret,
       });
@@ -30,7 +30,7 @@ export class AuthGuard implements CanActivate {
     return true;
   }
 
-  //Méthode pour Récupérer le tokene dans le header
+  // Méthode pour récupérer le token dans le header
   private extractTokenFromHeader(request: Request): string | undefined {
     const [type, token] = request.headers.authorization?.split(' ') ?? [];
     return type === 'Bearer' ? token : undefined;

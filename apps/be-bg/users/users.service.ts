@@ -31,26 +31,28 @@ export class UsersService {
       const res = await this.pool.query(text, [usernameOrEmail]);
       if (res.rowCount === 0) return undefined;
       return res.rows[0] as User;
-    } catch (err) {
+    } catch (error) {
       this.logger.debug(
         'Première requête échouée, tentative sans guillemets (lowercase)',
       );
       try {
         const res2 = await this.pool.query(
-          `SELECT id AS "userId", nom, email, mot_de_passe_hash, role
-           FROM utilisateur
-           WHERE email = $1 OR nom = $1
-           LIMIT 1`,
+          `
+            SELECT id AS "userId", nom, email, mot_de_passe_hash, role
+            FROM utilisateur
+            WHERE email = $1 OR nom = $1
+            LIMIT 1
+          `,
           [usernameOrEmail],
         );
         if (res2.rowCount === 0) return undefined;
         return res2.rows[0] as User;
-      } catch (err2) {
+      } catch (error2) {
         this.logger.error(
           "Erreur DB lors de la recherche d'un utilisateur",
-          err2,
+          error2,
         );
-        throw err2;
+        throw error2;
       }
     }
   }
@@ -65,16 +67,13 @@ export class UsersService {
     plainPassword: string,
     role = 'user',
   ) {
-    // Hash
     const hash = await bcrypt.hash(plainPassword, 10);
 
-    // Essayer avec "Utilisateur" puis fallback sur utilisateur
     const insertQuoted = `
       INSERT INTO "Utilisateur" (nom, email, mot_de_passe_hash, role)
       VALUES ($1, $2, $3, $4)
       RETURNING id AS "userId", nom, email, role, cree_le
     `;
-
     const insertLower = `
       INSERT INTO utilisateur (nom, email, mot_de_passe_hash, role)
       VALUES ($1, $2, $3, $4)
@@ -84,22 +83,14 @@ export class UsersService {
     try {
       const res = await this.pool.query(insertQuoted, [nom, email, hash, role]);
       return res.rows[0];
-    } catch (err) {
-      this.logger.debug(
-        'Insert quoted failed, try lowercase',
-        err?.message ?? err,
-      );
+    } catch (error) {
+      this.logger.debug('Insert quoted failed, try lowercase', error?.message ?? error);
       try {
-        const res2 = await this.pool.query(insertLower, [
-          nom,
-          email,
-          hash,
-          role,
-        ]);
+        const res2 = await this.pool.query(insertLower, [nom, email, hash, role]);
         return res2.rows[0];
-      } catch (err2) {
-        this.logger.error("Erreur lors de la création d'utilisateur", err2);
-        throw err2;
+      } catch (error2) {
+        this.logger.error("Erreur lors de la création d'utilisateur", error2);
+        throw error2;
       }
     }
   }
