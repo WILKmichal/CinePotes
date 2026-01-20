@@ -14,7 +14,20 @@
 ```
 pnpm install
 ```
-### Ajout variable env 
+### Ajout variable env
+
+#### Racine du projet
+```
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=example
+DB_NAME=mydatabase
+
+JWT_SECRET=une_clef_complexe_a_changer
+JWT_EXPIRES_IN=3600s
+```
+
 #### be-bg
 Dans l'application  be-bg, créer un fichier .env avec ces variables la :
 ```
