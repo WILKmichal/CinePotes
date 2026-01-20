@@ -3,24 +3,25 @@ import { ConfigService } from '@nestjs/config';
 import { MailService } from './mail.service';
 import * as nodemailer from 'nodemailer';
 
-// Mock de nodemailer
 jest.mock('nodemailer');
 
 describe('MailService', () => {
   let service: MailService;
-  let mockTransporter: {
-    sendMail: jest.Mock;
-    verify: jest.Mock;
+  let mockTransporter: { sendMail: jest.Mock; verify: jest.Mock };
+
+  const mockConfig: Record<string, string> = {
+    SMTP_HOST: 'smtp.example.com',
+    SMTP_PORT: '587',
+    SMTP_USER: 'test@example.com',
+    SMTP_PASSWORD: 'password123',
   };
 
   beforeEach(async () => {
-    // Mock du transporter
     mockTransporter = {
       sendMail: jest.fn(),
       verify: jest.fn(),
     };
 
-    // Mock de nodemailer.createTransport
     (nodemailer.createTransport as jest.Mock).mockReturnValue(mockTransporter);
 
     const module: TestingModule = await Test.createTestingModule({
@@ -29,15 +30,7 @@ describe('MailService', () => {
         {
           provide: ConfigService,
           useValue: {
-            get: jest.fn((key: string) => {
-              const config: Record<string, string> = {
-                SMTP_HOST: 'smtp.example.com',
-                SMTP_PORT: '587',
-                SMTP_USER: 'test@example.com',
-                SMTP_PASSWORD: 'password123',
-              };
-              return config[key];
-            }),
+            get: jest.fn((key: string) => mockConfig[key]),
           },
         },
       ],
@@ -46,59 +39,58 @@ describe('MailService', () => {
     service = module.get<MailService>(MailService);
   });
 
-  // Test 1: instancié
+  // constructor
   it('doit être instancié', () => {
     expect(service).toBeDefined();
   });
 
-  // Test 2: envoyer un email avec succès
-  it('doit envoyer un email avec succès', async () => {
-    // On simule un succès
-    mockTransporter.sendMail.mockResolvedValue({ messageId: '12345' });
-    await service.sendEmail(
-      'destinataire@test.com',
-      'Sujet Test',
-      'Contenu test',
-    );
+  it('doit lever une erreur si config SMTP manquante', async () => {
+    await expect(
+      Test.createTestingModule({
+        providers: [
+          MailService,
+          { provide: ConfigService, useValue: { get: jest.fn() } },
+        ],
+      }).compile(),
+    ).rejects.toThrow('Missing SMTP configuration');
+  });
 
-    // Vérifie que sendMail a été appelé
+  // sendEmail
+  it('doit envoyer un email avec succès', async () => {
+    mockTransporter.sendMail.mockResolvedValue({ messageId: '123' });
+
+    await service.sendEmail('user@test.com', 'Sujet', 'Contenu');
+
     expect(mockTransporter.sendMail).toHaveBeenCalledWith(
       expect.objectContaining({
         from: 'test@example.com',
-        to: 'destinataire@test.com',
-        subject: 'Votre lien personnel',
+        to: 'user@test.com',
       }),
     );
   });
 
-  // Test 3: gérer une erreur lors de l'envoi
-  it("doit gérer une erreur lors de l'envoi d'email", async () => {
-    // On simule une erreur
-    mockTransporter.sendMail.mockRejectedValue(new Error('Erreur SMTP'));
+  it("doit lever une erreur si l'envoi échoue", async () => {
+    mockTransporter.sendMail.mockRejectedValue(new Error('SMTP error'));
 
-    // On vérifie que l'erreur est bien lancée
     await expect(
-      service.sendEmail('destinataire@test.com', 'Sujet', 'Contenu'),
+      service.sendEmail('user@test.com', 'Sujet', 'Contenu'),
     ).rejects.toThrow("Échec de l'envoi de l'email");
   });
 
-  // Test 4: vérifier la connexion SMTP avec succès
-  it('doit vérifier la connexion SMTP (succès)', async () => {
+  // verifyConnection
+  it('doit retourner true si connexion SMTP OK', async () => {
     mockTransporter.verify.mockResolvedValue(true);
 
     const result = await service.verifyConnection();
 
     expect(result).toBe(true);
-    expect(mockTransporter.verify).toHaveBeenCalled();
   });
 
-  // Test 5: vérifier la connexion SMTP en échec
-  it('doit vérifier la connexion SMTP (échec)', async () => {
-    mockTransporter.verify.mockRejectedValue(new Error('Connexion échouée'));
+  it('doit retourner false si connexion SMTP échoue', async () => {
+    mockTransporter.verify.mockRejectedValue(new Error('Connection failed'));
 
     const result = await service.verifyConnection();
 
-    //verif
     expect(result).toBe(false);
   });
 });

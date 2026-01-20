@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Button, Card, Badge } from "@repo/ui";
 import { Header, Footer } from "@/components/utils";
 import { SessionForm } from "@/components/lobby/SessionForm";
 import { ParticipantList } from "@/components/lobby/ParticipantList";
@@ -42,69 +43,74 @@ export default function LobbyPage() {
 
       <main className="flex-grow flex flex-col items-center px-4 py-24 md:py-32">
         <div className="max-w-6xl w-full space-y-6">
-          {/* Header du lobby */}
           <div className="text-center space-y-2">
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">
               Lobby CinéPotes
             </h1>
             <p className="text-lg text-gray-600 dark:text-gray-300">
-              Créez votre session de visionnage avec vos amis
+              Invitez vos amis et commencez une session pour choisir le film de ce soir ! 
             </p>
           </div>
 
-          {/* Carte du lobby */}
-          <div className="bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-2xl shadow-2xl p-6 md:p-10 space-y-8">
-            {/* Info du lobby + Bouton pour ajouter un participant */}
+          <Card variant="default" padding="lg" className="space-y-8">
             <div className="flex flex-col md:flex-row items-center justify-between pb-6 border-b-2 border-gray-200 dark:border-gray-700 gap-4">
               <div className="text-center md:text-left">
                 <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
                   Session en cours
                 </h2>
-                <p className="text-base text-gray-500 dark:text-gray-400 mt-1">
-                  {lobbyUsers.length} participant{lobbyUsers.length > 1 ? "s" : ""} dans le lobby
-                </p>
+                <div className="flex items-center gap-2 mt-1 justify-center md:justify-start">
+                  <p className="text-base text-gray-500 dark:text-gray-400">
+                    {lobbyUsers.length} participant{lobbyUsers.length > 1 ? "s" : ""} dans le lobby
+                  </p>
+                  {lobbyUsers.length > 0 && (
+                    <Badge variant="primary">{lobbyUsers.length}</Badge>
+                  )}
+                </div>
               </div>
-              <button
+              <Button
                 onClick={() => setShowAddForm(!showAddForm)}
-                className="rounded-2xl bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-4 text-lg font-bold text-white shadow-lg hover:from-blue-500 hover:to-blue-600 transform hover:scale-105 transition-all duration-200"
+                variant="primary"
+                size="lg"
               >
-              {/* Si l formulaire est affiché, propose d'annuler, sinon ajouter */}
-                {showAddForm ? "✕ Annuler" : "Ajouter un participant"}
-              </button>
+                {showAddForm ? "Annuler" : "Ajouter un participant"}
+              </Button>
             </div>
 
-            {/* Formulaire d'ajout (affiché conditionnellement) */}
             {showAddForm && (
               <SessionForm
-                onAddUser={handleAddUser}           // Passe la fonction handleAddUser
-                onCancel={() => setShowAddForm(false)}  // Passe une fonction pour fermer le formulaire
+                onAddUser={handleAddUser}
+                onCancel={() => setShowAddForm(false)}
               />
             )}
 
-            {/* Liste des participants */}
             <div className="space-y-4">
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-                 Participants
+                Participants
               </h3>
-              {/* Composant ParticipantList qui gère l'affichage */}
               <ParticipantList
-                users={lobbyUsers}              // Passe la liste des utilisateurs
-                onRemoveUser={handleRemoveUser} // Passe la fonction de suppression
+                users={lobbyUsers}
+                onRemoveUser={handleRemoveUser}
               />
             </div>
 
-            {/* Actions du lobby */}
             <div className="pt-8 border-t-2 border-gray-200 dark:border-gray-700 flex flex-col md:flex-row gap-4">
-              <button
+              <Button
                 disabled={lobbyUsers.length === 0}
-                className="flex-grow rounded-2xl bg-gradient-to-r from-blue-600 to-purple-600 px-8 py-5 text-xl font-bold text-white shadow-xl hover:from-blue-500 hover:to-purple-500 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transform hover:scale-105 transition-all duration-200">
-                Commencer la session
-              </button>
-              <button className="rounded-2xl border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-8 py-5 text-xl font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 shadow-lg transform hover:scale-105 transition-all duration-200">
-                Partager le lien
-              </button>
+                variant="gradient"
+                size="lg"
+                fullWidth
+                className="flex-grow"
+              >
+              Commencer la session
+              </Button>
+              <Button
+                variant="secondary"
+                size="lg"
+              >
+              Partager le lien
+              </Button>
             </div>
-          </div>
+          </Card>
         </div>
       </main>
 
