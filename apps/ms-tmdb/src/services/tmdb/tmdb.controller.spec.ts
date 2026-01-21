@@ -19,7 +19,7 @@ function expectHttpException(
     if (!msgPart) return;
 
     const response = ex.getResponse();
-
+    
     let message: string;
 
     if (typeof response === 'string') {
@@ -27,7 +27,6 @@ function expectHttpException(
     } else if (
       typeof response === 'object' &&
       response !== null &&
-      
       'message' in response
     ) {
       const msg = (response as { message: string | string[] }).message;
