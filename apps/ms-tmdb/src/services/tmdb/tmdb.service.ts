@@ -3,7 +3,6 @@ import axios, { AxiosError } from 'axios';
 import { RedisService } from '../redis/redis.service';
 import { DetailsFilm } from '../../../../types/tmdb.types';
 
-/** ===== Types TMDB (locaux au fichier, pas besoin de nouveaux fichiers) ===== */
 type TmdbStatusMessage = { status_message?: string };
 
 type TmdbMovie = {

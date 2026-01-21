@@ -1,13 +1,5 @@
 // tmdb.controller.ts
-import {
-  Controller,
-  Get,
-  HttpException,
-  HttpStatus,
-  Param,
-  ParseIntPipe,
-  Query,
-} from '@nestjs/common';
+import {Controller,Get,HttpException,HttpStatus,Param,ParseIntPipe,Query,} from '@nestjs/common';
 import { DetailsFilm } from '../../../../types/tmdb.types';
 import { TmdbService } from './tmdb.service';
 
