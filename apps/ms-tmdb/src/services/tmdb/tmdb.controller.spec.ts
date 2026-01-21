@@ -152,7 +152,7 @@ describe('TmdbController (ms-tmdb)', () => {
     });
   });
 
-  describe('GET /tmdb/:id', () => {
+  describe('GET /tmdb/:id ', () => {
     it('doit appeler obtenirDetailsFilm', async () => {
       serviceMock.obtenirDetailsFilm.mockResolvedValueOnce({} as any);
 
