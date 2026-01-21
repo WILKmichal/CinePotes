@@ -1,4 +1,3 @@
-// tmdb.controller.ts
 import {
   Controller,
   Get,

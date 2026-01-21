@@ -61,14 +61,11 @@ describe('MailController', () => {
 
   // POST /mail/send - 400 champs manquants
   it('POST /mail/send - 400 champs manquants', () => {
-    return request(app.getHttpServer())
-      .post('/mail/send')
-      .send({})
-      .expect(400);
+    return request(app.getHttpServer()).post('/mail/send').send({}).expect(400);
   });
 
   // POST /mail/send - 500 erreur serveur
-  it('POST /mail/send - 500 erreur lors de l\'envoi', () => {
+  it("POST /mail/send - 500 erreur lors de l'envoi", () => {
     (mailService.sendEmail as jest.Mock).mockRejectedValue(
       new Error("Échec de l'envoi"),
     );

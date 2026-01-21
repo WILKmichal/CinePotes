@@ -7,7 +7,6 @@ import { AuthModule } from 'auth/auth.module';
 import { UsersModule } from 'users/users.module';
 import { SeancesModule } from './seances/seances.module';
 
-
 @Module({
   imports: [TmdbModule, AuthModule, UsersModule, SeancesModule],
   controllers: [AppController, TestController],
