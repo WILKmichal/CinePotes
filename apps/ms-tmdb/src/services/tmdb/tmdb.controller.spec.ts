@@ -1,54 +1,55 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { TmdbController } from './tmdb.controller';
 import { TmdbService } from './tmdb.service';
+// import { DetailsFilm } from '../../../../types/tmdb.types'; // supprimé car unused
 
-/**
- * Helper  :
- *  Exécute une fonction
- *  Vérifie qu’elle lève une HttpException
- *  Vérifie le status
- *  Vérifie éventuellement qu’un bout de message est présent
- */
-function expectHttpException(fn: () => any, status: number, msgPart?: string) {
+function expectHttpException(
+  fn: () => unknown,
+  status: number,
+  msgPart?: string,
+): void {
   try {
     fn();
     fail('Une HttpException était attendue');
-  } catch (e) {
-    expect(e).toBeInstanceOf(HttpException);
-    const ex = e as HttpException;
+  } catch (error) {
+    expect(error).toBeInstanceOf(HttpException);
+    const ex = error as HttpException;
 
     expect(ex.getStatus()).toBe(status);
 
-    if (msgPart) {
-      const r = ex.getResponse() as any;
+    if (!msgPart) return;
 
-      let message = '';
+    const response = ex.getResponse();
 
-      if (typeof r === 'string') {
-        message = r;
-      } else if (typeof r?.message === 'string') {
-        message = r.message;
-      } else if (Array.isArray(r?.message)) {
-        message = r.message.join(', ');
-      } else {
-        message = JSON.stringify(r);
-      }
+    let message: string;
 
-      expect(message).toContain(msgPart);
+    if (typeof response === 'string') {
+      message = response;
+    } else if (
+      typeof response === 'object' &&
+      response !== null &&
+      'message' in response
+    ) {
+      const msg = (response as { message: string | string[] }).message;
+      message = Array.isArray(msg) ? msg.join(', ') : msg;
+    } else {
+      message = JSON.stringify(response);
     }
+
+    expect(message).toContain(msgPart);
   }
 }
 
 describe('TmdbController (ms-tmdb)', () => {
   let controller: TmdbController;
 
-  const serviceMock: jest.Mocked<TmdbService> = {
+  const serviceMock = {
     obtenirPlusieursFilms: jest.fn(),
     obtenirFilmsPopulaires: jest.fn(),
     rechercherFilms: jest.fn(),
     rechercherFilmsAvancee: jest.fn(),
     obtenirDetailsFilm: jest.fn(),
-  } as any;
+  } as Partial<jest.Mocked<TmdbService>> as jest.Mocked<TmdbService>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -58,13 +59,13 @@ describe('TmdbController (ms-tmdb)', () => {
   describe('GET /tmdb/movies', () => {
     it('doit refuser si ids est manquant', () => {
       expectHttpException(
-        () => controller.getMovies('' as any),
+        () => controller.getMovies(''),
         HttpStatus.BAD_REQUEST,
         'ids est requis',
       );
     });
 
-    it('doit refuser si ids ne contient aucun nombre valide', () => {
+    it('doit refuser si ids invalide', () => {
       expectHttpException(
         () => controller.getMovies('abc, def'),
         HttpStatus.BAD_REQUEST,
@@ -73,26 +74,32 @@ describe('TmdbController (ms-tmdb)', () => {
     });
 
     it('doit parser ids et appeler obtenirPlusieursFilms', async () => {
-      serviceMock.obtenirPlusieursFilms.mockResolvedValueOnce([] as any);
+      const spy = jest
+        .spyOn(serviceMock, 'obtenirPlusieursFilms')
+        .mockResolvedValueOnce([]);
 
       await controller.getMovies(' 1, 2,abc, 3 ');
-      expect(serviceMock.obtenirPlusieursFilms).toHaveBeenCalledWith([1, 2, 3]);
+
+      expect(spy).toHaveBeenCalledWith([1, 2, 3]);
     });
   });
 
   describe('GET /tmdb/films/populaires', () => {
     it('doit appeler obtenirFilmsPopulaires', async () => {
-      serviceMock.obtenirFilmsPopulaires.mockResolvedValueOnce([] as any);
+      const spy = jest
+        .spyOn(serviceMock, 'obtenirFilmsPopulaires')
+        .mockResolvedValueOnce([]);
 
       await controller.getPopularMovies();
-      expect(serviceMock.obtenirFilmsPopulaires).toHaveBeenCalled();
+
+      expect(spy).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('GET /tmdb/recherche', () => {
     it('doit refuser si query manquant', () => {
       expectHttpException(
-        () => controller.rechercherFilms('' as any),
+        () => controller.rechercherFilms(''),
         HttpStatus.BAD_REQUEST,
         'au moins 3 caractères',
       );
@@ -106,45 +113,54 @@ describe('TmdbController (ms-tmdb)', () => {
       );
     });
 
-    it('doit appeler rechercherFilms du service si query valide', async () => {
-      serviceMock.rechercherFilms.mockResolvedValueOnce([] as any);
+    it('doit appeler rechercherFilms si query valide', async () => {
+      const spy = jest
+        .spyOn(serviceMock, 'rechercherFilms')
+        .mockResolvedValueOnce([]);
 
       await controller.rechercherFilms('batman');
-      expect(serviceMock.rechercherFilms).toHaveBeenCalledWith('batman');
+
+      expect(spy).toHaveBeenCalledWith('batman');
     });
   });
 
   describe('GET /tmdb/recherche/avancee', () => {
     it('doit refuser si aucun critère', () => {
       expectHttpException(
-        () => (controller as any).rechercherFilmsAvancee(),
+        () => controller.rechercherFilmsAvancee('', '', ''),
         HttpStatus.BAD_REQUEST,
         'Au moins un critère',
       );
     });
 
-    it('doit refuser si titre existe mais < 2 caractères', () => {
+    it('doit refuser si titre < 2 caractères', () => {
       expectHttpException(
-        () => (controller as any).rechercherFilmsAvancee('a'),
+        () => controller.rechercherFilmsAvancee('a', '', ''),
         HttpStatus.BAD_REQUEST,
         'au moins 2 caractères',
       );
     });
 
-    it("doit refuser si l'année n'est pas au format YYYY", () => {
-      // On passe '' pour titre (pas undefined), puis annee en 2e param
+    it("doit refuser si l'année n'est pas YYYY", () => {
       expectHttpException(
-        () => (controller as any).rechercherFilmsAvancee('', '20xx'),
+        () => controller.rechercherFilmsAvancee('', '20xx', ''),
         HttpStatus.BAD_REQUEST,
         'format YYYY',
       );
     });
 
-    it('doit appeler rechercherFilmsAvancee du service avec trim', async () => {
-      serviceMock.rechercherFilmsAvancee.mockResolvedValueOnce([] as any);
+    it('doit appeler rechercherFilmsAvancee avec trim', async () => {
+      const spy = jest
+        .spyOn(serviceMock, 'rechercherFilmsAvancee')
+        .mockResolvedValueOnce([]);
 
-      await controller.rechercherFilmsAvancee('  Matrix ', ' 1999 ', ' Action ');
-      expect(serviceMock.rechercherFilmsAvancee).toHaveBeenCalledWith({
+      await controller.rechercherFilmsAvancee(
+        '  Matrix ',
+        ' 1999 ',
+        ' Action ',
+      );
+
+      expect(spy).toHaveBeenCalledWith({
         titre: 'Matrix',
         annee: '1999',
         genre: 'Action',
@@ -152,12 +168,22 @@ describe('TmdbController (ms-tmdb)', () => {
     });
   });
 
-  describe('GET /tmdb/:id ', () => {
+  describe('GET /tmdb/:id', () => {
     it('doit appeler obtenirDetailsFilm', async () => {
-      serviceMock.obtenirDetailsFilm.mockResolvedValueOnce({} as any);
+      const spy = jest
+        .spyOn(serviceMock, 'obtenirDetailsFilm')
+        .mockResolvedValueOnce({
+          id: 12,
+          titre: 'Film',
+          resume: '',
+          date_sortie: '',
+          affiche_url: null,
+          note_moyenne: 0,
+        });
 
       await controller.getMovie(12);
-      expect(serviceMock.obtenirDetailsFilm).toHaveBeenCalledWith(12);
+
+      expect(spy).toHaveBeenCalledWith(12);
     });
   });
 });

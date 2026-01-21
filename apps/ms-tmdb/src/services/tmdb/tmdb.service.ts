@@ -3,9 +3,9 @@ import axios, { AxiosError } from 'axios';
 import { RedisService } from '../redis/redis.service';
 import { DetailsFilm } from '../../../../types/tmdb.types';
 
-type TmdbStatusMessage = { status_message?: string };
+export type TmdbStatusMessage = { status_message?: string };
 
-type TmdbMovie = {
+export type TmdbMovie = {
   id: number;
   title: string;
   overview?: string | null;
@@ -15,21 +15,21 @@ type TmdbMovie = {
   genre_ids?: number[];
 };
 
-type TmdbListResponse<T> = {
+export type TmdbListResponse<T> = {
   results: T[];
 };
 
-type TmdbGenresResponse = {
+export type TmdbGenresResponse = {
   genres: Array<{ id: number; name: string }>;
 };
 
-type RechercheAvanceeFiltres = {
+export type RechercheAvanceeFiltres = {
   titre?: string;
   annee?: string;
   genre?: string;
 };
 
-type DiscoverMovieParams = {
+export type DiscoverMovieParams = {
   api_key: string;
   language: string;
   sort_by: 'popularity.desc';

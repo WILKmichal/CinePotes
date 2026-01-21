@@ -2,38 +2,56 @@ import { HttpException, HttpStatus } from '@nestjs/common';
 import { TmdbController } from './tmdb.controller';
 import { TmdbMsClient } from './tmdb-ms.client';
 
+type UnknownHttpResponse =
+  | string
+  | { message?: string | string[] }
+  | Record<string, unknown>;
+
+function responseToMessage(resp: unknown): string {
+  if (typeof resp === 'string') return resp;
+
+  if (resp && typeof resp === 'object') {
+    const r = resp as Exclude<UnknownHttpResponse, string>;
+
+    // cas Nest classique: { message: string | string[] }
+    if ('message' in r) {
+      const msg = (r as { message?: unknown }).message;
+
+      if (typeof msg === 'string') return msg;
+      if (Array.isArray(msg) && msg.every((x) => typeof x === 'string')) {
+        return msg.join(', ');
+      }
+    }
+
+    return JSON.stringify(r);
+  }
+
+  return String(resp);
+}
+
 /**
  * Helper :
- *  Exécute une fonction
- *  Vérifie qu’elle lève une HttpException
- *  Vérifie le status
- *  Vérifie éventuellement qu’un bout de message est présent
+ * - exécute une fonction
+ * - vérifie qu’elle lève une HttpException
+ * - vérifie le status
+ * - vérifie éventuellement qu’un bout de message est présent
  */
-function expectHttpException(fn: () => any, status: number, msgPart?: string) {
+function expectHttpException(
+  fn: () => unknown,
+  status: number,
+  msgPart?: string,
+) {
   try {
     fn();
     fail('Une HttpException était attendue');
-  } catch (e) {
+  } catch (e: unknown) {
     expect(e).toBeInstanceOf(HttpException);
     const ex = e as HttpException;
 
     expect(ex.getStatus()).toBe(status);
 
     if (msgPart) {
-      const r = ex.getResponse() as any;
-
-      let message = '';
-
-      if (typeof r === 'string') {
-        message = r;
-      } else if (typeof r?.message === 'string') {
-        message = r.message;
-      } else if (Array.isArray(r?.message)) {
-        message = r.message.join(', ');
-      } else {
-        message = JSON.stringify(r);
-      }
-
+      const message = responseToMessage(ex.getResponse());
       expect(message).toContain(msgPart);
     }
   }
@@ -42,21 +60,20 @@ function expectHttpException(fn: () => any, status: number, msgPart?: string) {
 describe('TmdbController (gateway be-bg)', () => {
   let controller: TmdbController;
 
-  const msMock: jest.Mocked<TmdbMsClient> = {
+  // Mock typé sans any
+  const msMock: jest.Mocked<Pick<TmdbMsClient, 'get'>> = {
     get: jest.fn(),
-  } as any;
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
-    controller = new TmdbController(msMock);
+    controller = new TmdbController(msMock as unknown as TmdbMsClient);
   });
 
-  // GET /tmdb/movies?ids=...
   describe('getMovies', () => {
     it('doit refuser si ids est manquant', () => {
-      // on passe une chaîne vide => équivalent pour "if (!ids)".
       expectHttpException(
-        () => controller.getMovies('' as any),
+        () => controller.getMovies(''),
         HttpStatus.BAD_REQUEST,
         'ids est requis',
       );
@@ -71,7 +88,7 @@ describe('TmdbController (gateway be-bg)', () => {
     });
 
     it('doit forward vers ms-tmdb avec ids nettoyés (join sans espaces)', async () => {
-      msMock.get.mockResolvedValueOnce([] as any);
+      msMock.get.mockResolvedValueOnce([]);
 
       await controller.getMovies(' 1, 2,abc, 3 ');
 
@@ -79,10 +96,9 @@ describe('TmdbController (gateway be-bg)', () => {
     });
   });
 
-  // GET /tmdb/films/populaires
   describe('getPopularMovies', () => {
     it('doit forward vers /tmdb/films/populaires', async () => {
-      msMock.get.mockResolvedValueOnce([] as any);
+      msMock.get.mockResolvedValueOnce([]);
 
       await controller.getPopularMovies();
 
@@ -90,11 +106,10 @@ describe('TmdbController (gateway be-bg)', () => {
     });
   });
 
-  // GET /tmdb/recherche?query=...
   describe('rechercherFilms', () => {
     it('doit refuser si query manquant', () => {
       expectHttpException(
-        () => controller.rechercherFilms('' as any),
+        () => controller.rechercherFilms(''),
         HttpStatus.BAD_REQUEST,
         'au moins 3 caractères',
       );
@@ -109,49 +124,59 @@ describe('TmdbController (gateway be-bg)', () => {
     });
 
     it('doit forward vers /tmdb/recherche avec query', async () => {
-      msMock.get.mockResolvedValueOnce([] as any);
+      msMock.get.mockResolvedValueOnce([]);
 
       await controller.rechercherFilms('batman');
 
-      expect(msMock.get).toHaveBeenCalledWith('/tmdb/recherche', { query: 'batman' });
+      expect(msMock.get).toHaveBeenCalledWith('/tmdb/recherche', {
+        query: 'batman',
+      });
     });
   });
 
-  // GET /tmdb/recherche/avancee
   describe('rechercherFilmsAvancee', () => {
     it('doit refuser si aucun critère', () => {
-      // Ici on veut appeler la méthode sans arguments (au lieu de passer undefined).
-      // TS n’aime pas, donc on cast en "any" pour un appel "comme Nest le ferait".
-      expectHttpException(
-        () => (controller as any).rechercherFilmsAvancee(),
-        HttpStatus.BAD_REQUEST,
-        'Au moins un critère',
-      );
+      // On veut simuler un appel sans args (comme Nest pourrait le faire)
+      // sans utiliser `any` ni accéder à une méthode via un objet `any`.
+      const call = () =>
+        (
+          controller.rechercherFilmsAvancee as (...args: unknown[]) => unknown
+        )();
+
+      expectHttpException(call, HttpStatus.BAD_REQUEST, 'Au moins un critère');
     });
 
     it('doit refuser si titre < 2', () => {
-      // On passe seulement le titre (au lieu de mettre undefined pour les autres)
+      const call = () =>
+        (controller.rechercherFilmsAvancee as (...args: unknown[]) => unknown)(
+          'a',
+        );
+
       expectHttpException(
-        () => (controller as any).rechercherFilmsAvancee('a'),
+        call,
         HttpStatus.BAD_REQUEST,
         'au moins 2 caractères',
       );
     });
 
     it("doit refuser si annee n'est pas YYYY", () => {
-      // On peut passer '' pour titre et mettre annee en 2e param.
-      // (évite explicit undefined)
-      expectHttpException(
-        () => (controller as any).rechercherFilmsAvancee('', '20xx'),
-        HttpStatus.BAD_REQUEST,
-        'format YYYY',
-      );
+      const call = () =>
+        (controller.rechercherFilmsAvancee as (...args: unknown[]) => unknown)(
+          '',
+          '20xx',
+        );
+
+      expectHttpException(call, HttpStatus.BAD_REQUEST, 'format YYYY');
     });
 
     it('doit forward vers /tmdb/recherche/avancee en trimant les valeurs', async () => {
-      msMock.get.mockResolvedValueOnce([] as any);
+      msMock.get.mockResolvedValueOnce([]);
 
-      await controller.rechercherFilmsAvancee('  Matrix ', ' 1999 ', ' Action ');
+      await controller.rechercherFilmsAvancee(
+        '  Matrix ',
+        ' 1999 ',
+        ' Action ',
+      );
 
       expect(msMock.get).toHaveBeenCalledWith('/tmdb/recherche/avancee', {
         titre: 'Matrix',
@@ -161,10 +186,9 @@ describe('TmdbController (gateway be-bg)', () => {
     });
   });
 
-  // GET /tmdb/:id
   describe('getMovie', () => {
     it('doit forward vers /tmdb/:id', async () => {
-      msMock.get.mockResolvedValueOnce({} as any);
+      msMock.get.mockResolvedValueOnce({} as unknown);
 
       await controller.getMovie(7);
 

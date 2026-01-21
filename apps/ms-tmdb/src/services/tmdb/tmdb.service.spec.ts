@@ -1,49 +1,41 @@
 import { HttpStatus } from '@nestjs/common';
-import axios from 'axios';
 import { TmdbService } from './tmdb.service';
 import { RedisService } from '../redis/redis.service';
+import axios from 'axios';
 
-// On mock axios (get + isAxiosError)
 jest.mock('axios');
-const mockedAxios = axios as jest.Mocked<typeof axios>;
+
+const mockedAxios = axios as unknown as jest.Mocked<typeof axios>;
 
 describe('TmdbService', () => {
   let service: TmdbService;
 
-  // Mock RedisService (seulement ce qu’on utilise)
-  const redisMock: jest.Mocked<RedisService> = {
+  const redisMock = {
     get: jest.fn(),
     set: jest.fn(),
     onModuleInit: jest.fn(),
-  } as any;
+  } satisfies Pick<RedisService, 'get' | 'set' | 'onModuleInit'>;
 
   beforeEach(() => {
     jest.clearAllMocks();
 
-    // On évite les logs pendant les tests
-    jest.spyOn(console, 'log').mockImplementation(() => {});
-    jest.spyOn(console, 'error').mockImplementation(() => {});
+    jest.spyOn(console, 'log').mockImplementation(() => undefined);
+    jest.spyOn(console, 'error').mockImplementation(() => undefined);
 
-    // Valeur par défaut de la clé
     process.env.TMDB_API_KEY = 'fake_key';
 
-    // IMPORTANT:
-    // Quand axios est mocké, isAxiosError peut ne pas être un mock "callable".
-    // On force un jest.fn() pour pouvoir contrôler son retour.
-    (mockedAxios.isAxiosError as unknown as jest.Mock) = jest.fn();
+    jest.spyOn(mockedAxios, 'isAxiosError').mockReturnValue(false);
 
-    service = new TmdbService(redisMock);
+    service = new TmdbService(redisMock as unknown as RedisService);
   });
 
   afterEach(() => {
-    // Restore des spies console
-    (console.log as unknown as jest.Mock).mockRestore?.();
-    (console.error as unknown as jest.Mock).mockRestore?.();
+    jest.restoreAllMocks();
   });
 
   describe('obtenirDetailsFilm', () => {
     it('doit renvoyer depuis le cache si présent', async () => {
-      redisMock.get.mockResolvedValueOnce({
+      jest.spyOn(redisMock, 'get').mockResolvedValueOnce({
         id: 1,
         titre: 'Cached',
         resume: '...',
@@ -52,15 +44,18 @@ describe('TmdbService', () => {
         note_moyenne: 7,
       });
 
+      const getSpy = jest.spyOn(mockedAxios, 'get');
+
       const film = await service.obtenirDetailsFilm(1);
       expect(film.titre).toBe('Cached');
-      expect(mockedAxios.get).not.toHaveBeenCalled();
+      expect(getSpy).not.toHaveBeenCalled();
     });
 
     it('doit appeler TMDB si cache absent, mapper puis set en cache', async () => {
-      redisMock.get.mockResolvedValueOnce(null);
+      jest.spyOn(redisMock, 'get').mockResolvedValueOnce(null);
 
-      mockedAxios.get.mockResolvedValueOnce({
+      const getSpy = jest.spyOn(mockedAxios, 'get');
+      getSpy.mockResolvedValueOnce({
         data: {
           id: 10,
           title: 'Inception',
@@ -69,7 +64,9 @@ describe('TmdbService', () => {
           poster_path: '/abc.jpg',
           vote_average: 8.8,
         },
-      } as any);
+      });
+
+      const setSpy = jest.spyOn(redisMock, 'set');
 
       const film = await service.obtenirDetailsFilm(10);
 
@@ -82,13 +79,14 @@ describe('TmdbService', () => {
         note_moyenne: 8.8,
       });
 
-      expect(redisMock.set).toHaveBeenCalledWith('tmdb:film:10', film, 7200);
+      expect(setSpy).toHaveBeenCalledWith('tmdb:film:10', film, 7200);
     });
 
     it('affiche_url doit être null si poster_path absent', async () => {
-      redisMock.get.mockResolvedValueOnce(null);
+      jest.spyOn(redisMock, 'get').mockResolvedValueOnce(null);
 
-      mockedAxios.get.mockResolvedValueOnce({
+      const getSpy = jest.spyOn(mockedAxios, 'get');
+      getSpy.mockResolvedValueOnce({
         data: {
           id: 11,
           title: 'NoPoster',
@@ -97,21 +95,19 @@ describe('TmdbService', () => {
           poster_path: null,
           vote_average: null,
         },
-      } as any);
+      });
 
       const film = await service.obtenirDetailsFilm(11);
       expect(film.affiche_url).toBeNull();
     });
 
     it('doit transformer une erreur 404 TMDB en HttpException NOT_FOUND', async () => {
-      redisMock.get.mockResolvedValueOnce(null);
+      jest.spyOn(redisMock, 'get').mockResolvedValueOnce(null);
 
-      // On force axios.isAxiosError => true
-      (mockedAxios.isAxiosError as unknown as jest.Mock).mockReturnValueOnce(
-        true,
-      );
+      jest.spyOn(mockedAxios, 'isAxiosError').mockReturnValueOnce(true);
 
-      mockedAxios.get.mockRejectedValueOnce({
+      const getSpy = jest.spyOn(mockedAxios, 'get');
+      getSpy.mockRejectedValueOnce({
         response: { status: 404, data: { status_message: 'Not found' } },
       });
 
@@ -121,13 +117,12 @@ describe('TmdbService', () => {
     });
 
     it('doit transformer une erreur 401 TMDB en HttpException UNAUTHORIZED', async () => {
-      redisMock.get.mockResolvedValueOnce(null);
+      jest.spyOn(redisMock, 'get').mockResolvedValueOnce(null);
 
-      (mockedAxios.isAxiosError as unknown as jest.Mock).mockReturnValueOnce(
-        true,
-      );
+      jest.spyOn(mockedAxios, 'isAxiosError').mockReturnValueOnce(true);
 
-      mockedAxios.get.mockRejectedValueOnce({
+      const getSpy = jest.spyOn(mockedAxios, 'get');
+      getSpy.mockRejectedValueOnce({
         response: { status: 401, data: { status_message: 'Invalid key' } },
       });
 
@@ -137,13 +132,12 @@ describe('TmdbService', () => {
     });
 
     it('doit transformer une erreur 429 TMDB en HttpException TOO_MANY_REQUESTS', async () => {
-      redisMock.get.mockResolvedValueOnce(null);
+      jest.spyOn(redisMock, 'get').mockResolvedValueOnce(null);
 
-      (mockedAxios.isAxiosError as unknown as jest.Mock).mockReturnValueOnce(
-        true,
-      );
+      jest.spyOn(mockedAxios, 'isAxiosError').mockReturnValueOnce(true);
 
-      mockedAxios.get.mockRejectedValueOnce({
+      const getSpy = jest.spyOn(mockedAxios, 'get');
+      getSpy.mockRejectedValueOnce({
         response: { status: 429, data: { status_message: 'Rate limit' } },
       });
 
@@ -152,32 +146,28 @@ describe('TmdbService', () => {
       });
     });
 
-    it("erreur axios (autre status) => renvoie status + status_message si présent", async () => {
-      redisMock.get.mockResolvedValueOnce(null);
+    it('erreur axios (autre status) => renvoie status + status_message si présent', async () => {
+      jest.spyOn(redisMock, 'get').mockResolvedValueOnce(null);
 
-      (mockedAxios.isAxiosError as unknown as jest.Mock).mockReturnValueOnce(
-        true,
-      );
+      jest.spyOn(mockedAxios, 'isAxiosError').mockReturnValueOnce(true);
 
-      mockedAxios.get.mockRejectedValueOnce({
+      const getSpy = jest.spyOn(mockedAxios, 'get');
+      getSpy.mockRejectedValueOnce({
         response: { status: 500, data: { status_message: 'Server error' } },
       });
 
-      // Une seule attente (pas de double appel non mocké)
       await expect(service.obtenirDetailsFilm(1)).rejects.toMatchObject({
         status: 500,
       });
     });
 
     it('erreur non axios => 500 générique', async () => {
-      redisMock.get.mockResolvedValueOnce(null);
+      jest.spyOn(redisMock, 'get').mockResolvedValueOnce(null);
 
-      // Force isAxiosError => false
-      (mockedAxios.isAxiosError as unknown as jest.Mock).mockReturnValueOnce(
-        false,
-      );
+      jest.spyOn(mockedAxios, 'isAxiosError').mockReturnValueOnce(false);
 
-      mockedAxios.get.mockRejectedValueOnce(new Error('boom'));
+      const getSpy = jest.spyOn(mockedAxios, 'get');
+      getSpy.mockRejectedValueOnce(new Error('boom'));
 
       await expect(service.obtenirDetailsFilm(1)).rejects.toMatchObject({
         status: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -187,17 +177,22 @@ describe('TmdbService', () => {
 
   describe('obtenirFilmsPopulaires', () => {
     it('doit renvoyer le cache si présent', async () => {
-      redisMock.get.mockResolvedValueOnce([{ id: 1 } as any]);
+      jest
+        .spyOn(redisMock, 'get')
+        .mockResolvedValueOnce([{ id: 1 }] as unknown);
+
+      const getSpy = jest.spyOn(mockedAxios, 'get');
 
       const res = await service.obtenirFilmsPopulaires();
       expect(res).toHaveLength(1);
-      expect(mockedAxios.get).not.toHaveBeenCalled();
+      expect(getSpy).not.toHaveBeenCalled();
     });
 
     it('doit récupérer TMDB, limiter à 10 et mettre en cache', async () => {
-      redisMock.get.mockResolvedValueOnce(null);
+      jest.spyOn(redisMock, 'get').mockResolvedValueOnce(null);
 
-      mockedAxios.get.mockResolvedValueOnce({
+      const getSpy = jest.spyOn(mockedAxios, 'get');
+      getSpy.mockResolvedValueOnce({
         data: {
           results: Array.from({ length: 12 }).map((_, i) => ({
             id: i + 1,
@@ -208,69 +203,67 @@ describe('TmdbService', () => {
             vote_average: null,
           })),
         },
-      } as any);
+      });
+
+      const setSpy = jest.spyOn(redisMock, 'set');
 
       const res = await service.obtenirFilmsPopulaires();
       expect(res).toHaveLength(10);
 
-      expect(redisMock.set).toHaveBeenCalledWith(
-        'tmdb:films:populaires',
-        res,
-        7200,
-      );
+      expect(setSpy).toHaveBeenCalledWith('tmdb:films:populaires', res, 7200);
     });
   });
 
   describe('rechercherFilms', () => {
     it('doit utiliser une clé cache normalisée en lowercase+trim', async () => {
-      redisMock.get.mockResolvedValueOnce(null);
+      jest.spyOn(redisMock, 'get').mockResolvedValueOnce(null);
 
-      mockedAxios.get.mockResolvedValueOnce({
+      const getSpyAxios = jest.spyOn(mockedAxios, 'get');
+      getSpyAxios.mockResolvedValueOnce({
         data: { results: [{ id: 1, title: 'A' }] },
-      } as any);
+      });
+
+      const getSpyRedis = jest.spyOn(redisMock, 'get');
 
       await service.rechercherFilms('  TeSt  ');
-      expect(redisMock.get).toHaveBeenCalledWith('tmdb:recherche:test');
+      expect(getSpyRedis).toHaveBeenCalledWith('tmdb:recherche:test');
     });
 
     it('doit mettre en cache 3600 secondes', async () => {
-      redisMock.get.mockResolvedValueOnce(null);
+      jest.spyOn(redisMock, 'get').mockResolvedValueOnce(null);
 
-      mockedAxios.get.mockResolvedValueOnce({
+      const getSpyAxios = jest.spyOn(mockedAxios, 'get');
+      getSpyAxios.mockResolvedValueOnce({
         data: { results: [{ id: 1, title: 'A' }] },
-      } as any);
+      });
+
+      const setSpy = jest.spyOn(redisMock, 'set');
 
       const res = await service.rechercherFilms('abc');
-      expect(redisMock.set).toHaveBeenCalledWith(
-        'tmdb:recherche:abc',
-        res,
-        3600,
-      );
+      expect(setSpy).toHaveBeenCalledWith('tmdb:recherche:abc', res, 3600);
     });
   });
 
   describe('rechercherFilmsAvancee', () => {
     it('si titre fourni: search/movie puis filtre genre côté Node', async () => {
-      // cache recherche avancée absent
-      redisMock.get.mockResolvedValueOnce(null);
+      jest
+        .spyOn(redisMock, 'get')
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(null);
 
-      // appel search/movie
-      mockedAxios.get.mockResolvedValueOnce({
-        data: {
-          results: [
-            { id: 1, title: 'X', genre_ids: [28] },
-            { id: 2, title: 'Y', genre_ids: [12] },
-          ],
-        },
-      } as any);
-
-      // obtenirGenres() => cache genres absent
-      redisMock.get.mockResolvedValueOnce(null);
-
-      // axios genre/list
-      mockedAxios.get.mockResolvedValueOnce({
-        data: { genres: [{ id: 28, name: 'Action' }] },
-      } as any);
+      const getSpy = jest.spyOn(mockedAxios, 'get');
+      getSpy
+        .mockResolvedValueOnce({
+          data: {
+            results: [
+              { id: 1, title: 'X', genre_ids: [28] },
+              { id: 2, title: 'Y', genre_ids: [12] },
+            ],
+          },
+        })
+        .mockResolvedValueOnce({
+          data: { genres: [{ id: 28, name: 'Action' }] },
+        });
 
       const res = await service.rechercherFilmsAvancee({
         titre: 'test',
@@ -281,16 +274,17 @@ describe('TmdbService', () => {
     });
 
     it('si genre inconnu: renvoie [] et cache 600s', async () => {
-      // cache recherche avancée absent
-      redisMock.get.mockResolvedValueOnce(null);
+      jest
+        .spyOn(redisMock, 'get')
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce([{ id: 28, name: 'Action' }]);
 
-      // titre fourni => search/movie
-      mockedAxios.get.mockResolvedValueOnce({
+      const getSpy = jest.spyOn(mockedAxios, 'get');
+      getSpy.mockResolvedValueOnce({
         data: { results: [{ id: 1, title: 'X', genre_ids: [28] }] },
-      } as any);
+      });
 
-      // obtenirGenres => genres déjà en cache mais ne contient pas le genre demandé
-      redisMock.get.mockResolvedValueOnce([{ id: 28, name: 'Action' }]);
+      const setSpy = jest.spyOn(redisMock, 'set');
 
       const res = await service.rechercherFilmsAvancee({
         titre: 'test',
@@ -299,47 +293,101 @@ describe('TmdbService', () => {
 
       expect(res).toEqual([]);
 
-      // clé cache contient un JSON stringify, on match juste le début
-      expect(redisMock.set).toHaveBeenCalledWith(
+      expect(setSpy).toHaveBeenCalledWith(
         expect.stringContaining('tmdb:recherche_avancee:'),
         [],
         600,
       );
     });
+    it('si résultat en cache: renvoie le cache et n’appelle pas axios', async () => {
+      // Arrange: cache hit
+      const cached = [{ id: 123, titre: 'Cached Film' }];
+      jest.spyOn(redisMock, 'get').mockResolvedValueOnce(cached as unknown);
 
-    it('sans titre: utilise discover/movie (année/genre) et cache 1800s', async () => {
-      // cache recherche avancée absent
-      redisMock.get.mockResolvedValueOnce(null);
+      const axiosGetSpy = jest.spyOn(mockedAxios, 'get');
 
-      // obtenirGenres => genres en cache
-      redisMock.get.mockResolvedValueOnce([{ id: 28, name: 'Action' }]);
+      // Act
+      const res = await service.rechercherFilmsAvancee({
+        titre: 'test',
+        genre: 'Action',
+      });
 
-      // discover/movie
-      mockedAxios.get.mockResolvedValueOnce({
-        data: { results: [{ id: 9, title: 'Z' }] },
-      } as any);
+      // Assert
+      expect(res).toEqual(cached);
+      expect(axiosGetSpy).not.toHaveBeenCalled();
+    });
+    it('sans titre: doit appeler discover/movie avec annee+genre, mapper puis mettre en cache (1800s)', async () => {
+      // Arrange
+      jest
+        .spyOn(redisMock, 'get')
+        // 1) cache recherche avancée => miss
+        .mockResolvedValueOnce(null)
+        // 2) cache genres => hit (باش ما يديرش axios على /genre/movie/list)
+        .mockResolvedValueOnce([{ id: 28, name: 'Action' }]);
 
+      const getSpy = jest.spyOn(mockedAxios, 'get');
+
+      // discover/movie response
+      getSpy.mockResolvedValueOnce({
+        data: {
+          results: [
+            {
+              id: 1,
+              title: 'Film 1',
+              overview: null,
+              release_date: '2020-01-01',
+              poster_path: '/p.jpg',
+              vote_average: 7.5,
+              genre_ids: [28],
+            },
+          ],
+        },
+      });
+
+      const setSpy = jest.spyOn(redisMock, 'set');
+
+      // Act
       const res = await service.rechercherFilmsAvancee({
         annee: '2020',
         genre: 'Action',
       });
 
-      expect(res).toHaveLength(1);
+      // Assert
+      expect(getSpy).toHaveBeenCalledTimes(1);
 
-      expect(redisMock.set).toHaveBeenCalledWith(
+      const [calledUrl, calledConfig] = getSpy.mock.calls[0] as unknown as [
+        string,
+        { params?: Record<string, unknown> },
+      ];
+
+      expect(calledUrl).toContain('/discover/movie');
+
+      expect(calledConfig.params).toEqual(
+        expect.objectContaining({
+          api_key: 'fake_key',
+          language: 'fr-FR',
+          sort_by: 'popularity.desc',
+          page: 1,
+          primary_release_year: '2020',
+          with_genres: 28,
+        }),
+      );
+
+      expect(res).toEqual([
+        {
+          id: 1,
+          titre: 'Film 1',
+          resume: 'Pas de résumé disponible',
+          date_sortie: '2020-01-01',
+          affiche_url: 'https://image.tmdb.org/t/p/w500/p.jpg',
+          note_moyenne: 7.5,
+        },
+      ]);
+
+      expect(setSpy).toHaveBeenCalledWith(
         expect.stringContaining('tmdb:recherche_avancee:'),
         res,
         1800,
-      );
-
-      expect(mockedAxios.get).toHaveBeenCalledWith(
-        expect.stringContaining('/discover/movie'),
-        expect.objectContaining({
-          params: expect.objectContaining({
-            primary_release_year: '2020',
-            with_genres: 28,
-          }),
-        }),
       );
     });
   });

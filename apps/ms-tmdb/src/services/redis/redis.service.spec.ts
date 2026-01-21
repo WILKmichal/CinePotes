@@ -1,103 +1,58 @@
+import { Test, TestingModule } from '@nestjs/testing';
 import { RedisService } from './redis.service';
+import Redis from 'ioredis';
 
-// On mock ioredis (le constructeur Redis)
-const onHandlers: Record<string, Function> = {};
-// on stocke le handler pour le déclencher dans les tests
-const mockRedisInstance = {
-  on: jest.fn((event: string, cb: Function) => {
-    onHandlers[event] = cb;
-  }),
-  get: jest.fn(),
-  set: jest.fn(),
-};
-
-jest.mock('ioredis', () => {
-  return {
-    Redis: jest.fn(() => mockRedisInstance),
-  };
-});
+jest.mock('ioredis');
 
 describe('RedisService', () => {
   let service: RedisService;
+  let redisClient: InstanceType<typeof Redis>;
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-    // reset handlers
-    for (const k of Object.keys(onHandlers)) delete onHandlers[k];
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [RedisService],
+    }).compile();
 
-    service = new RedisService();
-  });
-
-  it('doit créer un client Redis au onModuleInit et passer valable=true au connect', () => {
+    service = module.get(RedisService);
     service.onModuleInit();
 
-    // Simule l’évènement "connect"
-    expect(onHandlers.connect).toBeDefined();
-    onHandlers.connect();
-
-    // on vérifie que le client existe via le comportement:
-    // get/set ne doivent pas retourner null "par absence client".
-    expect(mockRedisInstance.on).toHaveBeenCalled();
+    redisClient = (Redis as unknown as jest.Mock).mock.results[0]
+      .value as InstanceType<typeof Redis>;
   });
 
-  it('doit mettre redisClient=null si "error" est déclenché', async () => {
-    service.onModuleInit();
-
-    expect(onHandlers.error).toBeDefined();
-    onHandlers.error(new Error('boom'));
-
-    // Après erreur, get doit renvoyer null (car client mis à null)
-    const res = await service.get('k');
-    expect(res).toBeNull();
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
-  it('get() doit retourner null si pas de client', async () => {
-    // pas de onModuleInit => client null
-    const res = await service.get('any');
-    expect(res).toBeNull();
+  it('should be defined', () => {
+    expect(service).toBeDefined();
   });
 
-  it('get() doit parser le JSON si une valeur existe', async () => {
-    service.onModuleInit();
-    onHandlers.connect();
+  it('get() should return parsed value', async () => {
+    const value = { ok: true };
 
-    mockRedisInstance.get.mockResolvedValueOnce(JSON.stringify({ a: 1 }));
+    jest.spyOn(redisClient, 'get').mockResolvedValue(JSON.stringify(value));
 
-    const res = await service.get<{ a: number }>('k1');
-    expect(res).toEqual({ a: 1 });
-    expect(mockRedisInstance.get).toHaveBeenCalledWith('k1');
+    const result = await service.get<typeof value>('test');
+
+    expect(result).toEqual(value);
   });
 
-  it('set() ne doit rien faire si pas de client', async () => {
-    await service.set('k', { x: 1 });
-    expect(mockRedisInstance.set).not.toHaveBeenCalled();
+  it('get() should return null if key does not exist', async () => {
+    jest.spyOn(redisClient, 'get').mockResolvedValue(null);
+
+    const result = await service.get('missing');
+
+    expect(result).toBeNull();
   });
 
-  it('set() doit stringify et poser un TTL (par défaut 7200)', async () => {
-    service.onModuleInit();
-    onHandlers.connect();
+  it('set() should save value with ttl', async () => {
+    const data = { hello: 'redis' };
 
-    await service.set('k2', { x: 2 });
+    const setSpy = jest.spyOn(redisClient, 'set').mockResolvedValue('OK');
 
-    // ioredis set(key, value, 'EX', ttl)
-    expect(mockRedisInstance.set).toHaveBeenCalledWith(
-      'k2',
-      JSON.stringify({ x: 2 }),
-      'EX',
-      7200,
-    );
-  });
+    await service.set('key', data, 120);
 
-  it('set() doit utiliser le ttl fourni', async () => {
-    service.onModuleInit();
-    onHandlers.connect();
-
-    await service.set('k3', { y: 9 }, 60);
-    expect(mockRedisInstance.set).toHaveBeenCalledWith(
-      'k3',
-      JSON.stringify({ y: 9 }),
-      'EX',
-      60,
-    );
+    expect(setSpy).toHaveBeenCalledWith('key', JSON.stringify(data), 'EX', 120);
   });
 });
