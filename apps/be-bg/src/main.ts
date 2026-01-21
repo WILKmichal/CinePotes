@@ -1,9 +1,17 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Active la validation automatique des DTOs
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true,        // Supprime les propriétés non définies dans le DTO
+    forbidNonWhitelisted: true,  // Rejette la requête si des propriétés inconnues sont envoyées
+    transform: true,        // Transforme automatiquement les types (ex: string -> number)
+  }));
 
   // Autoriser le front sur plusieurs ports
   app.enableCors({
