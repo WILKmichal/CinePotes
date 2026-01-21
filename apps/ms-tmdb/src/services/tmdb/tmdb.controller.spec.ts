@@ -19,7 +19,6 @@ function expectHttpException(
     if (!msgPart) return;
 
     const response = ex.getResponse();
-
     let message: string;
 
     if (typeof response === 'string') {
