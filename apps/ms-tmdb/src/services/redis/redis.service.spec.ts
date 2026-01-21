@@ -16,7 +16,7 @@ describe('RedisService', () => {
     service = module.get(RedisService);
     service.onModuleInit();
 
-    redisClient = (Redis as unknown as jest.Mock).mock.results[0]
+    redisClient = (Redis as jest.MockedClass<typeof Redis>).mock.results[0]
       .value as InstanceType<typeof Redis>;
   });
 

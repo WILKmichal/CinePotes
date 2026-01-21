@@ -1,7 +1,6 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { TmdbController } from './tmdb.controller';
 import { TmdbService } from './tmdb.service';
-// import { DetailsFilm } from '../../../../types/tmdb.types'; // supprimé car unused
 
 function expectHttpException(
   fn: () => unknown,
