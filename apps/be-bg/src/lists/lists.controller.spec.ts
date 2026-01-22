@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from '@nestjs/testing';
 import { ListsController } from './lists.controller';
 import { ListsService, Liste, ListeFilm } from './lists.service';

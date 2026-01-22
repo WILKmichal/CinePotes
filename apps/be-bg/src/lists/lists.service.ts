@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { Pool } from 'pg';
 import { PG_POOL } from '../../database/database.module';
 
@@ -20,8 +20,6 @@ export type ListeFilm = {
 
 @Injectable()
 export class ListsService {
-  private readonly logger = new Logger(ListsService.name);
-
   constructor(@Inject(PG_POOL) private readonly pool: Pool) {}
 
   /**
@@ -34,7 +32,7 @@ export class ListsService {
       WHERE utilisateur_id = $1
       ORDER BY cree_le DESC
     `;
-    const res = await this.pool.query(query, [userId]);
+    const res = await this.pool.query<Liste>(query, [userId]);
     return res.rows;
   }
 
@@ -47,7 +45,7 @@ export class ListsService {
       FROM liste
       WHERE id = $1 AND utilisateur_id = $2
     `;
-    const res = await this.pool.query(query, [listeId, userId]);
+    const res = await this.pool.query<Liste>(query, [listeId, userId]);
     return res.rows[0];
   }
 
@@ -64,7 +62,7 @@ export class ListsService {
       VALUES ($1, $2, $3)
       RETURNING id, nom, description, utilisateur_id, cree_le, maj_le
     `;
-    const res = await this.pool.query(query, [
+    const res = await this.pool.query<Liste>(query, [
       nom,
       description || null,
       userId,
@@ -104,9 +102,14 @@ export class ListsService {
       ON CONFLICT (liste_id, tmdb_id) DO NOTHING
       RETURNING id, liste_id, tmdb_id, cree_le
     `;
-    const res = await this.pool.query(query, [listeId, tmdbId]);
+    const res = await this.pool.query<ListeFilm>(query, [listeId, tmdbId]);
     return (
-      res.rows[0] || { liste_id: listeId, tmdb_id: tmdbId, cree_le: new Date() }
+      res.rows[0] || {
+        id: '',
+        liste_id: listeId,
+        tmdb_id: tmdbId,
+        cree_le: new Date(),
+      }
     );
   }
 
@@ -148,7 +151,7 @@ export class ListsService {
       WHERE liste_id = $1
       ORDER BY cree_le DESC
     `;
-    const res = await this.pool.query(query, [listeId]);
+    const res = await this.pool.query<{ tmdb_id: number }>(query, [listeId]);
     return res.rows.map((row) => row.tmdb_id);
   }
 
