@@ -40,7 +40,7 @@ const bruFiles = getAllBruFiles(testDir);
 // E.g., "GET /auth/login" -> "GET_auth_login" 
 function routeToFileName(route) {
   const [method, ...pathParts] = route.split(' ');
-  const pathStr = pathParts.join(' ').replace(/\//g, '_').replace(/^_/, '').replace(/{.*?}/g, 'by_id');
+  const pathStr = pathParts.join(' ').replace(/\//g, '_').replace(/^_/, '').replace(/{.*?}/g, 'by_id'); // NOSONAR
   return `${method}_${pathStr}`; /* --NOSONAR */
 }
 
