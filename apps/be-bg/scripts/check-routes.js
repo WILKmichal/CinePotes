@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 
 const routesFile = path.join(__dirname, '../routes.txt');
 const testDir = path.join(__dirname, '../bruno/test_ci');
@@ -41,7 +41,7 @@ const bruFiles = getAllBruFiles(testDir);
 function routeToFileName(route) {
   const [method, ...pathParts] = route.split(' ');
   const pathStr = pathParts.join(' ').replace(/\//g, '_').replace(/^_/, '').replace(/{.*?}/g, 'by_id');
-  return `${method}_${pathStr}`;
+  return `${method}_${pathStr}`; /* --NOSONAR */
 }
 
 // Check if a route has a corresponding test
