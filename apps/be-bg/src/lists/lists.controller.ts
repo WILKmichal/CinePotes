@@ -13,45 +13,67 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiParam,
+} from '@nestjs/swagger';
 import { AuthGuard } from '../../auth/auth.guard';
 import { ListsService } from './lists.service';
+import { CreateListDto } from './dto/create-list.dto';
+import { AddFilmDto } from './dto/add-film.dto';
+import {
+  ListResponseDto,
+  ListWithFilmsResponseDto,
+  FilmsInListResponseDto,
+  AddFilmResponseDto,
+} from './dto/list-response.dto';
 
-interface CreateListDto {
-  nom: string;
-  description?: string;
-}
-
-interface AddFilmDto {
-  tmdbId: number;
-}
-
+@ApiTags('Lists')
+@ApiBearerAuth()
 @Controller('lists')
 @UseGuards(AuthGuard)
 export class ListsController {
   constructor(private readonly listsService: ListsService) {}
 
-  /**
-   * GET /lists - Récupère toutes les listes de l'utilisateur connecté
-   */
   @Get()
+  @ApiOperation({ summary: "Récupérer toutes les listes de l'utilisateur" })
+  @ApiResponse({
+    status: 200,
+    description: 'Liste des listes personnelles',
+    type: [ListResponseDto],
+  })
+  @ApiResponse({ status: 401, description: 'Non authentifié' })
   async findAll(@Request() req: { user: { sub: string } }) {
     const userId = req.user.sub;
     return this.listsService.findAllByUser(userId);
   }
 
-  /**
-   * GET /lists/with-films - Récupère toutes les listes avec leurs films
-   */
   @Get('with-films')
+  @ApiOperation({ summary: 'Récupérer toutes les listes avec leurs films' })
+  @ApiResponse({
+    status: 200,
+    description: 'Liste des listes avec les IDs TMDB des films',
+    type: [ListWithFilmsResponseDto],
+  })
+  @ApiResponse({ status: 401, description: 'Non authentifié' })
   async findAllWithFilms(@Request() req: { user: { sub: string } }) {
     const userId = req.user.sub;
     return this.listsService.findAllByUserWithFilms(userId);
   }
 
-  /**
-   * GET /lists/:id - Récupère une liste spécifique
-   */
   @Get(':id')
+  @ApiOperation({ summary: 'Récupérer une liste spécifique' })
+  @ApiParam({ name: 'id', description: 'ID de la liste (UUID)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Détails de la liste',
+    type: ListResponseDto,
+  })
+  @ApiResponse({ status: 401, description: 'Non authentifié' })
+  @ApiResponse({ status: 404, description: 'Liste non trouvée' })
   async findOne(
     @Param('id') id: string,
     @Request() req: { user: { sub: string } },
@@ -64,10 +86,16 @@ export class ListsController {
     return liste;
   }
 
-  /**
-   * GET /lists/:id/films - Récupère les films d'une liste
-   */
   @Get(':id/films')
+  @ApiOperation({ summary: "Récupérer les films d'une liste" })
+  @ApiParam({ name: 'id', description: 'ID de la liste (UUID)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Liste des IDs TMDB des films',
+    type: FilmsInListResponseDto,
+  })
+  @ApiResponse({ status: 401, description: 'Non authentifié' })
+  @ApiResponse({ status: 404, description: 'Liste non trouvée' })
   async getFilms(
     @Param('id') id: string,
     @Request() req: { user: { sub: string } },
@@ -81,10 +109,15 @@ export class ListsController {
     return { listeId: id, films };
   }
 
-  /**
-   * POST /lists - Crée une nouvelle liste
-   */
   @Post()
+  @ApiOperation({ summary: 'Créer une nouvelle liste' })
+  @ApiResponse({
+    status: 201,
+    description: 'Liste créée avec succès',
+    type: ListResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Données invalides' })
+  @ApiResponse({ status: 401, description: 'Non authentifié' })
   async create(
     @Body() createListDto: CreateListDto,
     @Request() req: { user: { sub: string } },
@@ -102,10 +135,17 @@ export class ListsController {
     );
   }
 
-  /**
-   * POST /lists/:id/films - Ajoute un film à une liste
-   */
   @Post(':id/films')
+  @ApiOperation({ summary: 'Ajouter un film à une liste' })
+  @ApiParam({ name: 'id', description: 'ID de la liste (UUID)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Film ajouté avec succès',
+    type: AddFilmResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'tmdbId manquant' })
+  @ApiResponse({ status: 401, description: 'Non authentifié' })
+  @ApiResponse({ status: 403, description: 'Accès refusé à cette liste' })
   async addFilm(
     @Param('id') id: string,
     @Body() addFilmDto: AddFilmDto,
@@ -130,11 +170,13 @@ export class ListsController {
     return { message: 'Film ajouté à la liste', ...result };
   }
 
-  /**
-   * DELETE /lists/:id - Supprime une liste
-   */
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Supprimer une liste' })
+  @ApiParam({ name: 'id', description: 'ID de la liste (UUID)' })
+  @ApiResponse({ status: 204, description: 'Liste supprimée avec succès' })
+  @ApiResponse({ status: 401, description: 'Non authentifié' })
+  @ApiResponse({ status: 404, description: 'Liste non trouvée' })
   async delete(
     @Param('id') id: string,
     @Request() req: { user: { sub: string } },
@@ -146,11 +188,14 @@ export class ListsController {
     }
   }
 
-  /**
-   * DELETE /lists/:id/films/:tmdbId - Retire un film d'une liste
-   */
   @Delete(':id/films/:tmdbId')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: "Retirer un film d'une liste" })
+  @ApiParam({ name: 'id', description: 'ID de la liste (UUID)' })
+  @ApiParam({ name: 'tmdbId', description: 'ID TMDB du film' })
+  @ApiResponse({ status: 204, description: 'Film retiré avec succès' })
+  @ApiResponse({ status: 401, description: 'Non authentifié' })
+  @ApiResponse({ status: 404, description: 'Film ou liste non trouvé' })
   async removeFilm(
     @Param('id') id: string,
     @Param('tmdbId') tmdbId: string,

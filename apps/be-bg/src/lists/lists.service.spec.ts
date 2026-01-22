@@ -98,7 +98,11 @@ describe('ListsService', () => {
     it('should create a new list with description', async () => {
       mockPool.query.mockResolvedValue({ rows: [mockListe] });
 
-      const result = await service.create(mockUserId, 'Ma liste', 'Description');
+      const result = await service.create(
+        mockUserId,
+        'Ma liste',
+        'Description',
+      );
 
       expect(result).toEqual(mockListe);
       expect(mockPool.query).toHaveBeenCalledWith(
@@ -157,7 +161,11 @@ describe('ListsService', () => {
         .mockResolvedValueOnce({ rows: [mockListe] }) // findOne
         .mockResolvedValueOnce({ rows: [mockListeFilm] }); // insert
 
-      const result = await service.addFilmToList(mockListeId, mockTmdbId, mockUserId);
+      const result = await service.addFilmToList(
+        mockListeId,
+        mockTmdbId,
+        mockUserId,
+      );
 
       expect(result).toEqual(mockListeFilm);
     });
@@ -165,7 +173,11 @@ describe('ListsService', () => {
     it('should return null when list does not belong to user', async () => {
       mockPool.query.mockResolvedValueOnce({ rows: [] }); // findOne returns empty
 
-      const result = await service.addFilmToList(mockListeId, mockTmdbId, mockUserId);
+      const result = await service.addFilmToList(
+        mockListeId,
+        mockTmdbId,
+        mockUserId,
+      );
 
       expect(result).toBeNull();
     });
@@ -175,7 +187,11 @@ describe('ListsService', () => {
         .mockResolvedValueOnce({ rows: [mockListe] }) // findOne
         .mockResolvedValueOnce({ rows: [] }); // insert returns empty due to ON CONFLICT
 
-      const result = await service.addFilmToList(mockListeId, mockTmdbId, mockUserId);
+      const result = await service.addFilmToList(
+        mockListeId,
+        mockTmdbId,
+        mockUserId,
+      );
 
       expect(result).toMatchObject({
         liste_id: mockListeId,
@@ -190,7 +206,11 @@ describe('ListsService', () => {
         .mockResolvedValueOnce({ rows: [mockListe] }) // findOne
         .mockResolvedValueOnce({ rowCount: 1 }); // delete
 
-      const result = await service.removeFilmFromList(mockListeId, mockTmdbId, mockUserId);
+      const result = await service.removeFilmFromList(
+        mockListeId,
+        mockTmdbId,
+        mockUserId,
+      );
 
       expect(result).toBe(true);
     });
@@ -198,7 +218,11 @@ describe('ListsService', () => {
     it('should return false when list does not belong to user', async () => {
       mockPool.query.mockResolvedValueOnce({ rows: [] }); // findOne returns empty
 
-      const result = await service.removeFilmFromList(mockListeId, mockTmdbId, mockUserId);
+      const result = await service.removeFilmFromList(
+        mockListeId,
+        mockTmdbId,
+        mockUserId,
+      );
 
       expect(result).toBe(false);
     });
@@ -208,7 +232,11 @@ describe('ListsService', () => {
         .mockResolvedValueOnce({ rows: [mockListe] }) // findOne
         .mockResolvedValueOnce({ rowCount: 0 }); // delete
 
-      const result = await service.removeFilmFromList(mockListeId, mockTmdbId, mockUserId);
+      const result = await service.removeFilmFromList(
+        mockListeId,
+        mockTmdbId,
+        mockUserId,
+      );
 
       expect(result).toBe(false);
     });
@@ -218,7 +246,11 @@ describe('ListsService', () => {
         .mockResolvedValueOnce({ rows: [mockListe] }) // findOne
         .mockResolvedValueOnce({ rowCount: null }); // delete
 
-      const result = await service.removeFilmFromList(mockListeId, mockTmdbId, mockUserId);
+      const result = await service.removeFilmFromList(
+        mockListeId,
+        mockTmdbId,
+        mockUserId,
+      );
 
       expect(result).toBe(false);
     });

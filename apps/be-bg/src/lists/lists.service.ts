@@ -54,13 +54,21 @@ export class ListsService {
   /**
    * Crée une nouvelle liste pour un utilisateur
    */
-  async create(userId: string, nom: string, description?: string): Promise<Liste> {
+  async create(
+    userId: string,
+    nom: string,
+    description?: string,
+  ): Promise<Liste> {
     const query = `
       INSERT INTO liste (nom, description, utilisateur_id)
       VALUES ($1, $2, $3)
       RETURNING id, nom, description, utilisateur_id, cree_le, maj_le
     `;
-    const res = await this.pool.query(query, [nom, description || null, userId]);
+    const res = await this.pool.query(query, [
+      nom,
+      description || null,
+      userId,
+    ]);
     return res.rows[0];
   }
 
@@ -79,7 +87,11 @@ export class ListsService {
   /**
    * Ajoute un film (par tmdb_id) à une liste
    */
-  async addFilmToList(listeId: string, tmdbId: number, userId: string): Promise<ListeFilm | null> {
+  async addFilmToList(
+    listeId: string,
+    tmdbId: number,
+    userId: string,
+  ): Promise<ListeFilm | null> {
     // Vérifie que la liste appartient à l'utilisateur
     const liste = await this.findOne(listeId, userId);
     if (!liste) {
@@ -93,13 +105,19 @@ export class ListsService {
       RETURNING id, liste_id, tmdb_id, cree_le
     `;
     const res = await this.pool.query(query, [listeId, tmdbId]);
-    return res.rows[0] || { liste_id: listeId, tmdb_id: tmdbId, cree_le: new Date() };
+    return (
+      res.rows[0] || { liste_id: listeId, tmdb_id: tmdbId, cree_le: new Date() }
+    );
   }
 
   /**
    * Retire un film d'une liste
    */
-  async removeFilmFromList(listeId: string, tmdbId: number, userId: string): Promise<boolean> {
+  async removeFilmFromList(
+    listeId: string,
+    tmdbId: number,
+    userId: string,
+  ): Promise<boolean> {
     // Vérifie que la liste appartient à l'utilisateur
     const liste = await this.findOne(listeId, userId);
     if (!liste) {
@@ -137,7 +155,9 @@ export class ListsService {
   /**
    * Récupère toutes les listes d'un utilisateur avec leurs films
    */
-  async findAllByUserWithFilms(userId: string): Promise<(Liste & { films: number[] })[]> {
+  async findAllByUserWithFilms(
+    userId: string,
+  ): Promise<(Liste & { films: number[] })[]> {
     const listes = await this.findAllByUser(userId);
     const result: (Liste & { films: number[] })[] = [];
 

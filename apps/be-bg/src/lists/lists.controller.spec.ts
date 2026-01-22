@@ -1,7 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ListsController } from './lists.controller';
 import { ListsService, Liste, ListeFilm } from './lists.service';
-import { BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  BadRequestException,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { AuthGuard } from '../../auth/auth.guard';
 
 describe('ListsController', () => {
@@ -84,7 +88,9 @@ describe('ListsController', () => {
       const result = await controller.findAllWithFilms(mockRequest);
 
       expect(result).toEqual([listeWithFilms]);
-      expect(listsService.findAllByUserWithFilms).toHaveBeenCalledWith(mockUserId);
+      expect(listsService.findAllByUserWithFilms).toHaveBeenCalledWith(
+        mockUserId,
+      );
     });
   });
 
@@ -95,15 +101,18 @@ describe('ListsController', () => {
       const result = await controller.findOne(mockListeId, mockRequest);
 
       expect(result).toEqual(mockListe);
-      expect(listsService.findOne).toHaveBeenCalledWith(mockListeId, mockUserId);
+      expect(listsService.findOne).toHaveBeenCalledWith(
+        mockListeId,
+        mockUserId,
+      );
     });
 
     it('should throw NotFoundException when list not found', async () => {
       listsService.findOne.mockResolvedValue(undefined);
 
-      await expect(controller.findOne(mockListeId, mockRequest)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        controller.findOne(mockListeId, mockRequest),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -120,9 +129,9 @@ describe('ListsController', () => {
     it('should throw NotFoundException when list not found', async () => {
       listsService.findOne.mockResolvedValue(undefined);
 
-      await expect(controller.getFilms(mockListeId, mockRequest)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        controller.getFilms(mockListeId, mockRequest),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -150,7 +159,11 @@ describe('ListsController', () => {
       const result = await controller.create({ nom: 'Ma liste' }, mockRequest);
 
       expect(result).toEqual(listeWithoutDesc);
-      expect(listsService.create).toHaveBeenCalledWith(mockUserId, 'Ma liste', undefined);
+      expect(listsService.create).toHaveBeenCalledWith(
+        mockUserId,
+        'Ma liste',
+        undefined,
+      );
     });
 
     it('should trim whitespace from nom and description', async () => {
@@ -169,9 +182,9 @@ describe('ListsController', () => {
     });
 
     it('should throw BadRequestException when nom is empty', async () => {
-      await expect(
-        controller.create({ nom: '' }, mockRequest),
-      ).rejects.toThrow(BadRequestException);
+      await expect(controller.create({ nom: '' }, mockRequest)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw BadRequestException when nom is only whitespace', async () => {
@@ -197,7 +210,10 @@ describe('ListsController', () => {
         mockRequest,
       );
 
-      expect(result).toEqual({ message: 'Film ajouté à la liste', ...mockListeFilm });
+      expect(result).toEqual({
+        message: 'Film ajouté à la liste',
+        ...mockListeFilm,
+      });
       expect(listsService.addFilmToList).toHaveBeenCalledWith(
         mockListeId,
         mockTmdbId,
@@ -207,7 +223,11 @@ describe('ListsController', () => {
 
     it('should throw BadRequestException when tmdbId is missing', async () => {
       await expect(
-        controller.addFilm(mockListeId, { tmdbId: undefined as unknown as number }, mockRequest),
+        controller.addFilm(
+          mockListeId,
+          { tmdbId: undefined as unknown as number },
+          mockRequest,
+        ),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -230,7 +250,9 @@ describe('ListsController', () => {
     it('should delete a list', async () => {
       listsService.delete.mockResolvedValue(true);
 
-      await expect(controller.delete(mockListeId, mockRequest)).resolves.toBeUndefined();
+      await expect(
+        controller.delete(mockListeId, mockRequest),
+      ).resolves.toBeUndefined();
       expect(listsService.delete).toHaveBeenCalledWith(mockListeId, mockUserId);
     });
 
