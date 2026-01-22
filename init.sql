@@ -3,15 +3,24 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -----------------------------
 -- Table Utilisateur
-CREATE TABLE IF NOT EXISTS Utilisateur (
+CREATE TABLE IF NOT EXISTS utilisateur (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     nom VARCHAR(100) NOT NULL,
     email VARCHAR(180) UNIQUE NOT NULL,
     mot_de_passe_hash TEXT NOT NULL,
     role VARCHAR(50) NOT NULL CHECK (role IN ('admin', 'user', 'chef')),
+    email_verifie BOOLEAN DEFAULT FALSE,
+    email_verification_token TEXT,
     cree_le TIMESTAMP DEFAULT NOW(),
     maj_le TIMESTAMP DEFAULT NOW()
 );
+
+-- Index sur le token pour faciliter la recherche
+CREATE INDEX IF NOT EXISTS idx_utilisateur_email_token
+ON utilisateur(email_verification_token);
+
+-- Index sur email pour login
+CREATE INDEX IF NOT EXISTS idx_utilisateur_email ON utilisateur(email);
 
 -----------------------------
 -- Table Film
@@ -57,7 +66,6 @@ CREATE TABLE IF NOT EXISTS Selection (
         REFERENCES utilisateur(id) ON DELETE CASCADE,
     CONSTRAINT fk_selection_film FOREIGN KEY (film_id)
         REFERENCES film(id) ON DELETE CASCADE,
-    -- Un utilisateur ne peut proposer qu'une seule fois un même film dans une séance
     CONSTRAINT uk_selection UNIQUE (seance_id, utilisateur_id, film_id)
 );
 
@@ -76,7 +84,6 @@ CREATE TABLE IF NOT EXISTS Classement (
         REFERENCES utilisateur(id) ON DELETE CASCADE,
     CONSTRAINT fk_classement_film FOREIGN KEY (film_id)
         REFERENCES film(id) ON DELETE CASCADE,
-    -- Un utilisateur ne peut classer un même film qu'une seule fois dans une séance
     CONSTRAINT uk_classement UNIQUE (seance_id, utilisateur_id, film_id)
 );
 
@@ -90,15 +97,10 @@ CREATE INDEX idx_classement_seance ON classement(seance_id);
 CREATE INDEX idx_classement_utilisateur ON classement(utilisateur_id);
 CREATE INDEX idx_classement_film ON classement(film_id);
 
--- Index sur email pour login
-CREATE INDEX idx_utilisateur_email ON utilisateur(email);
-
 -----------------------------
 -- Insertion de valeurs de test
--- NOSONAR - Test data for local development only
 INSERT INTO utilisateur (nom, email, mot_de_passe_hash, role)
 VALUES
 ('Admin CinéPote', 'admin@cinepote.fr', 'test', 'admin'),
--- NOSONAR - Test data for local development only
 ('Max Dupont', 'max.chef@cinepote.fr', 'kalilinux', 'chef'),
 ('August Martin', 'august.user@cinepote.fr', 'Ryzen2025', 'user');

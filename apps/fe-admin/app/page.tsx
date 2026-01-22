@@ -1,10 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const confirmed = searchParams.get("confirmed");
+
   const [mode, setMode] = useState<"login" | "register">("login");
   const [username, setUsername] = useState("");
   const [nom, setNom] = useState("");
@@ -14,6 +17,13 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002";
+
+  useEffect(() => {
+    if (confirmed) {
+      setError(""); // reset erreurs
+      alert("Votre email a été confirmé ✅ Vous pouvez vous connecter !");
+    }
+  }, [confirmed]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,13 +84,21 @@ export default function LoginPage() {
         <div className="text-center mb-4">
           <button
             onClick={() => setMode("login")}
-            className={`px-4 py-2 rounded-l-lg ${mode === "login" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-900"}`}
+            className={`px-4 py-2 rounded-l-lg ${
+              mode === "login"
+                ? "bg-blue-600 text-white"
+                : "bg-gray-200 text-gray-900"
+            }`}
           >
             Connexion
           </button>
           <button
             onClick={() => setMode("register")}
-            className={`px-4 py-2 rounded-r-lg ${mode === "register" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-900"}`}
+            className={`px-4 py-2 rounded-r-lg ${
+              mode === "register"
+                ? "bg-blue-600 text-white"
+                : "bg-gray-200 text-gray-900"
+            }`}
           >
             Inscription
           </button>
@@ -136,7 +154,11 @@ export default function LoginPage() {
           {mode === "register" && (
             <div>
               <label className="block mb-1 font-medium text-gray-700">Rôle</label>
-              <select value={role} onChange={(e) => setRole(e.target.value)} className="w-full px-4 py-2 border rounded-lg text-gray-900 bg-white">
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className="w-full px-4 py-2 border rounded-lg text-gray-900 bg-white"
+              >
                 <option value="user">user</option>
                 <option value="chef">chef</option>
                 <option value="admin">admin</option>
