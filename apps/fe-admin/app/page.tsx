@@ -1,10 +1,12 @@
 "use client";
-
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect");
+
   const [mode, setMode] = useState<"login" | "register">("login");
   const [username, setUsername] = useState("");
   const [nom, setNom] = useState("");
@@ -15,6 +17,59 @@ export default function LoginPage() {
 
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002";
 
+  const onLoginSuccess = (token: string) => {
+    localStorage.setItem("access_token", token);
+
+    if (redirect) {
+      location.href = `${redirect}?token=${encodeURIComponent(token)}`;
+      return;
+    }
+
+    router.push("/");
+  };
+
+  const doLogin = async () => {
+    const res = await fetch(`${API_BASE}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      setError(data?.message || "Identifiants incorrects.");
+      return;
+    }
+
+    const token = data?.access_token ?? data?.token ?? null;
+    if (!token) {
+      setError("Réponse inattendue du serveur (token manquant).");
+      return;
+    }
+
+    onLoginSuccess(token);
+  };
+
+  const doRegister = async () => {
+    const res = await fetch(`${API_BASE}/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nom, email: username, password, role }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!(res.ok || res.status === 201)) {
+      setError(data?.message || "Erreur lors de la création du compte.");
+      return;
+    }
+
+    alert("Inscription réussie — vous pouvez maintenant vous connecter");
+    setMode("login");
+    setPassword("");
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -22,39 +77,9 @@ export default function LoginPage() {
 
     try {
       if (mode === "login") {
-        const res = await fetch(`${API_BASE}/auth/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, password }),
-        });
-        const data = await res.json().catch(() => ({}));
-        if (res.ok) {
-          const token = data?.access_token ?? data?.token ?? null;
-          if (!token) {
-            setError("Réponse inattendue du serveur (token manquant).");
-            setLoading(false);
-            return;
-          }
-          localStorage.setItem("access_token", token);
-          router.push("/dashboard");
-        } else {
-          setError(data?.message || "Identifiants incorrects.");
-        }
+        await doLogin();
       } else {
-        // register
-        const res = await fetch(`${API_BASE}/auth/register`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ nom, email: username, password, role }),
-        });
-        const data = await res.json().catch(() => ({}));
-        if (res.ok || res.status === 201) {
-          alert("Inscription réussie — vous pouvez maintenant vous connecter");
-          setMode("login");
-          setPassword("");
-        } else {
-          setError(data?.message || "Erreur lors de la création du compte.");
-        }
+        await doRegister();
       }
     } catch (err) {
       console.error("Erreur fetch:", err);
@@ -62,6 +87,11 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getButtonText = () => {
+    if (loading) return "Traitement...";
+    return mode === "login" ? "Se connecter" : "S'inscrire";
   };
 
   return (
@@ -73,14 +103,24 @@ export default function LoginPage() {
 
         <div className="text-center mb-4">
           <button
+            type="button"
             onClick={() => setMode("login")}
-            className={`px-4 py-2 rounded-l-lg ${mode === "login" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-900"}`}
+            className={`px-4 py-2 rounded-l-lg ${
+              mode === "login"
+                ? "bg-blue-600 text-white"
+                : "bg-gray-200 text-gray-900"
+            }`}
           >
             Connexion
           </button>
           <button
+            type="button"
             onClick={() => setMode("register")}
-            className={`px-4 py-2 rounded-r-lg ${mode === "register" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-900"}`}
+            className={`px-4 py-2 rounded-r-lg ${
+              mode === "register"
+                ? "bg-blue-600 text-white"
+                : "bg-gray-200 text-gray-900"
+            }`}
           >
             Inscription
           </button>
@@ -95,8 +135,14 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-5" autoComplete="off">
           {mode === "register" && (
             <div>
-              <label className="block mb-1 font-medium text-gray-700">Nom</label>
+              <label
+                htmlFor="nom"
+                className="block mb-1 font-medium text-gray-700"
+              >
+                Nom
+              </label>
               <input
+                id="nom"
                 type="text"
                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 bg-white"
                 placeholder="Votre nom"
@@ -108,8 +154,14 @@ export default function LoginPage() {
           )}
 
           <div>
-            <label className="block mb-1 font-medium text-gray-700">Email</label>
+            <label
+              htmlFor="email"
+              className="block mb-1 font-medium text-gray-700"
+            >
+              Email
+            </label>
             <input
+              id="email"
               type="email"
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 bg-white"
               placeholder="Entrez votre email"
@@ -121,22 +173,40 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="block mb-1 font-medium text-gray-700">Mot de passe</label>
+            <label
+              htmlFor="password"
+              className="block mb-1 font-medium text-gray-700"
+            >
+              Mot de passe
+            </label>
             <input
+              id="password"
               type="password"
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 bg-white"
               placeholder="Entrez votre mot de passe"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              autoComplete="current-password"
+              autoComplete={
+                mode === "login" ? "current-password" : "new-password"
+              }
             />
           </div>
 
           {mode === "register" && (
             <div>
-              <label className="block mb-1 font-medium text-gray-700">Rôle</label>
-              <select value={role} onChange={(e) => setRole(e.target.value)} className="w-full px-4 py-2 border rounded-lg text-gray-900 bg-white">
+              <label
+                htmlFor="role"
+                className="block mb-1 font-medium text-gray-700"
+              >
+                Rôle
+              </label>
+              <select
+                id="role"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className="w-full px-4 py-2 border rounded-lg text-gray-900 bg-white"
+              >
                 <option value="user">user</option>
                 <option value="chef">chef</option>
                 <option value="admin">admin</option>
@@ -149,7 +219,7 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full bg-blue-600 text-white font-semibold py-2 rounded-lg hover:bg-blue-700 transition duration-200 shadow-md disabled:opacity-60"
           >
-            {loading ? "Traitement..." : mode === "login" ? "Se connecter" : "S'inscrire"}
+            {getButtonText()}
           </button>
         </form>
       </div>
