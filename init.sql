@@ -62,6 +62,31 @@ CREATE TABLE IF NOT EXISTS Selection (
 );
 
 -----------------------------
+-- Table Liste (listes personnelles d'utilisateurs)
+CREATE TABLE IF NOT EXISTS Liste (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    nom VARCHAR(150) NOT NULL,
+    description TEXT,
+    utilisateur_id UUID NOT NULL,
+    cree_le TIMESTAMP DEFAULT NOW(),
+    maj_le TIMESTAMP DEFAULT NOW(),
+    CONSTRAINT fk_liste_utilisateur FOREIGN KEY (utilisateur_id)
+        REFERENCES utilisateur(id) ON DELETE CASCADE
+);
+
+-----------------------------
+-- Table ListeFilm (association liste <-> film TMDB)
+CREATE TABLE IF NOT EXISTS ListeFilm (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    liste_id UUID NOT NULL,
+    tmdb_id INTEGER NOT NULL,
+    cree_le TIMESTAMP DEFAULT NOW(),
+    CONSTRAINT fk_listefilm_liste FOREIGN KEY (liste_id)
+        REFERENCES liste(id) ON DELETE CASCADE,
+    CONSTRAINT uk_listefilm UNIQUE (liste_id, tmdb_id)
+);
+
+-----------------------------
 -- Table Classement
 CREATE TABLE IF NOT EXISTS Classement (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -92,6 +117,11 @@ CREATE INDEX idx_classement_film ON classement(film_id);
 
 -- Index sur email pour login
 CREATE INDEX idx_utilisateur_email ON utilisateur(email);
+
+-- Index pour les listes
+CREATE INDEX idx_liste_utilisateur ON liste(utilisateur_id);
+CREATE INDEX idx_listefilm_liste ON listefilm(liste_id);
+CREATE INDEX idx_listefilm_tmdb ON listefilm(tmdb_id);
 
 -----------------------------
 -- Insertion de valeurs de test
