@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ListsController } from './lists.controller';
 import { ListsService } from './lists.service';
-import { DatabaseModule } from '../database/database.module';
+import { DatabaseModule } from '../../database/database.module';
 import { JwtModule } from '@nestjs/jwt';
-import { jwtConstants } from '../auth/constants';
+import { jwtConstants } from '../../auth/constants';
 
 @Module({
   imports: [

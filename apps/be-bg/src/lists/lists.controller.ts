@@ -13,7 +13,7 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
-import { AuthGuard } from '../auth/auth.guard';
+import { AuthGuard } from '../../auth/auth.guard';
 import { ListsService } from './lists.service';
 
 interface CreateListDto {
