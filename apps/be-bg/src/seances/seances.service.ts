@@ -191,7 +191,7 @@ export class SeancesService {
 
     return { message: 'Vous avez quitté la séance' };
   }
-  //Lancer le vote (changement de statut de la séance) Seule le proprietaire peut le faire
+  //Lancer le votee (changement de statut de la séance) Seule le proprietaire peut le faire
   async updateStatut(seance_id: string, proprietaire_id: string, nouveauStatut: string) {
     const query = `
       UPDATE seance
