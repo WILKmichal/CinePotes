@@ -94,3 +94,21 @@ jobs:
           run: pnpm install --frozen-lockfile
         - name: Run unit tests
           run: pnpm test:cov
+
+    be_bg-routes-check:
+      runs-on: ubuntu-latest
+      needs: commit-lint
+      defaults:
+        run:
+          working-directory: ./apps/be-bg
+      steps:
+        - uses: actions/checkout@v4
+        - uses: actions/setup-node@v4
+          with:
+            node-version: "20"
+        - name: Install pnpm
+          run: npm install -g pnpm
+        - name: Install dependencies
+          run: pnpm install --frozen-lockfile
+        - name: Check if all routes are mapped by Bruno tests
+          run: pnpm check:routes

@@ -1,0 +1,11 @@
+GET /
+GET /test
+GET /test/hello
+GET /tmdb/movies
+GET /tmdb/films/populaires
+GET /tmdb/recherche
+GET /tmdb/recherche/avancee
+GET /tmdb/{id}
+POST /auth/login
+POST /auth/register
+GET /auth/profile
