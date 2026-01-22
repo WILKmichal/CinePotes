@@ -2,20 +2,15 @@ import {
   Body,
   Controller,
   Get,
-  HttpCode,
   HttpStatus,
   Post,
-  Request,
-  UseGuards,
+  Query,
+  Res,
 } from '@nestjs/common';
-import { AuthGuard } from './auth.guard';
+import type { Response } from 'express';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
-
-interface SignInDto {
-  username: string;
-  password: string;
-}
+import { MailService } from '../../ms-mail/src/mail/mail.service';
 
 interface RegisterDto {
   nom?: string;
@@ -29,13 +24,12 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly usersService: UsersService,
+    private readonly mailService: MailService,
   ) {}
 
-  @HttpCode(HttpStatus.OK)
   @Post('login')
-  async signIn(@Body() signInDto: SignInDto) {
-    const { username, password } = signInDto;
-    return this.authService.signIn(username, password);
+  async login(@Body() body: { username: string; password: string }) {
+    return this.authService.signIn(body.username, body.password);
   }
 
   @Post('register')
@@ -43,27 +37,44 @@ export class AuthController {
     const nom = body.nom ?? body.email.split('@')[0];
     const role = body.role ?? 'user';
 
-    // Basic validation
-    if (!body.email || !body.password) {
-      return {
-        status: HttpStatus.BAD_REQUEST,
-        message: 'Email et password requis',
-      };
-    }
-
-    const created = await this.usersService.createUser(
+    const user = await this.usersService.createUser(
       nom,
       body.email,
       body.password,
       role,
     );
 
-    return { status: HttpStatus.CREATED, user: created };
+    const confirmUrl = `http://localhost:3002/auth/confirm-email?token=${encodeURIComponent(
+      user.email_verification_token,
+    )}`;
+
+    await this.mailService.sendEmail(
+      body.email,
+      'Confirmation de votre compte CinéPotes',
+      `
+      <h2>Bienvenue ${nom} 🎬</h2>
+      <p>Merci de confirmer votre email :</p>
+      <a href="${confirmUrl}">Confirmer mon email</a>
+      `,
+    );
+
+    return {
+      status: HttpStatus.CREATED,
+      message: 'Email de confirmation envoyé',
+    };
   }
 
-  @UseGuards(AuthGuard)
-  @Get('profile')
-  getProfile(@Request() req: { user: any }) {
-    return req.user;
+  @Get('confirm-email')
+  async confirmEmail(
+    @Query('token') token: string,
+    @Res() res: Response,
+  ) {
+    const ok = await this.usersService.confirmEmail(token);
+
+    if (!ok) {
+      return res.status(400).send('Lien invalide ou expiré');
+    }
+
+    return res.redirect('http://localhost:3001');
   }
 }
