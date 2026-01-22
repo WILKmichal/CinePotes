@@ -37,7 +37,7 @@ function getAllBruFiles(dir) {
 const bruFiles = getAllBruFiles(testDir);
 
 // Convert routes to searchable format
-// E.g., "GET /auth/login" -> "GET_auth_login"
+// E.g., "GET /auth/login" -> "GET_auth_login" 
 function routeToFileName(route) {
   const [method, ...pathParts] = route.split(' ');
   const pathStr = pathParts.join(' ').replace(/\//g, '_').replace(/^_/, '').replace(/{.*?}/g, 'by_id');
