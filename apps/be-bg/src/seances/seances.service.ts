@@ -1,8 +1,8 @@
 import { Injectable, Inject, NotFoundException, ConflictException } from '@nestjs/common';
 import { Pool } from 'pg';
+import { randomBytes } from 'crypto';
 import { PG_POOL } from '../../database/database.module';
 import { CreateSeanceDto } from './dto/create-seance.dto';
-import { UpdateSeanceDto } from './dto/update-seance.dto';
 import { Seance } from './entities/seance.entity';
 
 @Injectable()
@@ -13,9 +13,10 @@ export class SeancesService {
   //Genère un code unique de 6 caractères pour la séance
   private generateCode(): string {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const bytes = randomBytes(6);
     let code = '';
     for (let i = 0; i < 6; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
+      code += chars.charAt(bytes[i] % chars.length);
     }
     return code;
   }
@@ -23,7 +24,7 @@ export class SeancesService {
   async create(createSeanceDto: CreateSeanceDto, proprietaire_id: string) {
     const code = this.generateCode();
     //pourquoi utiliser des placeholders ? pour éviter les injections SQL, on retrouve le lien avec les placeholders ensuite dans le tab
-    /* exemple : 
+    /* exemple :
     const res = await this.pool.query(query, [
         createSeanceDto.nom,  --> $1
         createSeanceDto.date, --> $2
@@ -63,7 +64,7 @@ export class SeancesService {
     }
     throw new Error('Impossible de créer la séance');
   }
-  
+
 
   //Rejoindre une séance via son code ( ajout d'un participant )
   async join(code: string, utilisateur_id: string){
@@ -94,9 +95,9 @@ export class SeancesService {
         console.error('Query failed, trying fallback', error);
       }
     }
-    
-  }
 
+  }
+  //Récupère la séance créée par l'utilisateur connecté
     async findByProprietaire(proprietaire_id: string){
     const queries = [
       `
@@ -169,7 +170,7 @@ export class SeancesService {
         const res= await this.pool.query(query, [seance_id]);
         return res.rows; //Retourne le tableau de participants
       }catch(error){
-        console.error('Query failed, trying fallbaack', error);
+        console.error('Find seance avec son code', error);
       }
     }
 
@@ -181,13 +182,13 @@ export class SeancesService {
       DELETE FROM participant
       WHERE seance_id = $1 AND utilisateur_id = $2
     `;
-    
+
     const res = await this.pool.query(query, [seance_id, utilisateur_id]);
-    
+
     if (res.rowCount === 0) {
       throw new NotFoundException('Vous n\'etes pas participant de cette séance');
     }
-    
+
     return { message: 'Vous avez quitté la séance' };
   }
   //Lancer le vote (changement de statut de la séance) Seule le proprietaire peut le faire
@@ -198,13 +199,13 @@ export class SeancesService {
       WHERE id = $2 AND proprietaire_id = $3
       RETURNING *
     `;
-    
+
     const res = await this.pool.query(query, [nouveauStatut, seance_id, proprietaire_id]);
-    
+
     if (res.rowCount === 0) {
       throw new NotFoundException('Séance introuvable ou non autorisé');
     }
-    
+
     return res.rows[0];
   }
 

@@ -1,7 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
 import { SeancesService } from './seances.service';
 import { CreateSeanceDto } from './dto/create-seance.dto';
-import { UpdateSeanceDto } from './dto/update-seance.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { JoinSeanceDto } from './dto/join-seance.dto';
 
