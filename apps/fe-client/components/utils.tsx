@@ -18,15 +18,12 @@ export interface FiltresRechercheFilms {
 }
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3333";
 
-const getIsLoggedIn = () => {
-  if (globalThis.window !== undefined) {
-    return !!localStorage.getItem("access_token");
-  }
-  return false;
-};
-
 function Header() {
-  const [isLoggedIn] = useState(getIsLoggedIn);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    setIsLoggedIn(!!localStorage.getItem("access_token"));
+  }, []);
 
   return <header className="fixed inset-x-0 top-0 z-30 mx-auto w-full max-w-screen-md border border-gray-100 bg-white/80 py-3 shadow backdrop-blur-lg md:top-6 md:rounded-3xl lg:max-w-screen-lg">
             <div className="px-4">
