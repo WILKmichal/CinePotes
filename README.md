@@ -49,6 +49,9 @@ Generez vous même la clé TMDB.
 Dans l'application fe-client, créer un fichier .env avec la variable :
 ```
 NEXT_PUBLIC_API_URL=http://localhost:3333
+NEXT_PUBLIC_ADMIN_URL=http://localhost:3000
+NEXT_PUBLIC_API_URL=http://localhost:3002
+
 ```
 #### ms-mail
 Dans l'application ms-mail, créer un fichier .env avec ces variables la :
