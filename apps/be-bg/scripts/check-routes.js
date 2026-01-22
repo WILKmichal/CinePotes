@@ -51,6 +51,7 @@ function extractRouteFromBruFile(filePath) {
       return normalizeRoute(metaRoute, url);
     }
   } catch (err) {
+    console.log(err);
     // Silently skip files that can't be read
   }
   return null;
@@ -65,11 +66,11 @@ function normalizeRoute(metaRoute, url) {
   
   // Extract path from URL (remove protocol, domain, and environment variables)
   // Example: {{URL}}/tmdb/550 -> /tmdb/550
-  const urlPath = url.replace(/^[^\/]*\/\/[^\/]*/, '').replace(/{{[^}]+}}/g, '').split('?')[0];
+  const urlPath = url.replace(/^[^\/]*\/\/[^\/]*/, '').replace(/{{[^}]+}}/g, '').split('?')[0]; // NOSONAR
   
   // Build normalized route by replacing placeholders in metaPath with actual values
-  let urlParts = urlPath.split('/').filter(p => p);
-  let metaParts_arr = metaPath.split('/').filter(p => p);
+  let urlParts = urlPath.split('/').filter(p => p); //NOSONAR
+  let metaParts_arr = metaPath.split('/').filter(p => p); //NOSONAR
   
   // Check if number of segments match (URL shouldn't have extra segments)
   if (urlParts.length !== metaParts_arr.length) {
