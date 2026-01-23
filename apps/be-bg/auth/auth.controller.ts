@@ -75,6 +75,6 @@ export class AuthController {
       return res.status(400).send('Lien invalide ou expiré');
     }
 
-    return res.redirect('http://localhost:3001');
+    return res.redirect('http://localhost:3000/?redirect=http%3A%2F%2Flocalhost%3A3001%2Fauth%2Fcallback');
   }
 }
