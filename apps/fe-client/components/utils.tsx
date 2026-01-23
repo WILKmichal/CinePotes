@@ -370,7 +370,7 @@ function useRechercheFilms2(requete: string) {
       setError(null);
       try {
         console.log(`🔍 Recherche: "${requete}"`);
-        
+
         const response = await fetch(
           `${API_URL}/tmdb/recherche?query=${encodeURIComponent(requete)}`
         );
@@ -379,7 +379,7 @@ function useRechercheFilms2(requete: string) {
         }
         const data = await response.json();
         console.log(`${data.length} résultat(s) trouvé(s)`);
-        
+
         setResultats(data);
       } catch (err) {
         console.error('Erreur recherche:', err);
