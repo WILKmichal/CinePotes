@@ -37,5 +37,5 @@ import { ListeFilm } from './lists/entities/liste-film.entity';
   providers: [AppService],
 })
 export class AppModule {
-  constructor(private dataSource: DataSource) {}
+  constructor(private readonly dataSource: DataSource) {}
 }
