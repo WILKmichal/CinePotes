@@ -1,0 +1,27 @@
+meta {
+  name: GET /tmdb/recherche/avancee
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{URL}}/tmdb/recherche/avancee?titre=Avatar&annee=2009&genre=sci-fi
+  body: none
+  auth: none
+}
+
+params:query {
+  titre: Avatar
+  annee: 2009
+  genre: sci-fi
+}
+
+tests {
+  test("Status code is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response is an array", function() {
+    expect(res.body).to.be.an('array');
+  });
+}
