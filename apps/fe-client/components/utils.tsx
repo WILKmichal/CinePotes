@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -20,7 +20,6 @@ export interface FiltresRechercheFilms {
   annee: string;
 }
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3333";
-
 function decodeJwt(token: string) {
   try {
     const payload = token.split(".")[1];
@@ -43,20 +42,24 @@ function decodeJwt(token: string) {
     return null;
   }
 }
+
 export default function Header() {
   const router = useRouter();
+  const displayName =
+    typeof window === "undefined"
+      ? null
+      : (() => {
+          const token = localStorage.getItem("access_token");
+          if (!token) return null;
+          const payload = decodeJwt(token);
+          return payload?.username ?? null;
+        })();
 
-  const displayName = useMemo(() => {
-    if (typeof window === "undefined") return null;
-    const token = window.localStorage.getItem("access_token");
-    if (!token) return null;
-    const payload = decodeJwt(token);
-    return payload?.username ?? null;
-  }, []);
+
 
   const handleLogout = () => {
     localStorage.removeItem("access_token");
-    location.href = "/";
+    router.replace("/");
   };
 
   return (
@@ -76,20 +79,19 @@ export default function Header() {
 
           <div className="hidden md:flex md:items-center md:justify-center md:gap-5">
             <Link
-              aria-current="page"
-              className="inline-block rounded-lg px-2 py-1 text-sm font-medium text-gray-900 transition-all duration-200 hover:bg-gray-100 hover:text-gray-900"
+              className="inline-block rounded-lg px-2 py-1 text-sm font-medium text-gray-900 hover:bg-gray-100"
               href="/"
             >
               Home
             </Link>
             <Link
-              className="inline-block rounded-lg px-2 py-1 text-sm font-medium text-gray-900 transition-all duration-200 hover:bg-gray-100 hover:text-gray-900"
+              className="inline-block rounded-lg px-2 py-1 text-sm font-medium text-gray-900 hover:bg-gray-100"
               href="/lobby"
             >
               Lobby
             </Link>
             <Link
-              className="inline-block rounded-lg px-2 py-1 text-sm font-medium text-gray-900 transition-all duration-200 hover:bg-gray-100 hover:text-gray-900"
+              className="inline-block rounded-lg px-2 py-1 text-sm font-medium text-gray-900 hover:bg-gray-100"
               href="/about"
             >
               About us
@@ -105,7 +107,7 @@ export default function Header() {
 
                 <button
                   onClick={handleLogout}
-                  className="inline-flex items-center justify-center rounded-xl bg-gray-900 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-800"
+                  className="rounded-xl bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-800"
                 >
                   Log out
                 </button>
@@ -113,14 +115,14 @@ export default function Header() {
             ) : (
               <>
                 <Link
-                  className="inline flex items-center justify-center rounded-xl bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                  className="rounded-xl bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow ring-1 ring-gray-300 hover:bg-gray-50"
                   href={`${ADMIN_URL}?redirect=${encodeURIComponent(CALLBACK_URL)}`}
                 >
                   Sign in
                 </Link>
 
                 <Link
-                  className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                  className="rounded-xl bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-500"
                   href={`${ADMIN_URL}?redirect=${encodeURIComponent(CALLBACK_URL)}`}
                 >
                   Sign up
