@@ -1,0 +1,42 @@
+meta {
+  name: POST /auth/login
+  type: http
+  seq: 15
+}
+
+post {
+  url: {{URL}}/auth/login
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "username": "Testm_User",
+    "password": "Password123!"
+  }
+}
+
+script:pre-request {
+  const response = await bru.runRequest("./04-Auth/POST_auth_register.bru");
+  
+}
+
+script:post-response {
+  const data = res.body;
+  bru.setEnvVar("ACCESS_TOKEN", data.access_token);
+}
+
+tests {
+  test("Status code is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response contains access_token", function() {
+    expect(res.body).to.have.property('access_token');
+  });
+}

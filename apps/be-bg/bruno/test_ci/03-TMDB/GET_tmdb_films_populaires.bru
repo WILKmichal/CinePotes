@@ -1,0 +1,25 @@
+meta {
+  name: GET /tmdb/films/populaires
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{URL}}/tmdb/films/populaires
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status code is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response is an array", function() {
+    expect(res.body).to.be.an('array');
+  });
+  
+  test("Array contains popular movies", function() {
+    expect(res.body.length).to.be.greaterThan(0);
+  });
+}
