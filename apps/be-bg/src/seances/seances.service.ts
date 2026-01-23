@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { randomBytes } from 'crypto';
+import { randomBytes } from 'node:crypto';
 import { CreateSeanceDto } from './dto/create-seance.dto';
 import { Seance, SeanceStatut } from './entities/seance.entity';
 import { Participant } from './entities/participant.entity';
@@ -10,9 +10,9 @@ import { Participant } from './entities/participant.entity';
 export class SeancesService {
   constructor(
     @InjectRepository(Seance)
-    private seancesRepository: Repository<Seance>,
+    private readonly seancesRepository: Repository<Seance>,
     @InjectRepository(Participant)
-    private participantsRepository: Repository<Participant>,
+    private readonly participantsRepository: Repository<Participant>,
   ) {}
 
   //Genère un code unique de 6 caractères pour la séance
