@@ -41,9 +41,9 @@ CREATE TABLE IF NOT EXISTS seance (
     date TIMESTAMP NOT NULL,
     max_films INTEGER CHECK (max_films > 0 AND max_films <= 5),
     proprietaire_id UUID NOT NULL,
-    statut VARCHAR(50) NOT NULL CHECK (
-        statut IN ('en_attente', 'en_cours', 'terminee', 'annulee')
-    ),
+    statut VARCHAR(50) NOT NULL CHECK (statut IN ('en_attente', 'en_cours', 'terminee', 'annulee')),
+    code VARCHAR(6) UNIQUE,
+    est_actif BOOLEAN DEFAULT true,
     cree_le TIMESTAMP DEFAULT NOW(),
     maj_le TIMESTAMP DEFAULT NOW(),
     CONSTRAINT fk_seance_utilisateur FOREIGN KEY (proprietaire_id)
@@ -111,6 +111,25 @@ CREATE TABLE IF NOT EXISTS classement (
 );
 
 -----------------------------
+-- Table Participant (relation User <-> Seance)
+CREATE TABLE IF NOT EXISTS Participant (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    seance_id UUID NOT NULL,
+    utilisateur_id UUID NOT NULL,
+    a_rejoint_le TIMESTAMP DEFAULT NOW(),
+    CONSTRAINT fk_participant_seance FOREIGN KEY (seance_id)
+        REFERENCES seance(id) ON DELETE CASCADE,
+    CONSTRAINT fk_participant_utilisateur FOREIGN KEY (utilisateur_id)
+        REFERENCES utilisateur(id) ON DELETE CASCADE,
+    -- Un utilisateur ne peut rejoindre qu'une seule fois la même séance
+    CONSTRAINT uk_participant UNIQUE (seance_id, utilisateur_id)
+);
+
+-----------------------------
+-- Indexes pour optimiser les requêtes
+CREATE INDEX idx_selection_seance ON selection(seance_id);
+CREATE INDEX idx_selection_utilisateur ON selection(utilisateur_id);
+CREATE INDEX idx_selection_film ON selection(film_id);
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_utilisateur_email
     ON utilisateur(email);
@@ -133,6 +152,13 @@ CREATE INDEX IF NOT EXISTS idx_classement_film
 CREATE INDEX idx_liste_utilisateur ON liste(utilisateur_id);
 CREATE INDEX idx_listefilm_liste ON listefilm(liste_id);
 CREATE INDEX idx_listefilm_tmdb ON listefilm(tmdb_id);
+
+-- Index pour les requêtes
+CREATE INDEX idx_participant_seance ON participant(seance_id);
+CREATE INDEX idx_participant_utilisateur ON participant(utilisateur_id);
+
+-- Index sur code de séance pour recherche rapide
+CREATE INDEX idx_seance_code ON seance(code);
 
 -----------------------------
 -- Données de test (DEV UNIQUEMENT)
