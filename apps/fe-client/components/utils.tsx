@@ -45,13 +45,20 @@ function decodeJwt(token: string) {
 
 export default function Header() {
   const router = useRouter();
-  const [displayName] = useState<string | null>(() => {
+  const [displayName, setDisplayName] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
     const token = localStorage.getItem("access_token");
-    if (!token) return null;
+    if (!token) {
+      setDisplayName(null);
+      return;
+    }
 
     const payload = decodeJwt(token);
-    return payload?.username ?? null;
-  });
+    setDisplayName(payload?.username ?? null);
+  }, []);
 
 
   const handleLogout = () => {
