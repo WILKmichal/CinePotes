@@ -21,7 +21,9 @@ async function bootstrap() {
     .setTitle('CinePotes API')
     .setDescription("Documentation de l'API CinePotes")
     .setVersion('1.0')
+    .addBearerAuth()
     .addTag('films')
+    .addTag('Lists')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
