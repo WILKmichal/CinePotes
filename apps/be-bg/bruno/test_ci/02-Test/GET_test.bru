@@ -1,0 +1,25 @@
+meta {
+  name: GET /test
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{URL}}/test
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status code is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response contains message field", function() {
+    expect(res.body).to.have.property('message');
+  });
+  
+  test("Message is 'Hello Swagger!'", function() {
+    expect(res.body.message).to.equal('Hello Swagger!');
+  });
+}
