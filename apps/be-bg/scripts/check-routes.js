@@ -1,142 +1,189 @@
 #!/usr/bin/env node
-
 const fs = require('node:fs');
 const path = require('node:path');
 
-const routesFile = path.join(__dirname, '../routes.txt');
-const testDir = path.join(__dirname, '../bruno/test_ci');
-
-// Read routes from routes.txt
-const routes = fs
-  .readFileSync(routesFile, 'utf-8')
-  .split('\n')
-  .filter(line => line.trim());
-
-// Get all .bru files recursively from bruno/test_ci
-function getAllBruFiles(dir) {
-  const files = [];
-
-  function walk(currentDir) {
-    const entries = fs.readdirSync(currentDir, { withFileTypes: true });
-
-    for (const entry of entries) {
-      const fullPath = path.join(currentDir, entry.name);
-
-      if (entry.isDirectory()) {
-        walk(fullPath);
-      } else if (entry.name.endsWith('.bru')) {
-        files.push(fullPath);
-      }
-    }
-  }
-
-  walk(dir);
-  return files;
+// Get folder and file arguments
+const args = process.argv.slice(2);
+if (args.length < 2) {
+    console.error('Usage: node check-routes-1.js <folder> <file>');
+    console.error('Example: node check-routes-1.js ./src ./routes.txt');
+    process.exit(1);
 }
 
-const bruFiles = getAllBruFiles(testDir);
+const folderPath = args[0];
+const filePath = args[1];
+const brunoTestedUrls = [];
+const swaggerRoutes = [];
 
-// Extract route from Bruno file's meta name field and URL
-function extractRouteFromBruFile(filePath) {
-  try {
-    const content = fs.readFileSync(filePath, 'utf-8');
-    // Match the name field more carefully to handle placeholders with braces
-    const nameMatch = content.match(/name:\s*([^\n]+)/);
-    const urlMatch = content.match(/url:\s*([^\n]+)/);
+// Validate folder exists
+if (!fs.existsSync(folderPath)) {
+    console.error(`Error: Folder not found: ${folderPath}`);
+    process.exit(1);
+}
+
+// Validate it's a directory
+if (!fs.statSync(folderPath).isDirectory()) {
+    console.error(`Error: Path is not a directory: ${folderPath}`);
+    process.exit(1);
+}
+
+console.log(`Processing folder: ${folderPath}`);
+console.log(`Output file: ${filePath}`);
+
+// Your function to implement
+function getUrl(content) {
+    const httpVerbPattern = /(get|post|put|patch|delete|head|options)\s*\{[^}]*url:\s*([^\n]+)/gi;
+    const matches = [...content.matchAll(httpVerbPattern)];
+    const results = [];
     
-    if (nameMatch && urlMatch) {
-      const metaRoute = nameMatch[1].trim();
-      const url = urlMatch[1].trim();
-      
-      return normalizeRoute(metaRoute, url);
+    for (const match of matches) {
+        const verb = match[1].toUpperCase();
+        const url = match[2].trim();
+        
+        results.push({
+            verb: verb,
+            url: url
+        });
     }
-  } catch (err) {
-    console.log(err);
-    // Silently skip files that can't be read
-  }
-  return null;
+    
+    return results;
 }
 
-// Normalize route by replacing placeholders with actual values from URL
-function normalizeRoute(metaRoute, url) {
-  // Extract method and path from meta route
-  const metaParts = metaRoute.split(' ');
-  const method = metaParts[0];
-  let metaPath = metaParts.slice(1).join(' ');
-  
-  // Extract path from URL (remove protocol, domain, and environment variables)
-  // Example: {{URL}}/tmdb/550 -> /tmdb/550
-  const urlPath = url.replace(/^[^\/]*\/\/[^\/]*/, '').replace(/{{[^}]+}}/g, '').split('?')[0]; // NOSONAR
-  
-  // Build normalized route by replacing placeholders in metaPath with actual values
-  let urlParts = urlPath.split('/').filter(p => p); //NOSONAR
-  let metaParts_arr = metaPath.split('/').filter(p => p); //NOSONAR
-  
-  // Check if number of segments match (URL shouldn't have extra segments)
-  if (urlParts.length !== metaParts_arr.length) {
-    // URL has different number of segments than route - invalid match
-    return null;
-  }
-  
-  // Keep the meta route structure with placeholders intact
-  const normalizedPath = '/' + metaParts_arr.join('/');
-  return `${method} ${normalizedPath}`;
+// Recursive function to traverse folders
+function traverseFolder(dirPath) {
+    const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+    
+    for (const entry of entries) {
+        const fullPath = path.join(dirPath, entry.name);
+        
+        if (entry.isDirectory()) {
+            // Recursively process subdirectories
+            traverseFolder(fullPath);
+        } else if (entry.isFile()) {
+            // Process file
+            
+            try {
+                const content = fs.readFileSync(fullPath, 'utf8');
+                const results = getUrl(content);
+                
+                if (results.length > 0) {
+                    for (const result of results) {
+                        result.url = result.url.replaceAll('{{URL}}', '');
+                        brunoTestedUrls.push(`${result.verb.toUpperCase()} ${result.url}`);
+                    }
+                }
+            } catch (error) {
+                console.error(`Error reading file ${fullPath}:`, error.message);
+            }
+        }
+    }
 }
 
-// Build a map of routes found in Bruno files
-const bruRoutes = new Map();
-bruFiles.forEach(file => {
-  const route = extractRouteFromBruFile(file);
-  if (route) {
-    bruRoutes.set(route, path.relative(testDir, file));
-  }
-});
-
-// Check if a route has a corresponding test
-function findTestForRoute(route) {
-  // Try exact match
-  if (bruRoutes.has(route)) {
-    return bruRoutes.get(route);
-  }
-  
-  return null;
+function traverseRoutesFile(filePath) {
+    
+    try {
+        const fileContent = fs.readFileSync(filePath, 'utf8');
+        const lines = fileContent.split('\n');
+        
+        for (const line of lines) {
+            const trimmedLine = line.trim();
+            if (trimmedLine.length > 0) {  // Skip empty lines
+                swaggerRoutes.push(trimmedLine);
+            }
+        }
+        
+        console.log(`Loaded ${swaggerRoutes.length} routes from ${filePath}`);
+        return swaggerRoutes;
+    } catch (error) {
+        console.error(`Error reading file ${filePath}:`, error.message);
+        process.exit(1);
+    }
 }
 
-// Results
-const results = {
-  found: [],
-  missing: []
-};
-
-routes.forEach(route => {
-  const test = findTestForRoute(route);
-  if (test) {
-    results.found.push({ route, test: path.relative(testDir, test) });
-  } else {
-    results.missing.push(route);
-  }
-});
-
-// Output results
-console.log('\n📋 Route Test Coverage Report\n');
-console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
-console.log(`\n✅ Routes with tests (${results.found.length}):`);
-results.found.forEach(({ route, test }) => {
-  console.log(`   ${route}`);
-  console.log(`      → ${test}`);
-});
-
-if (results.missing.length > 0) {
-  console.log(`\n❌ Routes missing tests (${results.missing.length}):`);
-  results.missing.forEach(route => {
-    console.log(`   ${route}`);
-  });
+function testRouteCoverage(brunoRoutes, swaggerRoutes) {
+    // Convert path parameters in swagger routes to regex patterns
+    function routeToPattern(route) { //NOSONAR
+        // Split into verb and path
+        const [verb, path] = route.split(' ');
+        
+        // Replace path parameters like {id} with a regex pattern
+        // Also handle query parameters by removing them for matching
+        const pathWithoutQuery = path.split('?')[0];
+        const pattern = pathWithoutQuery.replace(/\{[^}]+\}/g, '[^/?]+'); //NOSONAR
+        
+        return {
+            verb,
+            pattern: new RegExp(`^${pattern}(\\?.*)?$`), //NOSONAR
+            original: route
+        };
+    }
+    
+    // Convert all swagger routes to patterns
+    const swaggerPatterns = swaggerRoutes.map(routeToPattern);
+    
+    const results = {
+        covered: [],
+        missing: [],
+        extra: []
+    };
+    
+    // Check which swagger routes are covered by bruno routes
+    for (const swaggerPattern of swaggerPatterns) {
+        const [verb, path] = swaggerPattern.original.split(' ');
+        const pathWithoutQuery = path.split('?')[0]; //NOSONAR
+        
+        const found = brunoRoutes.some(brunoRoute => {
+            const [brunoVerb, brunoPath] = brunoRoute.split(' ');
+            const brunoPathWithoutQuery = brunoPath.split('?')[0];
+            
+            // Check if verb matches and path matches the pattern
+            return brunoVerb === verb && swaggerPattern.pattern.test(brunoPathWithoutQuery);
+        });
+        
+        if (found) {
+            results.covered.push(swaggerPattern.original);
+        } else {
+            results.missing.push(swaggerPattern.original);
+        }
+    }
+    
+    // Check for extra routes in bruno that aren't in swagger
+    for (const brunoRoute of brunoRoutes) {
+        const [brunoVerb, brunoPath] = brunoRoute.split(' ');
+        const brunoPathWithoutQuery = brunoPath.split('?')[0];
+        
+        const found = swaggerPatterns.some(pattern => {
+            return brunoVerb === pattern.verb && pattern.pattern.test(brunoPathWithoutQuery);
+        });
+        
+        if (!found) {
+            results.extra.push(brunoRoute);
+        }
+    }
+    
+    return results;
 }
 
-console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-console.log(`\nTotal routes: ${routes.length}`);
-console.log(`Coverage: ${((results.found.length / routes.length) * 100).toFixed(1)}%\n`);
+// Start traversal
+traverseFolder(folderPath);
+traverseRoutesFile(filePath);
 
-// Exit with error code if there are missing tests
-process.exit(results.missing.length > 0 ? 1 : 0);
+// Capture the results from testRouteCoverage
+const results = testRouteCoverage(brunoTestedUrls, swaggerRoutes);
+
+console.log('\n✅ Covered routes:');
+results.covered.forEach(route => console.log(`  ${route}`));
+
+console.log('\n❌ Missing routes (in Swagger but not in Bruno):');
+results.missing.forEach(route => console.log(`  ${route}`));
+
+console.log('\n⚠️  Extra routes (in Bruno but not in Swagger):');
+results.extra.forEach(route => console.log(`  ${route}`));
+
+console.log(`\nCoverage: ${results.covered.length}/${swaggerRoutes.length} routes covered`);
+
+if (results.covered.length !== swaggerRoutes.length) {
+    console.error('\n❌ ERROR: Route coverage is not 100%!');
+    console.error(`Missing ${results.missing.length} route(s) in Bruno tests.`);
+    process.exit(1);
+}

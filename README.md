@@ -32,7 +32,16 @@ JWT_EXPIRES_IN=3600s
 Dans l'application  be-bg, créer un fichier .env avec ces variables la :
 ```
 PORT=3002
-TMDB_MS_URL=http://localhost:3333/
+TMDB_API_KEY=a92bcc609255f705450fa5885d59c430
+REDIS_URL=redis://localhost:6379
+
+TMDB_MS_URL=http://localhost:3333
+
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=contact.cinepote@gmail.com
+SMTP_PASSWORD=rxpl pmak hrwh gzmw
+USE_ETHEREAL=false
 ```
 #### ms-tmdb
 Dans l'application ms-tmdb, créer un fichier .env avec ces variables la :

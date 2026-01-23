@@ -1,11 +1,9 @@
 "use client";
+
 import { useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-/*
-Recuperation du token a partir de l url
-stocker dans local storage
-redirection vers fe client app.page.tsx */
-export default function AuthCallbackPage() {
+
+export default function CallbackClient() {
   const params = useSearchParams();
   const router = useRouter();
 
@@ -14,7 +12,7 @@ export default function AuthCallbackPage() {
 
     if (token) {
       localStorage.setItem("access_token", token);
-      router.replace("/");
+      router.replace("/"); // ✅ ICI UNIQUEMENT
     } else {
       router.replace("/");
     }
