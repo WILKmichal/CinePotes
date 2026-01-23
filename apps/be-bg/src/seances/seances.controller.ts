@@ -1,8 +1,9 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { SeancesService } from './seances.service';
 import { CreateSeanceDto } from './dto/create-seance.dto';
-import { AuthGuard } from '@nestjs/passport';
 import { JoinSeanceDto } from './dto/join-seance.dto';
+import { UpdateStatutDto } from './dto/update-statut.dto';
 
 @Controller('seances')
 @UseGuards(AuthGuard('jwt'))
@@ -30,9 +31,9 @@ export class SeancesController {
   }
   //PATCH /seances/:id/statut - Met à jour le statut d'une séance (seulement par le propriétaire)
   @Patch(':id/statut')
-  updateStatut(@Param('id') id: string, @Body('statut') statut: string, @Request() request) {
+  updateStatut(@Param('id') id: string, @Body() updateStatutDto: UpdateStatutDto, @Request() request) {
     const userId = request.user.sub;
-    return this.seancesService.updateStatut(id, userId, statut);
+    return this.seancesService.updateStatut(id, userId, updateStatutDto.statut);
   }
 
   // GET /seances/self - Récupère la séance créée par l'utilisateur connecté

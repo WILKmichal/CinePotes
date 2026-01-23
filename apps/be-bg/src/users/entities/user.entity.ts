@@ -37,7 +37,7 @@ export class User {
   })
   role: UserRole;
 
-  // 🔐 Email verification
+  //Email verification
   @Column({ type: 'boolean', nullable: false, default: false })
   email_verifie: boolean;
 

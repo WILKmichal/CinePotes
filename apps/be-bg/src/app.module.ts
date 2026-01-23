@@ -25,7 +25,7 @@ import { ListeFilm } from './lists/entities/liste-film.entity';
       password: process.env.DB_PASSWORD || 'example',
       database: process.env.DB_NAME || 'mydatabase',
       entities: [User, Seance, Participant, Liste, ListeFilm],
-      synchronize: true,
+      synchronize: false,
     }),
     TmdbModule,
     AuthModule,
