@@ -9,3 +9,11 @@ GET /tmdb/{id}
 POST /auth/login
 POST /auth/register
 GET /auth/confirm-email
+GET /lists
+POST /lists
+GET /lists/with-films
+GET /lists/{id}
+DELETE /lists/{id}
+GET /lists/{id}/films
+POST /lists/{id}/films
+DELETE /lists/{id}/films/{tmdbId}

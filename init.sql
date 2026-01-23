@@ -135,35 +135,13 @@ CREATE INDEX idx_listefilm_liste ON listefilm(liste_id);
 CREATE INDEX idx_listefilm_tmdb ON listefilm(tmdb_id);
 
 -----------------------------
--- Données de test (DEV UNIQUEMENT)
--- ⚠️ Comptes déjà confirmés pour éviter le blocage au login
-
-INSERT INTO utilisateur (
-    nom,
-    email,
-    mot_de_passe_hash,
-    role,
-    email_verifie
-)
-VALUES
-(
-    'Admin CinéPote',
-    'admin@cinepote.fr',
-    '$2a$10$XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', -- hash bcrypt
-    'admin',
-    true
-),
-(
-    'Max Dupont',
-    'max.chef@cinepote.fr',
-    '$2a$10$XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
-    'chef',
-    true
-),
-(
-    'August Martin',
-    'august.user@cinepote.fr',
-    '$2a$10$XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
+-- Utilisateur de test (pour Bruno CI)
+-- Email: bruno@test.fr | Mot de passe: Test123!
+INSERT INTO utilisateur (nom, email, mot_de_passe_hash, role, email_verifie)
+VALUES (
+    'Bruno Test',
+    'bruno@test.fr',
+    '$2b$10$g8ZLq/ubx0jdql2lN4Z3FudFKIFnwWQAvchjnEAQw5Zdhne2AOejW',
     'user',
     true
-);
+) ON CONFLICT (email) DO NOTHING;

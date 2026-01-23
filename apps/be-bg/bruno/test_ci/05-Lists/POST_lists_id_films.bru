@@ -1,0 +1,49 @@
+meta {
+  name: POST /lists/{id}/films
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{URL}}/lists/{{LIST_ID}}/films
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+body:json {
+  {
+    "tmdbId": 550
+  }
+}
+
+script:pre-request {
+  await bru.runRequest("05-Lists/POST_lists");
+}
+
+script:post-response {
+  if (res.body && res.body.tmdb_id) {
+    bru.setEnvVar("TMDB_ID", res.body.tmdb_id);
+  }
+}
+
+tests {
+  test("Status code is 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+  
+  test("Response contains liste_id", function() {
+    expect(res.body).to.have.property('liste_id');
+  });
+  
+  test("Response contains tmdb_id", function() {
+    expect(res.body).to.have.property('tmdb_id');
+  });
+}

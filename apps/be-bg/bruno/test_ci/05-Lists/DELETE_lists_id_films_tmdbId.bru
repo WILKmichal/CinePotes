@@ -1,0 +1,26 @@
+meta {
+  name: DELETE /lists/{id}/films/{tmdbId}
+  type: http
+  seq: 7
+}
+
+delete {
+  url: {{URL}}/lists/{{LIST_ID}}/films/{{TMDB_ID}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+script:pre-request {
+  await bru.runRequest("05-Lists/POST_lists");
+  await bru.runRequest("05-Lists/POST_lists_id_films");
+}
+
+tests {
+  test("Status code is 204", function() {
+    expect(res.getStatus()).to.equal(204);
+  });
+}

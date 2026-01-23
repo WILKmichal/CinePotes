@@ -1,0 +1,25 @@
+meta {
+  name: DELETE /lists/{id}
+  type: http
+  seq: 8
+}
+
+delete {
+  url: {{URL}}/lists/{{LIST_ID}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+script:pre-request {
+  await bru.runRequest("05-Lists/POST_lists");
+}
+
+tests {
+  test("Status code is 204", function() {
+    expect(res.getStatus()).to.equal(204);
+  });
+}
