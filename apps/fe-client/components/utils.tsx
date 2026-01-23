@@ -50,14 +50,15 @@ export default function Header() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    let nextDisplayName: string | null = null;
+
     const token = localStorage.getItem("access_token");
-    if (!token) {
-      setDisplayName(null);
-      return;
+    if (token) {
+      const payload = decodeJwt(token);
+      nextDisplayName = payload?.username ?? null;
     }
 
-    const payload = decodeJwt(token);
-    setDisplayName(payload?.username ?? null);
+    setDisplayName(nextDisplayName);
   }, []);
 
 
