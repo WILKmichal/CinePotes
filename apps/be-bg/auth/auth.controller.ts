@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { AuthService } from './auth.service';
-import { UsersService } from '../users/users.service';
+import { UsersService } from '../src/users/users.service';
 import { MailService } from '../../ms-mail/src/mail/mail.service';
 
 interface RegisterDto {
