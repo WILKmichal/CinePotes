@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -24,16 +24,12 @@ function decodeJwt(token: string) {
   try {
     const payload = token.split(".")[1];
 
-    const base64 = payload
-      .replaceAll("-", "+")
-      .replaceAll("_", "/");
+    const base64 = payload.replaceAll("-", "+").replaceAll("_", "/");
 
     const json = decodeURIComponent(
       atob(base64)
         .split("")
-        .map((c) =>
-          "%" + ("00" + c.codePointAt(0)!.toString(16)).slice(-2)
-        )
+        .map((c) => "%" + ("00" + c.codePointAt(0)!.toString(16)).slice(-2))
         .join("")
     );
 
@@ -43,19 +39,23 @@ function decodeJwt(token: string) {
   }
 }
 
+function getDisplayName(): string | null {
+  if (globalThis.window === undefined) return null;
+  const token = localStorage.getItem("access_token");
+  if (!token) return null;
+  const payload = decodeJwt(token);
+  return payload?.username ?? null;
+}
+
+const emptySubscribe = () => () => {};
+
 export default function Header() {
   const router = useRouter();
-  const displayName =
-    typeof window === "undefined"
-      ? null
-      : (() => {
-          const token = localStorage.getItem("access_token");
-          if (!token) return null;
-          const payload = decodeJwt(token);
-          return payload?.username ?? null;
-        })();
-
-
+  const displayName = useSyncExternalStore(
+    emptySubscribe,
+    getDisplayName,
+    () => null // server snapshot
+  );
 
   const handleLogout = () => {
     localStorage.removeItem("access_token");
@@ -96,6 +96,14 @@ export default function Header() {
             >
               About us
             </Link>
+            {displayName && (
+              <Link
+                className="inline-block rounded-lg px-2 py-1 text-sm font-medium text-gray-900 transition-all duration-200 hover:bg-gray-100 hover:text-gray-900"
+                href="/mes-listes"
+              >
+                Mes Listes
+              </Link>
+            )}
           </div>
 
           <div className="flex items-center justify-end gap-3">
@@ -361,7 +369,7 @@ function useRechercheFilms2(requete: string) {
       setError(null);
       try {
         console.log(`🔍 Recherche: "${requete}"`);
-        
+
         const response = await fetch(
           `${API_URL}/tmdb/recherche?query=${encodeURIComponent(requete)}`
         );
@@ -370,7 +378,7 @@ function useRechercheFilms2(requete: string) {
         }
         const data = await response.json();
         console.log(`${data.length} résultat(s) trouvé(s)`);
-        
+
         setResultats(data);
       } catch (err) {
         console.error('Erreur recherche:', err);
