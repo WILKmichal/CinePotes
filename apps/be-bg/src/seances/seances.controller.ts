@@ -28,7 +28,7 @@ export class SeancesController {
   getParticipants(@Param('id') id: string) {
     return this.seancesService.getParticipants(id);
   }
-
+  //PATCH /seances/:id/statut - Met à jour le statut d'une séance (seulement par le propriétaire)
   @Patch(':id/statut')
   updateStatut(@Param('id') id: string, @Body('statut') statut: string, @Request() request) {
     const userId = request.user.sub;
@@ -41,7 +41,7 @@ export class SeancesController {
     const userId = req.user.sub;
     return this.seancesService.findByProprietaire(userId);
   }
-
+  // DELETE /seances/:id/leave - Quitter une séance
   @Delete(':id/leave')
   leave(@Param('id') id: string, @Request() request) {
     const userId = request.user.sub;
