@@ -8,3 +8,4 @@ GET /tmdb/recherche/avancee
 GET /tmdb/{id}
 POST /auth/login
 POST /auth/register
+GET /auth/confirm-email
