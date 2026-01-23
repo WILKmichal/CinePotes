@@ -13,6 +13,7 @@ import { Seance } from './seances/entities/seance.entity';
 import { Participant } from './seances/entities/participant.entity';
 import { Liste } from './lists/entities/liste.entity';
 import { ListeFilm } from './lists/entities/liste-film.entity';
+import { DataSource } from 'typeorm';
 
 @Module({
   imports: [
@@ -35,4 +36,6 @@ import { ListeFilm } from './lists/entities/liste-film.entity';
   controllers: [AppController, TestController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule {
+  constructor(private readonly dataSource: DataSource) {}
+}

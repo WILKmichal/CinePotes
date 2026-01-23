@@ -1,174 +1,119 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { Pool } from 'pg';
-import { PG_POOL } from '../../database/database.module';
-
-export type Liste = {
-  id: string;
-  nom: string;
-  description?: string;
-  utilisateur_id: string;
-  cree_le: Date;
-  maj_le: Date;
-};
-
-export type ListeFilm = {
-  id: string;
-  liste_id: string;
-  tmdb_id: number;
-  cree_le: Date;
-};
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Liste } from './entities/liste.entity';
+import { ListeFilm } from './entities/liste-film.entity';
 
 @Injectable()
-export class ListsService {
-  constructor(@Inject(PG_POOL) private readonly pool: Pool) {}
+export class ListesService {
+  constructor(
+    @InjectRepository(Liste)
+    private readonly listesRepository: Repository<Liste>,
+    @InjectRepository(ListeFilm)
+    private readonly listeFilmsRepository: Repository<ListeFilm>,
+  ) {}
+  findAll(): Promise<Liste[]> {
+    return this.listesRepository.find();
+  }
 
-  /**
-   * Récupère toutes les listes d'un utilisateur
-   */
+  findOneById(id : string ): Promise<Liste | null> {
+    return this.listesRepository.findOneBy({ id });
+  }
+
+  async remove(id: number): Promise<void> {
+    await this.listesRepository.delete(id);
+  }
   async findAllByUser(userId: string): Promise<Liste[]> {
-    const query = `
-      SELECT id, nom, description, utilisateur_id, cree_le, maj_le
-      FROM liste
-      WHERE utilisateur_id = $1
-      ORDER BY cree_le DESC
-    `;
-    const res = await this.pool.query<Liste>(query, [userId]);
-    return res.rows;
+    return this.listesRepository.find({
+      where: { utilisateur_id: userId },
+      order: { cree_le: 'DESC' },
+    });
   }
 
-  /**
-   * Récupère une liste par son ID (vérifie qu'elle appartient à l'utilisateur)
-   */
-  async findOne(listeId: string, userId: string): Promise<Liste | undefined> {
-    const query = `
-      SELECT id, nom, description, utilisateur_id, cree_le, maj_le
-      FROM liste
-      WHERE id = $1 AND utilisateur_id = $2
-    `;
-    const res = await this.pool.query<Liste>(query, [listeId, userId]);
-    return res.rows[0];
+  //Récupère une liste par ID 
+  findOne(listeId: string,userId: string,): Promise<Liste | null> {
+    return this.listesRepository.findOne({
+      where: {
+        id: listeId,
+        utilisateur_id: userId,
+      },
+    });
   }
-
-  /**
-   * Crée une nouvelle liste pour un utilisateur
-   */
-  async create(
-    userId: string,
-    nom: string,
-    description?: string,
-  ): Promise<Liste> {
-    const query = `
-      INSERT INTO liste (nom, description, utilisateur_id)
-      VALUES ($1, $2, $3)
-      RETURNING id, nom, description, utilisateur_id, cree_le, maj_le
-    `;
-    const res = await this.pool.query<Liste>(query, [
+  // Créer une nouvelle liste
+  async create(userId: string,nom: string,description?: string,): Promise<Liste> {
+    const liste = this.listesRepository.create({
       nom,
-      description || null,
-      userId,
-    ]);
-    return res.rows[0];
+      description,
+      utilisateur_id: userId,
+    });
+
+    return this.listesRepository.save(liste);
   }
 
-  /**
-   * Supprime une liste (et ses films associés via CASCADE)
-   */
-  async delete(listeId: string, userId: string): Promise<boolean> {
-    const query = `
-      DELETE FROM liste
-      WHERE id = $1 AND utilisateur_id = $2
-    `;
-    const res = await this.pool.query(query, [listeId, userId]);
-    return (res.rowCount ?? 0) > 0;
+  // Supprimer une liste
+  async delete(listeId: string,userId: string,): Promise<boolean> {
+    const res = await this.listesRepository.delete({
+      id: listeId,
+      utilisateur_id: userId,
+    });
+
+    return (res.affected ?? 0) > 0;
   }
 
-  /**
-   * Ajoute un film (par tmdb_id) à une liste
-   */
-  async addFilmToList(
-    listeId: string,
-    tmdbId: number,
-    userId: string,
-  ): Promise<ListeFilm | null> {
-    // Vérifie que la liste appartient à l'utilisateur
+  //Ajouter un film à une liste
+  async addFilmToList(listeId: string,tmdbId: number,userId: string,): Promise<ListeFilm | null> {
     const liste = await this.findOne(listeId, userId);
-    if (!liste) {
-      return null;
-    }
+    if (!liste) return null;
 
-    const query = `
-      INSERT INTO listefilm (liste_id, tmdb_id)
-      VALUES ($1, $2)
-      ON CONFLICT (liste_id, tmdb_id) DO NOTHING
-      RETURNING id, liste_id, tmdb_id, cree_le
-    `;
-    const res = await this.pool.query<ListeFilm>(query, [listeId, tmdbId]);
-    return (
-      res.rows[0] || {
-        id: '',
-        liste_id: listeId,
-        tmdb_id: tmdbId,
-        cree_le: new Date(),
-      }
-    );
+    const film = this.listeFilmsRepository.create({
+      liste_id: listeId,
+      tmdb_id: tmdbId,
+    });
+
+    try {
+      return await this.listeFilmsRepository.save(film);
+    } catch {
+      return film;
+    }
   }
 
-  /**
-   * Retire un film d'une liste
-   */
-  async removeFilmFromList(
-    listeId: string,
-    tmdbId: number,
-    userId: string,
-  ): Promise<boolean> {
-    // Vérifie que la liste appartient à l'utilisateur
+  // Retirer un film d'une liste
+  async removeFilmFromList(listeId: string,tmdbId: number,userId: string,): Promise<boolean> {
     const liste = await this.findOne(listeId, userId);
-    if (!liste) {
-      return false;
-    }
+    if (!liste) return false;
 
-    const query = `
-      DELETE FROM listefilm
-      WHERE liste_id = $1 AND tmdb_id = $2
-    `;
-    const res = await this.pool.query(query, [listeId, tmdbId]);
-    return (res.rowCount ?? 0) > 0;
+    const res = await this.listeFilmsRepository.delete({
+      liste_id: listeId,
+      tmdb_id: tmdbId,
+    });
+
+    return (res.affected ?? 0) > 0;
   }
 
-  /**
-   * Récupère tous les films (tmdb_ids) d'une liste
-   */
-  async getFilmsInList(listeId: string, userId: string): Promise<number[]> {
-    // Vérifie que la liste appartient à l'utilisateur
+  //Récupérer les films d'une liste
+  async getFilmsInList(listeId: string,userId: string,): Promise<number[]> {
     const liste = await this.findOne(listeId, userId);
-    if (!liste) {
-      return [];
-    }
+    if (!liste) return [];
 
-    const query = `
-      SELECT tmdb_id
-      FROM listefilm
-      WHERE liste_id = $1
-      ORDER BY cree_le DESC
-    `;
-    const res = await this.pool.query<{ tmdb_id: number }>(query, [listeId]);
-    return res.rows.map((row) => row.tmdb_id);
+    const films = await this.listeFilmsRepository.find({
+      where: { liste_id: listeId },
+      order: { cree_le: 'DESC' },
+    });
+
+    return films.map((film) => film.tmdb_id);
   }
 
-  /**
-   * Récupère toutes les listes d'un utilisateur avec leurs films
-   */
-  async findAllByUserWithFilms(
-    userId: string,
-  ): Promise<(Liste & { films: number[] })[]> {
-    const listes = await this.findAllByUser(userId);
-    const result: (Liste & { films: number[] })[] = [];
+  // Listes + films
+  async findAllByUserWithFilms(userId: string,): Promise<(Omit<Liste, 'films'> & { films: number[] })[]> {
+    const listes = await this.listesRepository.find({
+      where: { utilisateur_id: userId },
+      relations: ['films'],
+      order: { cree_le: 'DESC' },
+    });
 
-    for (const liste of listes) {
-      const films = await this.getFilmsInList(liste.id, userId);
-      result.push({ ...liste, films });
-    }
-
-    return result;
+    return listes.map((liste) => ({
+      ...liste,
+      films: liste.films.map((film) => film.tmdb_id),
+    }));
   }
 }
