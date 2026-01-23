@@ -6,6 +6,14 @@ import { create } from 'axios';
 describe('SeancesController', () => {
   let controller: SeancesController;
 
+  const mockOrderService = {
+  create: jest.fn().mockReturnValue(mockOrder),
+  findAll: jest.fn().mockReturnValue([mockOrder]),
+  findOne: jest.fn().mockReturnValue(mockOrder),
+  update: jest.fn().mockReturnValue(mockOrder),
+  delete: jest.fn().mockReturnValue(mockOrder),
+};
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [SeancesController],
@@ -28,22 +36,42 @@ describe('SeancesController', () => {
   });
 
   describe('dois rejoindre une séance', ()=> {
+      //Arrange
 
+      //Act
+
+      //Assert
   });
 
   describe('dois récuperer les participants d\'une séance', ()=> {
+      //Arrange
 
+      //Act
+
+      //Assert
   });
 
   describe('dois update le statut d\'une séance', ()=> {
+      //Arrange
 
+      //Act
+
+      //Assert
   });
 
   describe('dois trouver la séance de l\'utilisateur', ()=> {
+      //Arrange
 
+      //Act
+
+      //Assert
   });
 
   describe('dois quitter la séance', ()=> {
+      //Arrange
 
+      //Act
+
+      //Assert
   });
 });

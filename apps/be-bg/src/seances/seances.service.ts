@@ -26,7 +26,6 @@ export class SeancesService {
     return code;
   }
 
-
   findAll(): Promise<Seance[]> {
     return this.seancesRepository.find();
   }
