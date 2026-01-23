@@ -1,4 +1,6 @@
 import { Injectable, Inject, NotFoundException, ConflictException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { Pool } from 'pg';
 import { randomBytes } from 'crypto';
 import { PG_POOL } from '../../database/database.module';
@@ -9,10 +11,16 @@ import { Participant } from './entities/participant.entity';
 @Injectable()
 export class SeancesService {
   // Injection du pool de connexion utilisant le token PG_POOL
-  constructor(@Inject(PG_POOL) private readonly pool: Pool) {}
+  // constructor(@Inject(PG_POOL) private readonly pool: Pool) {}
+  constructor(
+    @InjectRepository(Seance)
+    private seancesRepository: Repository<Seance>,
+    @InjectRepository(Participant)
+    private participantsRepository: Repository<Participant>,
+  ) {}
 
   //Genère un code unique de 6 caractères pour la séance
-  public generateCode(): string {
+  private generateCode(): string {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     const bytes = randomBytes(6);
     let code = '';
@@ -21,6 +29,13 @@ export class SeancesService {
     }
     return code;
   }
+
+  findAll(): Promise<Seance[]> {
+    return this.seancesRepository.find();
+  }
+
+
+
   // Crée une nouvelle séance
   async create(createSeanceDto: CreateSeanceDto, proprietaire_id: string) {
 
