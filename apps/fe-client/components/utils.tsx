@@ -1,6 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+
+const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL ?? "http://localhost:3000";
+const CALLBACK_URL = "http://localhost:3001/auth/callback";
 
 export interface DetailsFilm {
   id: number;
@@ -18,44 +21,128 @@ export interface FiltresRechercheFilms {
 }
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3333";
 
-function Header() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+function decodeJwt(token: string) {
+  try {
+    const payload = token.split(".")[1];
 
-  useEffect(() => {
-    setIsLoggedIn(!!localStorage.getItem("access_token"));
-  }, []);
+    const base64 = payload.replaceAll("-", "+").replaceAll("_", "/");
 
-  return <header className="fixed inset-x-0 top-0 z-30 mx-auto w-full max-w-screen-md border border-gray-100 bg-white/80 py-3 shadow backdrop-blur-lg md:top-6 md:rounded-3xl lg:max-w-screen-lg">
-            <div className="px-4">
-                <div className="flex items-center justify-between">
-                    <div className="flex shrink-0">
-                      <Link href="/" className="flex items-center" aria-current="page">
-                          <img className="h-7 w-auto" src="https://img.icons8.com/?size=100&id=11860&format=png&color=000000" alt="CinePotes" />
-                          <p className="sr-only">Website Title</p>
-                      </Link>
-                    </div>
-                    <div className="hidden md:flex md:items-center md:justify-center md:gap-5">
-                        <Link aria-current="page"
-                            className="inline-block rounded-lg px-2 py-1 text-sm font-medium text-gray-900 transition-all duration-200 hover:bg-gray-100 hover:text-gray-900"
-                            href="/">Home</Link>
-                        <Link className="inline-block rounded-lg px-2 py-1 text-sm font-medium text-gray-900 transition-all duration-200 hover:bg-gray-100 hover:text-gray-900"
-                            href="/lobby">Lobby</Link>
-                        <Link className="inline-block rounded-lg px-2 py-1 text-sm font-medium text-gray-900 transition-all duration-200 hover:bg-gray-100 hover:text-gray-900"
-                            href="/about">About us</Link>
-                        {isLoggedIn && (
-                          <Link className="inline-block rounded-lg px-2 py-1 text-sm font-medium text-gray-900 transition-all duration-200 hover:bg-gray-100 hover:text-gray-900"
-                              href="/mes-listes">Mes Listes</Link>
-                        )}
-                    </div>
-                    <div className="flex items-center justify-end gap-3">
-                        <Link className="hidden items-center justify-center rounded-xl bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition-all duration-150 hover:bg-gray-50 sm:inline-flex"
-                            href="/login">Sign in</Link>
-                        <Link className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-                            href="/login">Login</Link>
-                    </div>
-                </div>
-            </div>
-        </header>;
+    const json = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => "%" + ("00" + c.codePointAt(0)!.toString(16)).slice(-2))
+        .join("")
+    );
+
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
+
+function getDisplayName(): string | null {
+  if (globalThis.window === undefined) return null;
+  const token = localStorage.getItem("access_token");
+  if (!token) return null;
+  const payload = decodeJwt(token);
+  return payload?.username ?? null;
+}
+
+const emptySubscribe = () => () => {};
+
+export default function Header() {
+  const displayName = useSyncExternalStore(
+    emptySubscribe,
+    getDisplayName,
+    () => null // server snapshot
+  );
+
+  const handleLogout = () => {
+    localStorage.removeItem("access_token");
+    location.href = "/";
+  };
+
+  return (
+    <header className="fixed inset-x-0 top-0 z-30 mx-auto w-full max-w-screen-md border border-gray-100 bg-white/80 py-3 shadow backdrop-blur-lg md:top-6 md:rounded-3xl lg:max-w-screen-lg">
+      <div className="px-4">
+        <div className="flex items-center justify-between">
+          <div className="flex shrink-0">
+            <Link href="/" className="flex items-center" aria-current="page">
+              <img
+                className="h-7 w-auto"
+                src="https://img.icons8.com/?size=100&id=11860&format=png&color=000000"
+                alt="CinePotes"
+              />
+              <p className="sr-only">CinePotes</p>
+            </Link>
+          </div>
+
+          <div className="hidden md:flex md:items-center md:justify-center md:gap-5">
+            <Link
+              aria-current="page"
+              className="inline-block rounded-lg px-2 py-1 text-sm font-medium text-gray-900 transition-all duration-200 hover:bg-gray-100 hover:text-gray-900"
+              href="/"
+            >
+              Home
+            </Link>
+            <Link
+              className="inline-block rounded-lg px-2 py-1 text-sm font-medium text-gray-900 transition-all duration-200 hover:bg-gray-100 hover:text-gray-900"
+              href="/lobby"
+            >
+              Lobby
+            </Link>
+            <Link
+              className="inline-block rounded-lg px-2 py-1 text-sm font-medium text-gray-900 transition-all duration-200 hover:bg-gray-100 hover:text-gray-900"
+              href="/about"
+            >
+              About us
+            </Link>
+            {displayName && (
+              <Link
+                className="inline-block rounded-lg px-2 py-1 text-sm font-medium text-gray-900 transition-all duration-200 hover:bg-gray-100 hover:text-gray-900"
+                href="/mes-listes"
+              >
+                Mes Listes
+              </Link>
+            )}
+          </div>
+
+          <div className="flex items-center justify-end gap-3">
+            {displayName ? (
+              <>
+                <span className="text-sm font-semibold text-gray-900">
+                  {displayName}
+                </span>
+
+                <button
+                  onClick={handleLogout}
+                  className="inline-flex items-center justify-center rounded-xl bg-gray-900 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-800"
+                >
+                  Log out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  className="inline flex items-center justify-center rounded-xl bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                  href={`${ADMIN_URL}?redirect=${encodeURIComponent(CALLBACK_URL)}`}
+                >
+                  Sign in
+                </Link>
+
+                <Link
+                  className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                  href={`${ADMIN_URL}?redirect=${encodeURIComponent(CALLBACK_URL)}`}
+                >
+                  Sign up
+                </Link>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </header>
+  );
 }
 
 function Footer() {
