@@ -204,7 +204,7 @@ export class ListsController {
     const userId = req.user.sub;
     const removed = await this.listsService.removeFilmFromList(
       id,
-      parseInt(tmdbId, 10),
+      Number.parseInt(tmdbId, 10),
       userId,
     );
     if (!removed) {

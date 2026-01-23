@@ -1,0 +1,21 @@
+meta {
+  name: GET /
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{URL}}/
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status code is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response body contains message", function() {
+    expect(res.body).to.be.a('string');
+  });
+}

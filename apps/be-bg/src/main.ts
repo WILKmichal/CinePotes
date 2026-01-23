@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { writeFileSync } from 'node:fs';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -28,6 +29,17 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api-docs', app, document);
 
+  // Generate VERB + route list
+  const verbRouteLines: string[] = [];
+  for (const path in document.paths) {
+    const methods = Object.keys(document.paths[path]); // get methods like get, post, etc.
+    for (const method of methods) {
+      verbRouteLines.push(`${method.toUpperCase()} ${path}`);
+    }
+  }
+
+  writeFileSync('./routes.txt', verbRouteLines.join('\n'));
+  console.log('✅ Routes written to ./routes.txt');
   const port = Number(process.env.PORT ?? 3002); // support variable d'env
   await app.listen(port);
 

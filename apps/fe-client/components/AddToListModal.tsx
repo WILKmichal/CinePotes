@@ -184,11 +184,15 @@ export default function AddToListModal({
 
         {/* Créer une nouvelle liste */}
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor="new-list-name"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Créer une nouvelle liste
           </label>
           <div className="flex gap-2">
             <input
+              id="new-list-name"
               type="text"
               value={newListName}
               onChange={(e) => setNewListName(e.target.value)}
@@ -207,9 +211,9 @@ export default function AddToListModal({
 
         {/* Listes existantes */}
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <span className="block text-sm font-medium text-gray-700 mb-2">
             Mes listes
-          </label>
+          </span>
           {listes.length === 0 ? (
             <p className="text-gray-500 text-sm py-4 text-center">
               Vous n&apos;avez pas encore de liste. Créez-en une ci-dessus.
