@@ -4,6 +4,7 @@ import { randomBytes } from 'crypto';
 import { PG_POOL } from '../../database/database.module';
 import { CreateSeanceDto } from './dto/create-seance.dto';
 import { Seance } from './entities/seance.entity';
+import { Participant } from './entities/participant.entity';
 
 @Injectable()
 export class SeancesService {
@@ -11,7 +12,7 @@ export class SeancesService {
   constructor(@Inject(PG_POOL) private readonly pool: Pool) {}
 
   //Genère un code unique de 6 caractères pour la séance
-  private generateCode(): string {
+  public generateCode(): string {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     const bytes = randomBytes(6);
     let code = '';
@@ -22,6 +23,12 @@ export class SeancesService {
   }
   // Crée une nouvelle séance
   async create(createSeanceDto: CreateSeanceDto, proprietaire_id: string) {
+
+    // Vérifier si le propriétaire a déjà une séance active
+    const existingSeance = await this.findByProprietaire(proprietaire_id);
+    if (existingSeance) {
+      throw new ConflictException('Vous avez déjà une séance active. Veuillez la terminer avant d\'en créer une nouvelle.');
+    }
     const code = this.generateCode();
     //pourquoi utiliser des placeholders ? pour éviter les injections SQL, on retrouve le lien avec les placeholders ensuite dans le tab
     /* exemple :
@@ -66,37 +73,35 @@ export class SeancesService {
   }
 
 
-  //Rejoindre une séance via son code ( ajout d'un participant )
-  async join(code: string, utilisateur_id: string){
-    const seance = await this.findByCode(code);
+async join(code: string, utilisateur_id: string): Promise<{ participant: Participant; seance: Seance }>  {
+  const seance = await this.findByCode(code);
 
-    const queries = [
-      `
-        INSERT INTO participant (seance_id, utilisateur_id)
-        VALUES ($1, $2)
-        RETURNING id, seance_id, utilisateur_id, a_rejoint_le
-      `,
-    ];
-
-    for (const query of queries){
-      try{
-        const res = await this.pool.query(query ,[seance.id, utilisateur_id]);
-        if (res.rowCount && res.rowCount > 0){
-          return{
-            participant: res.rows[0],
-            seance : seance,
-          };
-        }
-      } catch (error){
-        //erreur 23505 = contrainte unique pas respectée (deja participant à la seance)
-         if (error.code === '23505') {
-        throw new ConflictException('Vous avez déjà rejoint cette séance');
-        }
-        console.error('Query failed, trying fallback', error);
-      }
-    }
-
+  if (seance.statut !== 'en_attente') {
+    throw new ConflictException('La séance n\'accepte plus de participants');
   }
+  const query = `
+    INSERT INTO participant (seance_id, utilisateur_id)
+    VALUES ($1, $2)
+    RETURNING id, seance_id, utilisateur_id, a_rejoint_le
+  `;
+
+  try {
+    const res = await this.pool.query(query, [seance.id, utilisateur_id]);
+    if (res.rowCount && res.rowCount > 0) {
+      return {
+        participant: res.rows[0],
+        seance: seance,
+      };
+    }
+  } catch (error) {
+    if (error.code === '23505') {
+      throw new ConflictException('Vous avez déjà rejoint cette séance');
+    }
+    throw error; // Relancer l'erreur si ce n'est pas une contrainte unique
+  }
+
+  throw new Error('Impossible de rejoindre la séance');
+}
   //Récupère la séance créée par l'utilisateur connecté
     async findByProprietaire(proprietaire_id: string){
     const queries = [
@@ -105,6 +110,7 @@ export class SeancesService {
       FROM seance
       WHERE proprietaire_id = $1 AND est_actif = true
       ORDER BY date DESC
+      LIMIT 1
       `,
     ];
 
@@ -119,7 +125,7 @@ export class SeancesService {
       }
     }
 
-    return []; //Retourne tab vide
+    return null; //Retourne rien
   }
 
 
@@ -191,7 +197,7 @@ export class SeancesService {
 
     return { message: 'Vous avez quitté la séance' };
   }
-  //Lancer le votee (changement de statut de la séance) Seule le proprietaire peut le faire
+  //Lancer le vote (changement de statut de la séance) Seule le proprietaire peut le faire
   async updateStatut(seance_id: string, proprietaire_id: string, nouveauStatut: string) {
     const query = `
       UPDATE seance

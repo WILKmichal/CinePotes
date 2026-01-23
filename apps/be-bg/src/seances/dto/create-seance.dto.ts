@@ -1,11 +1,11 @@
-import { IsString, IsDateString, IsInt, Min, Max } from 'class-validator';
+import { IsString, IsDateString, IsInt, Min, Max, IsDate } from 'class-validator';
 
 export class CreateSeanceDto {
     @IsString()
     nom: string // Nom de la séance
 
-    @IsDateString()
-    date: string // Date et heure de la séance au format ISO
+    @IsDate()
+    date: Date // Date
 
     @IsInt()
     @Min(1)
