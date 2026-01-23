@@ -1,4 +1,4 @@
-import { IsString, IsDateString, IsInt, Min, Max, IsDate } from 'class-validator';
+import { IsString, IsInt, Min, Max, IsDate } from 'class-validator';
 
 export class CreateSeanceDto {
     @IsString()
