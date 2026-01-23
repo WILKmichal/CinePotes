@@ -1,0 +1,15 @@
+meta {
+  name: Confirm Email - Success
+  type: http
+}
+
+get {
+  url: {{URL}}/auth/confirm-email
+  query {
+    token: valid-test-token
+  }
+}
+
+assert {
+  status: 302
+}

@@ -6,9 +6,9 @@ import { AuthController } from './auth.controller';
 import { jwtConstants } from './constants';
 import { JwtStrategy } from './jwt.strategy';
 import { PassportModule } from '@nestjs/passport';
+import { MailService } from '../../ms-mail/src/mail/mail.service';
 import * as dotenv from 'dotenv';
 dotenv.config();
-
 @Module({
   imports: [
     UsersModule,
@@ -16,14 +16,10 @@ dotenv.config();
     JwtModule.register({
       global: true,
       secret: jwtConstants.secret,
-
-      signOptions: {
-        expiresIn: (process.env.JWT_EXPIRES_IN || '3600s') as any,
-      },
+      signOptions: { expiresIn: '3600s' },
     }),
   ],
-  providers: [AuthService,JwtStrategy],
+  providers: [AuthService,JwtStrategy,MailService],
   controllers: [AuthController],
-  exports: [AuthService],
 })
 export class AuthModule {}
