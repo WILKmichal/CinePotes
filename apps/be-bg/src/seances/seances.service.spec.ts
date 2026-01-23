@@ -10,7 +10,7 @@ describe('SeancesService', () => {
   let service: SeancesService;
   let seanceRepository: jest.Mocked<Repository<Seance>>;
   let participantRepository: jest.Mocked<Repository<Participant>>;
-
+ 
   const mockSeanceRepository = {
     create: jest.fn(),
     save: jest.fn(),
@@ -44,8 +44,6 @@ describe('SeancesService', () => {
     }).compile();
 
     service = module.get<SeancesService>(SeancesService);
-    seanceRepository = module.get(getRepositoryToken(Seance));
-    participantRepository = module.get(getRepositoryToken(Participant));
 
     // Reset mocks avant chaque test
     jest.clearAllMocks();

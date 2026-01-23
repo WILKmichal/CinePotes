@@ -1,18 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SeancesController } from './seances.controller';
 import { SeancesService } from './seances.service';
-import { create } from 'axios';
 
 describe('SeancesController', () => {
   let controller: SeancesController;
-
-  const mockOrderService = {
-  create: jest.fn().mockReturnValue(mockOrder),
-  findAll: jest.fn().mockReturnValue([mockOrder]),
-  findOne: jest.fn().mockReturnValue(mockOrder),
-  update: jest.fn().mockReturnValue(mockOrder),
-  delete: jest.fn().mockReturnValue(mockOrder),
-};
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
