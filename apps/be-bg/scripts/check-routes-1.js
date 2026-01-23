@@ -4,7 +4,6 @@ const path = require('node:path');
 
 // Get folder and file arguments
 const args = process.argv.slice(2);
-
 if (args.length < 2) {
     console.error('Usage: node check-routes-1.js <folder> <file>');
     console.error('Example: node check-routes-1.js ./src ./routes.txt');
@@ -13,7 +12,6 @@ if (args.length < 2) {
 
 const folderPath = args[0];
 const filePath = args[1];
-
 const brunoTestedUrls = [];
 const swaggerRoutes = [];
 
@@ -102,11 +100,90 @@ function traverseRoutesFile(filePath) {
     }
 }
 
-// Call it after validation
+function testRouteCoverage(brunoRoutes, swaggerRoutes) {
+    // Convert path parameters in swagger routes to regex patterns
+    function routeToPattern(route) {
+        // Split into verb and path
+        const [verb, path] = route.split(' ');
+        
+        // Replace path parameters like {id} with a regex pattern
+        // Also handle query parameters by removing them for matching
+        const pathWithoutQuery = path.split('?')[0];
+        const pattern = pathWithoutQuery.replace(/\{[^}]+\}/g, '[^/?]+');
+        
+        return {
+            verb,
+            pattern: new RegExp(`^${pattern}(\\?.*)?$`),
+            original: route
+        };
+    }
+    
+    // Convert all swagger routes to patterns
+    const swaggerPatterns = swaggerRoutes.map(routeToPattern);
+    
+    const results = {
+        covered: [],
+        missing: [],
+        extra: []
+    };
+    
+    // Check which swagger routes are covered by bruno routes
+    for (const swaggerPattern of swaggerPatterns) {
+        const [verb, path] = swaggerPattern.original.split(' ');
+        const pathWithoutQuery = path.split('?')[0];
+        
+        const found = brunoRoutes.some(brunoRoute => {
+            const [brunoVerb, brunoPath] = brunoRoute.split(' ');
+            const brunoPathWithoutQuery = brunoPath.split('?')[0];
+            
+            // Check if verb matches and path matches the pattern
+            return brunoVerb === verb && swaggerPattern.pattern.test(brunoPathWithoutQuery);
+        });
+        
+        if (found) {
+            results.covered.push(swaggerPattern.original);
+        } else {
+            results.missing.push(swaggerPattern.original);
+        }
+    }
+    
+    // Check for extra routes in bruno that aren't in swagger
+    for (const brunoRoute of brunoRoutes) {
+        const [brunoVerb, brunoPath] = brunoRoute.split(' ');
+        const brunoPathWithoutQuery = brunoPath.split('?')[0];
+        
+        const found = swaggerPatterns.some(pattern => {
+            return brunoVerb === pattern.verb && pattern.pattern.test(brunoPathWithoutQuery);
+        });
+        
+        if (!found) {
+            results.extra.push(brunoRoute);
+        }
+    }
+    
+    return results;
+}
+
 // Start traversal
 traverseFolder(folderPath);
 traverseRoutesFile(filePath);
 
-console.log('Done!');
-console.log(brunoTestedUrls);
-console.log(swaggerRoutes);
+// Capture the results from testRouteCoverage
+const results = testRouteCoverage(brunoTestedUrls, swaggerRoutes);
+
+console.log('\n✅ Covered routes:');
+results.covered.forEach(route => console.log(`  ${route}`));
+
+console.log('\n❌ Missing routes (in Swagger but not in Bruno):');
+results.missing.forEach(route => console.log(`  ${route}`));
+
+console.log('\n⚠️  Extra routes (in Bruno but not in Swagger):');
+results.extra.forEach(route => console.log(`  ${route}`));
+
+console.log(`\nCoverage: ${results.covered.length}/${swaggerRoutes.length} routes covered`);
+
+if (results.covered.length !== swaggerRoutes.length) {
+    console.error('\n❌ ERROR: Route coverage is not 100%!');
+    console.error(`Missing ${results.missing.length} route(s) in Bruno tests.`);
+    process.exit(1);
+}
