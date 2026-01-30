@@ -37,6 +37,8 @@ REDIS_URL=redis://localhost:6379
 
 TMDB_MS_URL=http://localhost:3333
 
+NODE_ENV=test
+
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=contact.cinepote@gmail.com

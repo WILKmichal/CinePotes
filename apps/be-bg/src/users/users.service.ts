@@ -36,14 +36,15 @@ export class UsersService {
     role: UserRole = UserRole.USER,
   ): Promise<User> {
     const mot_de_passe_hash = await bcrypt.hash(plainPassword, 10);
+    const isTestEnv = process.env.NODE_ENV === "test"
 
     const user = this.usersRepository.create({
       nom,
       email,
       mot_de_passe_hash,
       role,
-      email_verifie: false,
-      email_verification_token: randomUUID(),
+      email_verifie: isTestEnv ? true : false,
+      email_verification_token: isTestEnv ? null : randomUUID(),
     });
 
     return this.usersRepository.save(user);
