@@ -7,7 +7,7 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
-import { AuthGuard } from '../../auth/auth.guard';
+import { AuthGuard } from '../auth/auth.guard';
 
 describe('ListsController', () => {
   let controller: ListsController;

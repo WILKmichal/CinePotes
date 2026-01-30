@@ -10,8 +10,8 @@ import {
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { AuthService } from './auth.service';
-import { UsersService } from '../src/users/users.service';
-import { MailService } from '../../ms-mail/src/mail/mail.service';
+import { UsersService } from '../users/users.service';
+import { MailService } from '../../../ms-mail/src/mail/mail.service';
 import { UserRole } from 'src/users/entities/user.entity';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';

@@ -20,8 +20,8 @@ import {
   ApiBearerAuth,
   ApiParam,
 } from '@nestjs/swagger';
-import { AuthGuard } from '../../auth/auth.guard';
-import { ListsService } from './lists.service';
+import { AuthGuard } from '../auth/auth.guard';
+import { ListesService } from './lists.service';
 import { CreateListDto } from './dto/create-list.dto';
 import { AddFilmDto } from './dto/add-film.dto';
 import {
@@ -36,7 +36,7 @@ import {
 @Controller('lists')
 @UseGuards(AuthGuard)
 export class ListsController {
-  constructor(private readonly listsService: ListsService) {}
+  constructor(private readonly listsService: ListesService) {}
 
   @Get()
   @ApiOperation({ summary: "Récupérer toutes les listes de l'utilisateur" })
