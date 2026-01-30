@@ -1,9 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, ConflictException} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { randomUUID } from 'node:crypto';
 import { User, UserRole } from './entities/user.entity';
+
 
 @Injectable()
 export class UsersService {
@@ -35,8 +36,17 @@ export class UsersService {
     plainPassword: string,
     role: UserRole = UserRole.USER,
   ): Promise<User> {
+
+    const existingUser = await this.usersRepository.findOne({
+      where: { email },
+    });
+
+    if (existingUser) {
+      throw new ConflictException('Un utilisateur avec cet email existe déjà');
+    }
+
     const mot_de_passe_hash = await bcrypt.hash(plainPassword, 10);
-    const isTestEnv = process.env.NODE_ENV === "test"
+    const isTestEnv = process.env.NODE_ENV === 'test';
 
     const user = this.usersRepository.create({
       nom,

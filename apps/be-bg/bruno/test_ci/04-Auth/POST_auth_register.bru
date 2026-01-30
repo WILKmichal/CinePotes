@@ -16,7 +16,7 @@ headers {
 
 body:json {
   {
-    "email": "tesmt@example.com",
+    "email": "testm@example.com",
     "password": "Password123!",
     "nom": "Testm_User",
     "role": "admin"
@@ -24,15 +24,12 @@ body:json {
 }
 
 tests {
-  test("Status code is 201", function() {
+  test("Status code is 201", function () {
     expect(res.getStatus()).to.equal(201);
   });
-  
-  test("Response contains user object", function() {
-    expect(res.body).to.have.property('user');
-  });
-  
-  test("User has email", function() {
-    expect(res.body.user).to.have.property('email');
+
+  test("Response contains confirmation message", function () {
+    expect(res.body).to.have.property("message");
+    expect(res.body.message).to.be.a("string");
   });
 }
