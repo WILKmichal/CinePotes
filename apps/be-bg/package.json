@@ -17,7 +17,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
-    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+    "test:cov:bf:min": "jest --coverage --coverageReporters=json-summary; node -e \"const c=require('./coverage/coverage-summary.json').total; const colors={red:'\\x1b[31m',green:'\\x1b[32m',reset:'\\x1b[0m'}; const fmt=(name,val)=>console.log(name+':', val>=75?colors.green:colors.red, val+'%', colors.reset); fmt('Branches',c.branches.pct); fmt('Functions',c.functions.pct);\"",
+    "test:cov:bf": "jest --coverage --coverageReporters=json 2>&1 || true; node scripts/coverage.js",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "check:routes": "node scripts/check-routes.js ./bruno/test_ci ./routes.txt"
   },
