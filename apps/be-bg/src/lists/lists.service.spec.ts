@@ -1,12 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { ListesService } from './lists.service';
+import { ListsService } from './lists.service';
 import { Liste } from './entities/liste.entity';
 import { ListeFilm } from './entities/liste-film.entity';
 import { User } from '../users/entities/user.entity';
 
-describe('ListesService', () => {
-  let service: ListesService;
+describe('ListsService', () => {
+  let service: ListsService;
 
   const mockListeRepository = {
     create: jest.fn(),
@@ -50,7 +50,7 @@ describe('ListesService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        ListesService,
+        ListsService,
         {
           provide: getRepositoryToken(Liste),
           useValue: mockListeRepository,
@@ -62,7 +62,7 @@ describe('ListesService', () => {
       ],
     }).compile();
 
-    service = module.get<ListesService>(ListesService);
+    service = module.get<ListsService>(ListsService);
 
     // Reset mocks avant chaque test
     jest.clearAllMocks();

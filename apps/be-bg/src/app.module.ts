@@ -15,6 +15,11 @@ import { Liste } from './lists/entities/liste.entity';
 import { ListeFilm } from './lists/entities/liste-film.entity';
 import { DataSource } from 'typeorm';
 
+// DEBUG: vérifier les variables DB
+console.log('DB_PASSWORD:', JSON.stringify(process.env.DB_PASSWORD));
+console.log('DB_USER:', JSON.stringify(process.env.DB_USER));
+console.log('DB_HOST:', JSON.stringify(process.env.DB_HOST));
+
 @Module({
   imports: [
     TypeOrmModule.forRoot({

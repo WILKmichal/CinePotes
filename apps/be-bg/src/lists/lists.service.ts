@@ -5,7 +5,7 @@ import { Liste } from './entities/liste.entity';
 import { ListeFilm } from './entities/liste-film.entity';
 
 @Injectable()
-export class ListesService {
+export class ListsService {
   constructor(
     @InjectRepository(Liste)
     private readonly listesRepository: Repository<Liste>,

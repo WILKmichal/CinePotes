@@ -12,11 +12,13 @@ import { AuthService } from './auth.service';
 import { UsersService } from '../src/users/users.service';
 import { MailService } from '../../ms-mail/src/mail/mail.service';
 
+import { UserRole } from '../src/users/entities/user.entity';
+
 interface RegisterDto {
   nom?: string;
   email: string;
   password: string;
-  role?: string;
+  role?: UserRole;
 }
 
 @Controller('auth')
@@ -35,7 +37,7 @@ export class AuthController {
   @Post('register')
   async register(@Body() body: RegisterDto) {
     const nom = body.nom ?? body.email.split('@')[0];
-    const role = body.role ?? 'user';
+    const role = body.role ?? UserRole.USER;
 
     const user = await this.usersService.createUser(
       nom,
@@ -45,7 +47,7 @@ export class AuthController {
     );
 
     const confirmUrl = `http://localhost:3002/auth/confirm-email?token=${encodeURIComponent(
-      user.email_verification_token,
+      user.email_verification_token!,
     )}`;
 
     await this.mailService.sendEmail(
