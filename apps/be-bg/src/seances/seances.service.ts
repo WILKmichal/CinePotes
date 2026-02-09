@@ -125,5 +125,4 @@ export class SeancesService {
     seance.statut = nouveauStatut;
     return this.seancesRepository.save(seance);
   }
-
 }

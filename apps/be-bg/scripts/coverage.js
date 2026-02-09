@@ -1,5 +1,5 @@
-const path = require('path');
-const fs = require('fs');
+const path = require('node:path');
+const fs = require('node:fs');
 
 const coveragePath = path.join(__dirname, '../coverage/coverage-final.json');
 if (!fs.existsSync(coveragePath)) {
@@ -50,27 +50,18 @@ Object.entries(c).forEach(([f, d]) => {
 // Sort by total untested count
 results.sort((a, b) => (b.branchCount + b.funcCount) - (a.branchCount + a.funcCount));
 
-// Calculate column widths
-const fileWidth = Math.max(30, Math.max(...results.map(r => r.file.length)) + 2);
-const branchWidth = Math.max(25, Math.max(...results.map(r => r.branches.length)) + 2);
-const funcWidth = Math.max(25, Math.max(...results.map(r => r.functions.length)) + 2);
-
 // Print header
-console.log('\n┌' + '─'.repeat(fileWidth + 2) + '┬' + '─'.repeat(branchWidth + 2) + '┬' + '─'.repeat(funcWidth + 2) + '┐');
-console.log('│ ' + 'File'.padEnd(fileWidth) + ' │ ' + 'Untested Branches'.padEnd(branchWidth) + ' │ ' + 'Untested Functions'.padEnd(funcWidth) + ' │');
-console.log('├' + '─'.repeat(fileWidth + 2) + '┼' + '─'.repeat(branchWidth + 2) + '┼' + '─'.repeat(funcWidth + 2) + '┤');
+console.log('\n📊 UNTESTED LINES BY BRANCH & FUNCTION\n');
+console.log('File'.padEnd(45) + ' | ' + 'Untested Branches'.padEnd(25) + ' | ' + 'Untested Functions');
+console.log('-'.repeat(45) + '-+-' + '-'.repeat(25) + '-+-' + '-'.repeat(30));
 
 // Print rows
 results.forEach(row => {
-  console.log('│ ' + row.file.padEnd(fileWidth) + ' │ ' + row.branches.padEnd(branchWidth) + ' │ ' + row.functions.padEnd(funcWidth) + ' │');
+  console.log(row.file.padEnd(45) + ' | ' + row.branches.padEnd(25) + ' | ' + row.functions);
 });
 
-// Print footer
-console.log('└' + '─'.repeat(fileWidth + 2) + '┴' + '─'.repeat(branchWidth + 2) + '┴' + '─'.repeat(funcWidth + 2) + '┘\n');
-
 // Print summary
+console.log('-'.repeat(110) + '\n');
 const totalBranches = results.reduce((sum, r) => sum + r.branchCount, 0);
 const totalFuncs = results.reduce((sum, r) => sum + r.funcCount, 0);
-console.log(`📊 Summary: ${results.length} files with untested code`);
-console.log(`   ├─ Total untested branches: ${totalBranches}`);
-console.log(`   └─ Total untested functions: ${totalFuncs}\n`);
+console.log(`✅ Files: ${results.length}  |  Untested Branches: ${totalBranches}  |  Untested Functions: ${totalFuncs}\n`);

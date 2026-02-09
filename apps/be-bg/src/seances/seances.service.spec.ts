@@ -10,7 +10,7 @@ describe('SeancesService', () => {
   let service: SeancesService;
   let seanceRepository: jest.Mocked<Repository<Seance>>;
   let participantRepository: jest.Mocked<Repository<Participant>>;
- 
+
   const mockSeanceRepository = {
     create: jest.fn(),
     save: jest.fn(),
@@ -51,6 +51,32 @@ describe('SeancesService', () => {
 
   it('should be defined', () => {
     expect(service).toBeDefined();
+  });
+
+  describe('findAll', () => {
+    it('should return all seances', async () => {
+      const mockSeances = [
+        { id: 'seance-1', nom: 'Séance 1', est_actif: true },
+        { id: 'seance-2', nom: 'Séance 2', est_actif: true },
+      ];
+      mockSeanceRepository.find.mockResolvedValue(mockSeances as Seance[]);
+
+      const result = await service.findAll();
+
+      expect(result).toBeDefined();
+      expect(Array.isArray(result)).toBe(true);
+      expect(result.length).toBe(2);
+      expect(mockSeanceRepository.find).toHaveBeenCalled();
+    });
+
+    it('should return empty array when no seances exist', async () => {
+      mockSeanceRepository.find.mockResolvedValue([]);
+
+      const result = await service.findAll();
+
+      expect(result).toEqual([]);
+      expect(Array.isArray(result)).toBe(true);
+    });
   });
 
   describe('create', () => {
