@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, OnModuleInit } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TestController } from './test.controller';
@@ -25,7 +25,7 @@ import { DataSource } from 'typeorm';
       password: process.env.DB_PASSWORD || 'example',
       database: process.env.DB_NAME || 'mydatabase',
       entities: [User, Seance, Participant, Liste, ListeFilm],
-      synchronize: false,
+      synchronize: true,
     }),
     TmdbModule,
     AuthModule,
@@ -36,6 +36,10 @@ import { DataSource } from 'typeorm';
   controllers: [AppController, TestController],
   providers: [AppService],
 })
-export class AppModule {
+export class AppModule implements OnModuleInit {
   constructor(private readonly dataSource: DataSource) {}
+
+  async onModuleInit() {
+    await this.dataSource.query('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"');
+  }
 }
