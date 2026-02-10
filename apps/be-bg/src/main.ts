@@ -1,10 +1,27 @@
+import * as dotenv from 'dotenv';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { writeFileSync } from 'node:fs';
+import { validateEnvironmentVariables } from './config.validation';
+
+dotenv.config();
 
 async function bootstrap() {
+  // Validate environment variables before creating the app
+  validateEnvironmentVariables();
+
   const app = await NestFactory.create(AppModule);
+
+  // Active la validation automatique des DTOs
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
 
   // Autoriser le front sur plusieurs ports
   app.enableCors({
@@ -32,19 +49,23 @@ async function bootstrap() {
   // Generate VERB + route list
   const verbRouteLines: string[] = [];
   for (const path in document.paths) {
-    const methods = Object.keys(document.paths[path]); // get methods like get, post, etc.
+    const methods = Object.keys(document.paths[path]);
     for (const method of methods) {
       verbRouteLines.push(`${method.toUpperCase()} ${path}`);
     }
   }
-
   writeFileSync('./routes.txt', verbRouteLines.join('\n'));
   console.log('✅ Routes written to ./routes.txt');
-  const port = Number(process.env.PORT ?? 3002); // support variable d'env
-  await app.listen(port);
 
+  const port = Number(process.env.APP_PORT);
+  await app.listen(port);
   console.log(`🚀 Backend running on http://localhost:${port}`);
   console.log(`📖 Swagger available on http://localhost:${port}/api-docs`);
 }
 
-bootstrap();
+bootstrap().catch((err) => {
+  // Log startup errors and exit with failure
+
+  console.error(err);
+  process.exit(1);
+});

@@ -1,18 +1,12 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { ListsController } from './lists.controller';
 import { ListsService } from './lists.service';
-import { DatabaseModule } from '../../database/database.module';
-import { JwtModule } from '@nestjs/jwt';
-import { jwtConstants } from '../../auth/constants';
+import { Liste } from './entities/liste.entity';
+import { ListeFilm } from './entities/liste-film.entity';
 
 @Module({
-  imports: [
-    DatabaseModule,
-    JwtModule.register({
-      secret: jwtConstants.secret,
-      signOptions: { expiresIn: '1h' },
-    }),
-  ],
+  imports: [TypeOrmModule.forFeature([Liste, ListeFilm])],
   controllers: [ListsController],
   providers: [ListsService],
   exports: [ListsService],

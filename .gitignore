@@ -22,6 +22,7 @@ dist/
 .npmrc
 .jestStorage
 coverage/
+coverage-e2e/
 
 # IDE
 .vscode/
