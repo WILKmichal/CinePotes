@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Delete,
   Body,
   Param,
@@ -168,6 +169,42 @@ export class ListsController {
     }
 
     return { message: 'Film ajouté à la liste', ...result };
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Modifier une liste (nom, description)' })
+  @ApiParam({ name: 'id', description: 'ID de la liste (UUID)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Liste modifiée avec succès',
+    type: ListResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Données invalides' })
+  @ApiResponse({ status: 401, description: 'Non authentifié' })
+  @ApiResponse({ status: 404, description: 'Liste non trouvée' })
+  async update(
+    @Param('id') id: string,
+    @Body() updateListDto: CreateListDto,
+    @Request() req: { user: { sub: string } },
+  ) {
+    const userId = req.user.sub;
+
+    if (!updateListDto.nom || updateListDto.nom.trim() === '') {
+      throw new BadRequestException('Le nom de la liste est requis');
+    }
+
+    const updated = await this.listsService.update(
+      id,
+      userId,
+      updateListDto.nom.trim(),
+      updateListDto.description?.trim(),
+    );
+
+    if (!updated) {
+      throw new NotFoundException('Liste non trouvée');
+    }
+
+    return updated;
   }
 
   @Delete(':id')

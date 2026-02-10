@@ -19,6 +19,7 @@ GET /lists
 POST /lists
 GET /lists/with-films
 GET /lists/{id}
+PATCH /lists/{id}
 DELETE /lists/{id}
 GET /lists/{id}/films
 POST /lists/{id}/films

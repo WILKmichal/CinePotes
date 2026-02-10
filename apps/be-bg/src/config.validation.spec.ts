@@ -31,6 +31,7 @@ describe('validateEnvironmentVariables', () => {
       DB_PASSWORD: 'example',
       DB_NAME: 'mydatabase',
       APP_PORT: '3002',
+      VERIFICATION_MAIL: 'FALSE',
     };
     expect(() => validateEnvironmentVariables()).not.toThrow();
     expect(process.exit).not.toHaveBeenCalled();
