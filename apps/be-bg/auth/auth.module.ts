@@ -19,7 +19,7 @@ dotenv.config();
       signOptions: { expiresIn: '3600s' },
     }),
   ],
-  providers: [AuthService, MailService, JwtStrategy],
+  providers: [AuthService,JwtStrategy,MailService],
   controllers: [AuthController],
 })
 export class AuthModule {}

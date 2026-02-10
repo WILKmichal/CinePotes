@@ -25,7 +25,7 @@ describe('AppModule', () => {
       await appModule.onModuleInit();
 
       expect(mockQuery).toHaveBeenCalledWith(
-        'CREATE EXTENSION IF NOT EXISTS "uuid-ossp"'
+        'CREATE EXTENSION IF NOT EXISTS "uuid-ossp"',
       );
     });
 
@@ -34,7 +34,7 @@ describe('AppModule', () => {
       mockQuery.mockRejectedValueOnce(dbError);
 
       await expect(appModule.onModuleInit()).rejects.toThrow(
-        'Database connection failed'
+        'Database connection failed',
       );
     });
 

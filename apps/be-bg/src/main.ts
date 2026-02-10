@@ -15,11 +15,13 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Active la validation automatique des DTOs
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: true,
-    transform: true,
-  }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
 
   // Autoriser le front sur plusieurs ports
   app.enableCors({
@@ -61,4 +63,9 @@ async function bootstrap() {
   console.log(`📖 Swagger available on http://localhost:${port}/api-docs`);
 }
 
-bootstrap();
+bootstrap().catch((err) => {
+  // Log startup errors and exit with failure
+
+  console.error(err);
+  process.exit(1);
+});

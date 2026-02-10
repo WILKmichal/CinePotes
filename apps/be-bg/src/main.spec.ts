@@ -30,7 +30,6 @@ describe('bootstrap function', () => {
   it('should parse APP_PORT as number', () => {
     process.env.APP_PORT = '3002';
     const port = Number(process.env.APP_PORT);
-    
     expect(port).toBe(3002);
     expect(typeof port).toBe('number');
   });
@@ -38,13 +37,19 @@ describe('bootstrap function', () => {
   it('should handle different port numbers', () => {
     process.env.APP_PORT = '8080';
     const port = Number(process.env.APP_PORT);
-    
     expect(port).toBe(8080);
   });
 
   it('should have all required environment variables set', () => {
-    const requiredVars = ['DB_HOST', 'DB_PORT', 'DB_USER', 'DB_PASSWORD', 'DB_NAME', 'APP_PORT'];
-    
+    const requiredVars = [
+      'DB_HOST',
+      'DB_PORT',
+      'DB_USER',
+      'DB_PASSWORD',
+      'DB_NAME',
+      'APP_PORT',
+    ];
+
     process.env.DB_HOST = 'localhost';
     process.env.DB_PORT = '5432';
     process.env.DB_USER = 'postgres';
@@ -52,7 +57,7 @@ describe('bootstrap function', () => {
     process.env.DB_NAME = 'mydatabase';
     process.env.APP_PORT = '3002';
 
-    requiredVars.forEach(varName => {
+    requiredVars.forEach((varName) => {
       expect(process.env[varName]).toBeDefined();
     });
   });

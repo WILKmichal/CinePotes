@@ -8,17 +8,15 @@ import { UsersModule } from './users/users.module';
 import { SeancesModule } from './seances/seances.module';
 import { ListsModule } from './lists/lists.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
 import { User } from './users/entities/user.entity';
 import { Seance } from './seances/entities/seance.entity';
 import { Participant } from './seances/entities/participant.entity';
 import { Liste } from './lists/entities/liste.entity';
 import { ListeFilm } from './lists/entities/liste-film.entity';
-import { DataSource } from 'typeorm';
-import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST,

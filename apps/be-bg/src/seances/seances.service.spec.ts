@@ -114,7 +114,9 @@ describe('SeancesService', () => {
     it('doit générer un code de 6 caractères', async () => {
       mockSeanceRepository.findOne.mockResolvedValue(null);
       mockSeanceRepository.create.mockImplementation((data) => data as Seance);
-      mockSeanceRepository.save.mockImplementation((data) => Promise.resolve(data as Seance));
+      mockSeanceRepository.save.mockImplementation((data) =>
+        Promise.resolve(data as Seance),
+      );
 
       const result = await service.create(mockCreateDto, mockProprietaireId);
 
@@ -127,9 +129,9 @@ describe('SeancesService', () => {
       const existingSeance = { id: 'existing-id', est_actif: true };
       mockSeanceRepository.findOne.mockResolvedValue(existingSeance as Seance);
 
-      await expect(service.create(mockCreateDto, mockProprietaireId))
-        .rejects
-        .toThrow(ConflictException);
+      await expect(
+        service.create(mockCreateDto, mockProprietaireId),
+      ).rejects.toThrow(ConflictException);
     });
   });
 
@@ -153,8 +155,12 @@ describe('SeancesService', () => {
 
       mockSeanceRepository.findOneBy.mockResolvedValue(mockSeance);
       mockParticipantRepository.findOneBy.mockResolvedValue(null); // Pas déjà participant
-      mockParticipantRepository.create.mockReturnValue(mockParticipant as Participant);
-      mockParticipantRepository.save.mockResolvedValue(mockParticipant as Participant);
+      mockParticipantRepository.create.mockReturnValue(
+        mockParticipant as Participant,
+      );
+      mockParticipantRepository.save.mockResolvedValue(
+        mockParticipant as Participant,
+      );
 
       const result = await service.join(mockCode, mockUtilisateurId);
 
@@ -167,28 +173,30 @@ describe('SeancesService', () => {
     it('doit rejeter si le code est invalide', async () => {
       mockSeanceRepository.findOneBy.mockResolvedValue(null);
 
-      await expect(service.join('INVALID', mockUtilisateurId))
-        .rejects
-        .toThrow(NotFoundException);
+      await expect(service.join('INVALID', mockUtilisateurId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
-    it('doit rejeter si l\'utilisateur a déjà rejoint', async () => {
+    it("doit rejeter si l'utilisateur a déjà rejoint", async () => {
       const existingParticipant = { id: 'existing-participant' };
       mockSeanceRepository.findOneBy.mockResolvedValue(mockSeance);
-      mockParticipantRepository.findOneBy.mockResolvedValue(existingParticipant as Participant);
+      mockParticipantRepository.findOneBy.mockResolvedValue(
+        existingParticipant as Participant,
+      );
 
-      await expect(service.join(mockCode, mockUtilisateurId))
-        .rejects
-        .toThrow(ConflictException);
+      await expect(service.join(mockCode, mockUtilisateurId)).rejects.toThrow(
+        ConflictException,
+      );
     });
 
-    it('doit rejeter si la séance n\'est plus en attente', async () => {
+    it("doit rejeter si la séance n'est plus en attente", async () => {
       const seanceEnCours = { ...mockSeance, statut: SeanceStatut.EN_COURS };
       mockSeanceRepository.findOneBy.mockResolvedValue(seanceEnCours as Seance);
 
-      await expect(service.join(mockCode, mockUtilisateurId))
-        .rejects
-        .toThrow(ConflictException);
+      await expect(service.join(mockCode, mockUtilisateurId)).rejects.toThrow(
+        ConflictException,
+      );
     });
   });
 
@@ -229,12 +237,12 @@ describe('SeancesService', () => {
       expect(result.code).toBe('ABC123');
     });
 
-    it('doit rejeter si le code n\'existe pas', async () => {
+    it("doit rejeter si le code n'existe pas", async () => {
       mockSeanceRepository.findOneBy.mockResolvedValue(null);
 
-      await expect(service.findByCode('INVALID'))
-        .rejects
-        .toThrow(NotFoundException);
+      await expect(service.findByCode('INVALID')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -244,7 +252,9 @@ describe('SeancesService', () => {
         { id: 'p1', seance_id: 'seance-id', utilisateur_id: 'user-1' },
         { id: 'p2', seance_id: 'seance-id', utilisateur_id: 'user-2' },
       ];
-      mockParticipantRepository.find.mockResolvedValue(mockParticipants as Participant[]);
+      mockParticipantRepository.find.mockResolvedValue(
+        mockParticipants as Participant[],
+      );
 
       const result = await service.getParticipants('seance-id');
 
@@ -267,19 +277,25 @@ describe('SeancesService', () => {
     const mockUtilisateurId = 'user-id-123';
 
     it('doit permettre à un participant de quitter', async () => {
-      mockParticipantRepository.delete.mockResolvedValue({ affected: 1, raw: {} });
+      mockParticipantRepository.delete.mockResolvedValue({
+        affected: 1,
+        raw: {},
+      });
 
       const result = await service.leave(mockSeanceId, mockUtilisateurId);
 
       expect(result.message).toBe('Vous avez quitté la séance');
     });
 
-    it('doit rejeter si l\'utilisateur n\'est pas participant', async () => {
-      mockParticipantRepository.delete.mockResolvedValue({ affected: 0, raw: {} });
+    it("doit rejeter si l'utilisateur n'est pas participant", async () => {
+      mockParticipantRepository.delete.mockResolvedValue({
+        affected: 0,
+        raw: {},
+      });
 
-      await expect(service.leave(mockSeanceId, mockUtilisateurId))
-        .rejects
-        .toThrow(NotFoundException);
+      await expect(
+        service.leave(mockSeanceId, mockUtilisateurId),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -299,17 +315,25 @@ describe('SeancesService', () => {
         statut: SeanceStatut.EN_COURS,
       } as Seance);
 
-      const result = await service.updateStatut(mockSeanceId, mockProprietaireId, SeanceStatut.EN_COURS);
+      const result = await service.updateStatut(
+        mockSeanceId,
+        mockProprietaireId,
+        SeanceStatut.EN_COURS,
+      );
 
       expect(result.statut).toBe(SeanceStatut.EN_COURS);
     });
 
-    it('doit rejeter si la séance n\'existe pas ou n\'appartient pas au propriétaire', async () => {
+    it("doit rejeter si la séance n'existe pas ou n'appartient pas au propriétaire", async () => {
       mockSeanceRepository.findOneBy.mockResolvedValue(null);
 
-      await expect(service.updateStatut(mockSeanceId, mockProprietaireId, SeanceStatut.EN_COURS))
-        .rejects
-        .toThrow(NotFoundException);
+      await expect(
+        service.updateStatut(
+          mockSeanceId,
+          mockProprietaireId,
+          SeanceStatut.EN_COURS,
+        ),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 });

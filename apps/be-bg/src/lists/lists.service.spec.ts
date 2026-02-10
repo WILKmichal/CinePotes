@@ -90,7 +90,9 @@ describe('ListsService', () => {
       const result = await service.findOneById(mockListeId);
 
       expect(result).toEqual(mockListe);
-      expect(mockListeRepository.findOneBy).toHaveBeenCalledWith({ id: mockListeId });
+      expect(mockListeRepository.findOneBy).toHaveBeenCalledWith({
+        id: mockListeId,
+      });
     });
 
     it('doit retourner null si non trouvée', async () => {
@@ -103,7 +105,7 @@ describe('ListsService', () => {
   });
 
   describe('findAllByUser', () => {
-    it('doit retourner toutes les listes d\'un utilisateur', async () => {
+    it("doit retourner toutes les listes d'un utilisateur", async () => {
       mockListeRepository.find.mockResolvedValue([mockListe]);
 
       const result = await service.findAllByUser(mockUserId);
@@ -165,7 +167,10 @@ describe('ListsService', () => {
     });
 
     it('doit créer une nouvelle liste sans description', async () => {
-      const listeWithoutDesc = { ...mockListe, description: null as unknown as string };
+      const listeWithoutDesc = {
+        ...mockListe,
+        description: null as unknown as string,
+      };
       mockListeRepository.create.mockReturnValue(listeWithoutDesc);
       mockListeRepository.save.mockResolvedValue(listeWithoutDesc);
 
@@ -226,7 +231,7 @@ describe('ListsService', () => {
       expect(mockListeFilmRepository.save).toHaveBeenCalled();
     });
 
-    it('doit retourner null si la liste n\'appartient pas à l\'utilisateur', async () => {
+    it("doit retourner null si la liste n'appartient pas à l'utilisateur", async () => {
       mockListeRepository.findOne.mockResolvedValue(null);
 
       const result = await service.addFilmToList(mockListeId, mockTmdbId, mockUserId);
@@ -235,7 +240,10 @@ describe('ListsService', () => {
     });
 
     it('doit retourner le film créé si erreur (doublon)', async () => {
-      const createdFilm = { liste_id: mockListeId, tmdb_id: mockTmdbId } as ListeFilm;
+      const createdFilm = {
+        liste_id: mockListeId,
+        tmdb_id: mockTmdbId,
+      } as ListeFilm;
       mockListeRepository.findOne.mockResolvedValue(mockListe);
       mockListeFilmRepository.create.mockReturnValue(createdFilm);
       mockListeFilmRepository.save.mockRejectedValue(new Error('Duplicate'));
@@ -250,9 +258,12 @@ describe('ListsService', () => {
   });
 
   describe('removeFilmFromList', () => {
-    it('doit supprimer un film d\'une liste et retourner true', async () => {
+    it("doit supprimer un film d'une liste et retourner true", async () => {
       mockListeRepository.findOne.mockResolvedValue(mockListe);
-      mockListeFilmRepository.delete.mockResolvedValue({ affected: 1, raw: {} });
+      mockListeFilmRepository.delete.mockResolvedValue({
+        affected: 1,
+        raw: {},
+      });
 
       const result = await service.removeFilmFromList(mockListeId, mockTmdbId, mockUserId);
 
@@ -263,7 +274,7 @@ describe('ListsService', () => {
       });
     });
 
-    it('doit retourner false si la liste n\'appartient pas à l\'utilisateur', async () => {
+    it("doit retourner false si la liste n'appartient pas à l'utilisateur", async () => {
       mockListeRepository.findOne.mockResolvedValue(null);
 
       const result = await service.removeFilmFromList(mockListeId, mockTmdbId, mockUserId);
@@ -271,9 +282,12 @@ describe('ListsService', () => {
       expect(result).toBe(false);
     });
 
-    it('doit retourner false si le film n\'est pas dans la liste', async () => {
+    it("doit retourner false si le film n'est pas dans la liste", async () => {
       mockListeRepository.findOne.mockResolvedValue(mockListe);
-      mockListeFilmRepository.delete.mockResolvedValue({ affected: 0, raw: {} });
+      mockListeFilmRepository.delete.mockResolvedValue({
+        affected: 0,
+        raw: {},
+      });
 
       const result = await service.removeFilmFromList(mockListeId, mockTmdbId, mockUserId);
 
@@ -282,7 +296,10 @@ describe('ListsService', () => {
 
     it('doit gérer affected null', async () => {
       mockListeRepository.findOne.mockResolvedValue(mockListe);
-      mockListeFilmRepository.delete.mockResolvedValue({ affected: null, raw: {} });
+      mockListeFilmRepository.delete.mockResolvedValue({
+        affected: null,
+        raw: {},
+      });
 
       const result = await service.removeFilmFromList(mockListeId, mockTmdbId, mockUserId);
 
@@ -291,7 +308,7 @@ describe('ListsService', () => {
   });
 
   describe('getFilmsInList', () => {
-    it('doit retourner tous les ids de films d\'une liste', async () => {
+    it("doit retourner tous les ids de films d'une liste", async () => {
       mockListeRepository.findOne.mockResolvedValue(mockListe);
       mockListeFilmRepository.find.mockResolvedValue([
         { ...mockListeFilm, tmdb_id: 123 } as ListeFilm,
@@ -307,7 +324,7 @@ describe('ListsService', () => {
       });
     });
 
-    it('doit retourner un tableau vide si la liste n\'appartient pas à l\'utilisateur', async () => {
+    it("doit retourner un tableau vide si la liste n'appartient pas à l'utilisateur", async () => {
       mockListeRepository.findOne.mockResolvedValue(null);
 
       const result = await service.getFilmsInList(mockListeId, mockUserId);
@@ -327,8 +344,17 @@ describe('ListsService', () => {
 
   describe('findAllByUserWithFilms', () => {
     it('doit retourner toutes les listes avec leurs films', async () => {
-      const liste1 = { ...mockListe, id: 'liste-1', films: [{ tmdb_id: 111 }, { tmdb_id: 222 }] as ListeFilm[] };
-      const liste2 = { ...mockListe, id: 'liste-2', nom: 'Liste 2', films: [{ tmdb_id: 333 }] as ListeFilm[] };
+      const liste1 = {
+        ...mockListe,
+        id: 'liste-1',
+        films: [{ tmdb_id: 111 }, { tmdb_id: 222 }] as ListeFilm[],
+      };
+      const liste2 = {
+        ...mockListe,
+        id: 'liste-2',
+        nom: 'Liste 2',
+        films: [{ tmdb_id: 333 }] as ListeFilm[],
+      };
 
       mockListeRepository.find.mockResolvedValue([liste1, liste2] as Liste[]);
 
