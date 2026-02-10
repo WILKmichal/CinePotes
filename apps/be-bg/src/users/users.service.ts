@@ -34,14 +34,21 @@ export class UsersService {
   ): Promise<User> {
     const mot_de_passe_hash = await bcrypt.hash(plainPassword, 10);
 
-    const user = this.usersRepository.create({
+    const newUser: Partial<User> = {
       nom,
       email,
       mot_de_passe_hash,
       role,
       email_verifie: false,
       email_verification_token: randomUUID(),
-    });
+    }
+    
+    if(process.env.VERIFICATION_MAIL === 'FALSE') {
+      newUser.email_verification_token = null;
+      newUser.email_verifie = true;
+    }
+
+    const user = this.usersRepository.create(newUser);
 
     return this.usersRepository.save(user);
   }

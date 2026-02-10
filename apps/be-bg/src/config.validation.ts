@@ -6,6 +6,7 @@ export function validateEnvironmentVariables(): void {
     DB_PASSWORD: 'postgres database password (e.g., example)',
     DB_NAME: 'postgres database name (e.g., mydatabase)',
     APP_PORT: 'Application port (e.g., 3002)',
+    VERIFICATION_MAIL: 'Enable verification mail (TRUE or FALSE)',
   };
 
   const missing = Object.entries(requiredVars)
