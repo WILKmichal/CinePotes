@@ -8,6 +8,7 @@ import { validateEnvironmentVariables } from './config.validation';
 
 dotenv.config();
 
+
 async function bootstrap() {
   // Validate environment variables before creating the app
   validateEnvironmentVariables();
