@@ -63,4 +63,9 @@ async function bootstrap() {
   console.log(`📖 Swagger available on http://localhost:${port}/api-docs`);
 }
 
-bootstrap();
+bootstrap().catch((err) => {
+  // Log startup errors and exit with failure
+
+  console.error(err);
+  process.exit(1);
+});

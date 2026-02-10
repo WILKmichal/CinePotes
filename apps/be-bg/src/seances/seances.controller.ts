@@ -7,8 +7,9 @@ import {
   Param,
   Delete,
   UseGuards,
-  Request,
+  Req,
 } from '@nestjs/common';
+import type { Request as ExpressRequest } from 'express';
 import { AuthGuard } from '@nestjs/passport';
 import { SeancesService } from './seances.service';
 import { CreateSeanceDto } from './dto/create-seance.dto';
@@ -22,14 +23,20 @@ export class SeancesController {
 
   //POST /seances - Crée une nouvelle séance
   @Post()
-  create(@Body() createSeanceDto: CreateSeanceDto, @Request() request) {
+  create(
+    @Body() createSeanceDto: CreateSeanceDto,
+    @Req() request: ExpressRequest & { user: { sub: string } },
+  ) {
     const userId = request.user.sub; // Récupère l'ID utilisateur depuis le JWT
     return this.seancesService.create(createSeanceDto, userId);
   }
 
   //POST /seances/join - Rejoindre une séance via son code
   @Post('join')
-  join(@Body() joinSeanceDto: JoinSeanceDto, @Request() request) {
+  join(
+    @Body() joinSeanceDto: JoinSeanceDto,
+    @Req() request: ExpressRequest & { user: { sub: string } },
+  ) {
     const userId = request.user.sub;
     return this.seancesService.join(joinSeanceDto.code, userId);
   }
@@ -44,7 +51,7 @@ export class SeancesController {
   updateStatut(
     @Param('id') id: string,
     @Body() updateStatutDto: UpdateStatutDto,
-    @Request() request,
+    @Req() request: ExpressRequest & { user: { sub: string } },
   ) {
     const userId = request.user.sub;
     return this.seancesService.updateStatut(id, userId, updateStatutDto.statut);
@@ -52,13 +59,16 @@ export class SeancesController {
 
   // GET /seances/self - Récupère la séance créée par l'utilisateur connecté
   @Get('self')
-  findMySeance(@Request() req) {
+  findMySeance(@Req() req: ExpressRequest & { user: { sub: string } }) {
     const userId = req.user.sub;
     return this.seancesService.findByProprietaire(userId);
   }
   // DELETE /seances/:id/leave - Quitter une séance
   @Delete(':id/leave')
-  leave(@Param('id') id: string, @Request() request) {
+  leave(
+    @Param('id') id: string,
+    @Req() request: ExpressRequest & { user: { sub: string } },
+  ) {
     const userId = request.user.sub;
     return this.seancesService.leave(id, userId);
   }
