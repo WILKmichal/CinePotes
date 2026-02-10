@@ -54,6 +54,22 @@ export class ListsService {
     return this.listesRepository.save(liste);
   }
 
+  // Modifier une liste (nom, description)
+  async update(
+    listeId: string,
+    userId: string,
+    nom?: string,
+    description?: string,
+  ): Promise<Liste | null> {
+    const liste = await this.findOne(listeId, userId);
+    if (!liste) return null;
+
+    if (nom) liste.nom = nom;
+    if (description !== undefined) liste.description = description;
+
+    return this.listesRepository.save(liste);
+  }
+
   // Supprimer une liste
   async delete(listeId: string, userId: string): Promise<boolean> {
     const res = await this.listesRepository.delete({

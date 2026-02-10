@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from '@nestjs/testing';
 import { ListsController } from './lists.controller';
-import { ListsService, Liste, ListeFilm } from './lists.service';
+import { ListsService } from './lists.service';
+import { Liste } from './entities/liste.entity';
+import { ListeFilm } from './entities/liste-film.entity';
 import {
   BadRequestException,
   NotFoundException,
@@ -17,6 +19,7 @@ describe('ListsController', () => {
   const mockListeId = 'liste-456';
   const mockTmdbId = 12345;
 
+  // Simule la requête avec le JWT décodé (user.sub = userId)
   const mockRequest = {
     user: { sub: mockUserId },
   };
@@ -28,6 +31,8 @@ describe('ListsController', () => {
     utilisateur_id: mockUserId,
     cree_le: new Date(),
     maj_le: new Date(),
+    utilisateur: {} as any,
+    films: [],
   };
 
   const mockListeFilm: ListeFilm = {
@@ -35,9 +40,11 @@ describe('ListsController', () => {
     liste_id: mockListeId,
     tmdb_id: mockTmdbId,
     cree_le: new Date(),
+    liste: {} as any,
   };
 
   beforeEach(async () => {
+    // On mock toutes les méthodes du service pour isoler le controller
     const mockListsService = {
       findAllByUser: jest.fn(),
       findAllByUserWithFilms: jest.fn(),
@@ -45,6 +52,7 @@ describe('ListsController', () => {
       getFilmsInList: jest.fn(),
       create: jest.fn(),
       addFilmToList: jest.fn(),
+      update: jest.fn(),
       delete: jest.fn(),
       removeFilmFromList: jest.fn(),
     };
@@ -58,6 +66,7 @@ describe('ListsController', () => {
         },
       ],
     })
+      // On bypass le guard d'auth pour tester uniquement la logique du controller
       .overrideGuard(AuthGuard)
       .useValue({ canActivate: () => true })
       .compile();
@@ -70,6 +79,8 @@ describe('ListsController', () => {
     expect(controller).toBeDefined();
   });
 
+  // ---- GET /lists ----
+
   describe('findAll', () => {
     it('should return all lists for the user', async () => {
       listsService.findAllByUser.mockResolvedValue([mockListe]);
@@ -80,6 +91,8 @@ describe('ListsController', () => {
       expect(listsService.findAllByUser).toHaveBeenCalledWith(mockUserId);
     });
   });
+
+  // ---- GET /lists/with-films ----
 
   describe('findAllWithFilms', () => {
     it('should return all lists with films for the user', async () => {
@@ -95,6 +108,8 @@ describe('ListsController', () => {
     });
   });
 
+  // ---- GET /lists/:id ----
+
   describe('findOne', () => {
     it('should return a specific list', async () => {
       listsService.findOne.mockResolvedValue(mockListe);
@@ -109,13 +124,15 @@ describe('ListsController', () => {
     });
 
     it('should throw NotFoundException when list not found', async () => {
-      listsService.findOne.mockResolvedValue(undefined);
+      listsService.findOne.mockResolvedValue(null);
 
       await expect(
         controller.findOne(mockListeId, mockRequest),
       ).rejects.toThrow(NotFoundException);
     });
   });
+
+  // ---- GET /lists/:id/films ----
 
   describe('getFilms', () => {
     it('should return films in a list', async () => {
@@ -128,13 +145,16 @@ describe('ListsController', () => {
     });
 
     it('should throw NotFoundException when list not found', async () => {
-      listsService.findOne.mockResolvedValue(undefined);
+      // On vérifie que la liste existe avant de chercher les films
+      listsService.findOne.mockResolvedValue(null);
 
       await expect(
         controller.getFilms(mockListeId, mockRequest),
       ).rejects.toThrow(NotFoundException);
     });
   });
+
+  // ---- POST /lists ----
 
   describe('create', () => {
     it('should create a new list with description', async () => {
@@ -154,7 +174,7 @@ describe('ListsController', () => {
     });
 
     it('should create a new list without description', async () => {
-      const listeWithoutDesc = { ...mockListe, description: undefined };
+      const listeWithoutDesc = { ...mockListe, description: null as unknown as string };
       listsService.create.mockResolvedValue(listeWithoutDesc);
 
       const result = await controller.create({ nom: 'Ma liste' }, mockRequest);
@@ -168,6 +188,7 @@ describe('ListsController', () => {
     });
 
     it('should trim whitespace from nom and description', async () => {
+      // Le controller doit nettoyer les espaces avant d'envoyer au service
       listsService.create.mockResolvedValue(mockListe);
 
       await controller.create(
@@ -201,6 +222,8 @@ describe('ListsController', () => {
     });
   });
 
+  // ---- POST /lists/:id/films ----
+
   describe('addFilm', () => {
     it('should add a film to a list', async () => {
       listsService.addFilmToList.mockResolvedValue(mockListeFilm);
@@ -233,12 +256,14 @@ describe('ListsController', () => {
     });
 
     it('should throw BadRequestException when tmdbId is 0', async () => {
+      // 0 est falsy en JS, donc le controller doit le rejeter
       await expect(
         controller.addFilm(mockListeId, { tmdbId: 0 }, mockRequest),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw ForbiddenException when list not found or access denied', async () => {
+      // Le service retourne null si la liste n'existe pas ou n'appartient pas au user
       listsService.addFilmToList.mockResolvedValue(null);
 
       await expect(
@@ -247,10 +272,73 @@ describe('ListsController', () => {
     });
   });
 
+  // ---- PATCH /lists/:id ----
+
+  describe('update', () => {
+    it('should update a list name and description', async () => {
+      const updatedListe = { ...mockListe, nom: 'Nouveau nom', description: 'Nouvelle desc' };
+      listsService.update.mockResolvedValue(updatedListe);
+
+      const result = await controller.update(
+        mockListeId,
+        { nom: 'Nouveau nom', description: 'Nouvelle desc' },
+        mockRequest,
+      );
+
+      expect(result).toEqual(updatedListe);
+      expect(listsService.update).toHaveBeenCalledWith(
+        mockListeId,
+        mockUserId,
+        'Nouveau nom',
+        'Nouvelle desc',
+      );
+    });
+
+    it('should trim whitespace from nom and description', async () => {
+      listsService.update.mockResolvedValue(mockListe);
+
+      await controller.update(
+        mockListeId,
+        { nom: '  Nouveau nom  ', description: '  Desc  ' },
+        mockRequest,
+      );
+
+      expect(listsService.update).toHaveBeenCalledWith(
+        mockListeId,
+        mockUserId,
+        'Nouveau nom',
+        'Desc',
+      );
+    });
+
+    it('should throw BadRequestException when nom is empty', async () => {
+      await expect(
+        controller.update(mockListeId, { nom: '' }, mockRequest),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException when nom is only whitespace', async () => {
+      await expect(
+        controller.update(mockListeId, { nom: '   ' }, mockRequest),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw NotFoundException when list not found', async () => {
+      listsService.update.mockResolvedValue(null);
+
+      await expect(
+        controller.update(mockListeId, { nom: 'Test' }, mockRequest),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ---- DELETE /lists/:id ----
+
   describe('delete', () => {
     it('should delete a list', async () => {
       listsService.delete.mockResolvedValue(true);
 
+      // Le controller ne retourne rien (204 No Content)
       await expect(
         controller.delete(mockListeId, mockRequest),
       ).resolves.toBeUndefined();
@@ -266,6 +354,8 @@ describe('ListsController', () => {
     });
   });
 
+  // ---- DELETE /lists/:id/films/:tmdbId ----
+
   describe('removeFilm', () => {
     it('should remove a film from a list', async () => {
       listsService.removeFilmFromList.mockResolvedValue(true);
@@ -273,6 +363,7 @@ describe('ListsController', () => {
       await expect(
         controller.removeFilm(mockListeId, String(mockTmdbId), mockRequest),
       ).resolves.toBeUndefined();
+      // Le tmdbId est parsé en number depuis le param string
       expect(listsService.removeFilmFromList).toHaveBeenCalledWith(
         mockListeId,
         mockTmdbId,
