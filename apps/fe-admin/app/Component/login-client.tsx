@@ -25,7 +25,7 @@ export default function LoginPage() {
       return;
     }
 
-    location.href = `http://localhost:3001/?access_token=${encodeURIComponent(token)}`;
+    location.href = `http://localhost:3001/auth/callback?token=${encodeURIComponent(token)}`;
   };
 
   const doLogin = async () => {

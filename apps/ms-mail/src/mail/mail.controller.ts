@@ -9,6 +9,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { MailService } from './mail.service';
 import { SendMailDto } from './dto/send-link.dto';
+import { pageReiniMotDePasse } from './app/page';
 
 @ApiTags('Mail')
 @Controller('mail')
@@ -46,19 +47,23 @@ export class MailController {
       message: isValid ? 'Connexion SMTP OK' : 'Connexion SMTP échouée',
     };
   }
+
   @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Envoyer un email de réinitialisation' })
   async resetPassword(@Body() body: {
     email: string;
     resetUrl: string;
     expiresInMinutes: number;
   }) {
-    await this.mailService.sendResetPasswordEmail(
+    const html = pageReiniMotDePasse(body.resetUrl, body.expiresInMinutes);
+
+    await this.mailService.sendEmail(
       body.email,
-      body.resetUrl,
-      body.expiresInMinutes,
+      'Réinitialisation de votre mot de passe',
+      html,
     );
 
     return { message: 'Reset password email envoyé' };
   }
-
 }

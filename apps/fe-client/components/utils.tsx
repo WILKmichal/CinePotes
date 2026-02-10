@@ -54,7 +54,7 @@ export default function Header() {
   const displayName = useSyncExternalStore(
     emptySubscribe,
     getDisplayName,
-    () => null // server snapshot
+    () => null
   );
 
   const handleLogout = () => {

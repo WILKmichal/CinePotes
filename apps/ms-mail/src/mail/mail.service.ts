@@ -2,7 +2,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import { Transporter } from 'nodemailer';
-import { pageReiniMotDePasse } from './app/page'
 
 @Injectable()
 export class MailService {
@@ -71,18 +70,5 @@ export class MailService {
       this.logger.error('Erreur de connexion SMTP', error);
       return false;
     }
-  }
-  async sendResetPasswordEmail(
-  email: string,
-  resetUrl: string,
-  expiresInMinutes: number,
-) {
-    const html = pageReiniMotDePasse(resetUrl, expiresInMinutes);
-
-    await this.sendEmail(
-      email,
-      'Réinitialisation de votre mot de passe',
-      html,
-    );
   }
 }

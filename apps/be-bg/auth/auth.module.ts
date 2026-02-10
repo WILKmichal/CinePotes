@@ -8,10 +8,14 @@ import { JwtStrategy } from './jwt.strategy';
 import { PassportModule } from '@nestjs/passport';
 import { MailService } from '../../ms-mail/src/mail/mail.service';
 import * as dotenv from 'dotenv';
+import { MailModule } from '../src/mail/mail.module';
+
+
 dotenv.config();
 @Module({
   imports: [
     UsersModule,
+    MailModule,
     PassportModule,
     JwtModule.register({
       global: true,
