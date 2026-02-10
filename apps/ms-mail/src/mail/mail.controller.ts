@@ -46,4 +46,19 @@ export class MailController {
       message: isValid ? 'Connexion SMTP OK' : 'Connexion SMTP échouée',
     };
   }
+  @Post('reset-password')
+  async resetPassword(@Body() body: {
+    email: string;
+    resetUrl: string;
+    expiresInMinutes: number;
+  }) {
+    await this.mailService.sendResetPasswordEmail(
+      body.email,
+      body.resetUrl,
+      body.expiresInMinutes,
+    );
+
+    return { message: 'Reset password email envoyé' };
+  }
+
 }

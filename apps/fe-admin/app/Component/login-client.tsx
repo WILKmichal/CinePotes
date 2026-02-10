@@ -192,7 +192,16 @@ export default function LoginPage() {
               }
             />
           </div>
-
+          {mode === "login" && (
+            <div className="text-right">
+              <button
+                type="button"
+                onClick={() => router.push("/forgot-password")}
+                className="text-sm text-blue-600 hover:underline">
+                Mot de passe oublié ?
+              </button>
+            </div>
+          )}
           {mode === "register" && (
             <div>
               <label

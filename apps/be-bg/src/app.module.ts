@@ -14,9 +14,11 @@ import { Participant } from './seances/entities/participant.entity';
 import { Liste } from './lists/entities/liste.entity';
 import { ListeFilm } from './lists/entities/liste-film.entity';
 import { DataSource } from 'typeorm';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST,
