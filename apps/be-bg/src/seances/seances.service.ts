@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { randomBytes } from 'node:crypto';
@@ -31,10 +35,15 @@ export class SeancesService {
   }
 
   // Crée une nouvelle séance
-  async create(createSeanceDto: CreateSeanceDto, proprietaire_id: string): Promise<Seance> {
+  async create(
+    createSeanceDto: CreateSeanceDto,
+    proprietaire_id: string,
+  ): Promise<Seance> {
     const existingSeance = await this.findByProprietaire(proprietaire_id);
     if (existingSeance) {
-      throw new ConflictException('Vous avez déjà une séance active. Veuillez la terminer avant d\'en créer une nouvelle.');
+      throw new ConflictException(
+        "Vous avez déjà une séance active. Veuillez la terminer avant d'en créer une nouvelle.",
+      );
     }
     const seance = this.seancesRepository.create({
       nom: createSeanceDto.nom,
@@ -49,13 +58,15 @@ export class SeancesService {
     return this.seancesRepository.save(seance);
   }
 
-
   // Rejoindre une séance via son code
-  async join(code: string, utilisateur_id: string): Promise<{ participant: Participant; seance: Seance }> {
+  async join(
+    code: string,
+    utilisateur_id: string,
+  ): Promise<{ participant: Participant; seance: Seance }> {
     const seance = await this.findByCode(code);
 
     if (seance.statut !== SeanceStatut.EN_ATTENTE) {
-      throw new ConflictException('La séance n\'accepte plus de participants');
+      throw new ConflictException("La séance n'accepte plus de participants");
     }
 
     // Vérifier si l'utilisateur a déjà rejoint
@@ -73,7 +84,8 @@ export class SeancesService {
       utilisateur_id,
     });
 
-    const savedParticipant = await this.participantsRepository.save(participant);
+    const savedParticipant =
+      await this.participantsRepository.save(participant);
 
     return { participant: savedParticipant, seance };
   }
@@ -86,7 +98,10 @@ export class SeancesService {
   }
   // Trouve une séance par son code
   async findByCode(code: string): Promise<Seance> {
-    const seance = await this.seancesRepository.findOneBy({ code, est_actif: true });
+    const seance = await this.seancesRepository.findOneBy({
+      code,
+      est_actif: true,
+    });
 
     if (!seance) {
       throw new NotFoundException(`Séance avec le code ${code} introuvable`);
@@ -105,18 +120,30 @@ export class SeancesService {
   }
   // Quitter une séance (suppression d'un participant)
   async leave(seance_id: string, utilisateur_id: string) {
-    const result = await this.participantsRepository.delete({ seance_id, utilisateur_id });
+    const result = await this.participantsRepository.delete({
+      seance_id,
+      utilisateur_id,
+    });
 
     if (result.affected === 0) {
-      throw new NotFoundException('Vous n\'êtes pas participant de cette séance');
+      throw new NotFoundException(
+        "Vous n'êtes pas participant de cette séance",
+      );
     }
 
     return { message: 'Vous avez quitté la séance' };
   }
 
   // Mettre à jour le statut d'une séance (seul le propriétaire peut le faire)
-  async updateStatut(seance_id: string, proprietaire_id: string, nouveauStatut: SeanceStatut): Promise<Seance> {
-    const seance = await this.seancesRepository.findOneBy({ id: seance_id, proprietaire_id });
+  async updateStatut(
+    seance_id: string,
+    proprietaire_id: string,
+    nouveauStatut: SeanceStatut,
+  ): Promise<Seance> {
+    const seance = await this.seancesRepository.findOneBy({
+      id: seance_id,
+      proprietaire_id,
+    });
 
     if (!seance) {
       throw new NotFoundException('Séance introuvable ou non autorisé');

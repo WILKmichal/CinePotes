@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { SeancesService } from './seances.service';
 import { CreateSeanceDto } from './dto/create-seance.dto';
@@ -31,7 +41,11 @@ export class SeancesController {
   }
   //PATCH /seances/:id/statut - Met à jour le statut d'une séance (seulement par le propriétaire)
   @Patch(':id/statut')
-  updateStatut(@Param('id') id: string, @Body() updateStatutDto: UpdateStatutDto, @Request() request) {
+  updateStatut(
+    @Param('id') id: string,
+    @Body() updateStatutDto: UpdateStatutDto,
+    @Request() request,
+  ) {
     const userId = request.user.sub;
     return this.seancesService.updateStatut(id, userId, updateStatutDto.statut);
   }

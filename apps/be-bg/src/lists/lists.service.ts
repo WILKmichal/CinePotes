@@ -16,7 +16,7 @@ export class ListsService {
     return this.listesRepository.find();
   }
 
-  findOneById(id : string ): Promise<Liste | null> {
+  findOneById(id: string): Promise<Liste | null> {
     return this.listesRepository.findOneBy({ id });
   }
 
@@ -30,8 +30,8 @@ export class ListsService {
     });
   }
 
-  //Récupère une liste par ID 
-  findOne(listeId: string,userId: string,): Promise<Liste | null> {
+  //Récupère une liste par ID
+  findOne(listeId: string, userId: string): Promise<Liste | null> {
     return this.listesRepository.findOne({
       where: {
         id: listeId,
@@ -40,7 +40,11 @@ export class ListsService {
     });
   }
   // Créer une nouvelle liste
-  async create(userId: string,nom: string,description?: string,): Promise<Liste> {
+  async create(
+    userId: string,
+    nom: string,
+    description?: string,
+  ): Promise<Liste> {
     const liste = this.listesRepository.create({
       nom,
       description,
@@ -51,7 +55,7 @@ export class ListsService {
   }
 
   // Supprimer une liste
-  async delete(listeId: string,userId: string,): Promise<boolean> {
+  async delete(listeId: string, userId: string): Promise<boolean> {
     const res = await this.listesRepository.delete({
       id: listeId,
       utilisateur_id: userId,
@@ -61,7 +65,11 @@ export class ListsService {
   }
 
   //Ajouter un film à une liste
-  async addFilmToList(listeId: string,tmdbId: number,userId: string,): Promise<ListeFilm | null> {
+  async addFilmToList(
+    listeId: string,
+    tmdbId: number,
+    userId: string,
+  ): Promise<ListeFilm | null> {
     const liste = await this.findOne(listeId, userId);
     if (!liste) return null;
 
@@ -78,7 +86,11 @@ export class ListsService {
   }
 
   // Retirer un film d'une liste
-  async removeFilmFromList(listeId: string,tmdbId: number,userId: string,): Promise<boolean> {
+  async removeFilmFromList(
+    listeId: string,
+    tmdbId: number,
+    userId: string,
+  ): Promise<boolean> {
     const liste = await this.findOne(listeId, userId);
     if (!liste) return false;
 
@@ -91,7 +103,7 @@ export class ListsService {
   }
 
   //Récupérer les films d'une liste
-  async getFilmsInList(listeId: string,userId: string,): Promise<number[]> {
+  async getFilmsInList(listeId: string, userId: string): Promise<number[]> {
     const liste = await this.findOne(listeId, userId);
     if (!liste) return [];
 
@@ -104,7 +116,9 @@ export class ListsService {
   }
 
   // Listes + films
-  async findAllByUserWithFilms(userId: string,): Promise<(Omit<Liste, 'films'> & { films: number[] })[]> {
+  async findAllByUserWithFilms(
+    userId: string,
+  ): Promise<(Omit<Liste, 'films'> & { films: number[] })[]> {
     const listes = await this.listesRepository.find({
       where: { utilisateur_id: userId },
       relations: ['films'],

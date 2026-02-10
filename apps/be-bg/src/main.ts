@@ -8,7 +8,6 @@ import { validateEnvironmentVariables } from './config.validation';
 
 dotenv.config();
 
-
 async function bootstrap() {
   // Validate environment variables before creating the app
   validateEnvironmentVariables();
@@ -16,11 +15,13 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Active la validation automatique des DTOs
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: true,
-    transform: true,
-  }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
 
   // Autoriser le front sur plusieurs ports
   app.enableCors({

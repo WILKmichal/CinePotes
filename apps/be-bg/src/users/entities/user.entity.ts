@@ -44,7 +44,6 @@ export class User {
   @Column({ type: 'uuid', nullable: true })
   email_verification_token: string | null;
 
-
   @CreateDateColumn({ type: 'timestamp', default: () => 'NOW()' })
   cree_le: Date;
 

@@ -1,51 +1,72 @@
-# Cinépote
+# CinePotes
 
-## Lancer l’application en mode développement
+Application collaborative pour organiser des soirees cinema entre amis.
 
-### Prérequis
+---
 
-- Docker
-- Docker Compose
-- pnpm
+## Prerequis
 
-### Installation des dépendances
+- [Docker](https://www.docker.com/) et Docker Compose
+- [pnpm](https://pnpm.io/) (v10+)
+- [Node.js](https://nodejs.org/) (v18+)
 
-À la racine du projet, installez les dépendances :
-```
+---
+
+## Installation
+
+```bash
 pnpm install
 ```
-### Ajout variable env
 
-#### Racine du projet
-```
+---
+
+## Variables d'environnement
+
+Chaque application necessite un fichier `.env` a sa racine.
+
+### Racine du projet (`/.env`)
+
+```env
 DB_HOST=localhost
 DB_PORT=5432
 DB_USER=postgres
-DB_PASSWORD=example
+DB_PASSWORD=
 DB_NAME=mydatabase
 
-JWT_SECRET=une_clef_complexe_a_changer
+JWT_SECRET=
 JWT_EXPIRES_IN=3600s
 ```
 
-#### be-bg
-Dans l'application  be-bg, créer un fichier .env avec ces variables la :
-```
+### Backend principal (`apps/be-bg/.env`)
+
+```env
+# Serveur
 PORT=3002
-TMDB_API_KEY=a92bcc609255f705450fa5885d59c430
+APP_PORT=3002
+
+# Base de donnees
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=
+DB_NAME=mydatabase
+
+# APIs externes
+TMDB_API_KEY=
+TMDB_MS_URL=http://localhost:3333
 REDIS_URL=redis://localhost:6379
 
-TMDB_MS_URL=http://localhost:3333
-
+# Mail
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
-SMTP_USER=contact.cinepote@gmail.com
-SMTP_PASSWORD=rxpl pmak hrwh gzmw
+SMTP_USER=
+SMTP_PASSWORD=
 USE_ETHEREAL=false
 ```
-#### ms-tmdb
-Dans l'application ms-tmdb, créer un fichier .env avec ces variables la :
-```
+
+### Microservice TMDB (`apps/ms-tmdb/.env`)
+
+```env
 PORT=3333
 TMDB_API_KEY=
 REDIS_URL=redis://localhost:6379
@@ -53,35 +74,49 @@ REDIS_HOST=localhost
 REDIS_PORT=6379
 TMDB_MS_URL=http://localhost:3333/
 ```
-Generez vous même la clé TMDB. 
-#### fe-client
-Dans l'application fe-client, créer un fichier .env avec la variable :
-```
+
+> Generez votre propre cle TMDB sur [themoviedb.org](https://www.themoviedb.org/).
+
+### Frontend client (`apps/fe-client/.env`)
+
+```env
 NEXT_PUBLIC_API_URL=http://localhost:3333
+NEXT_PUBLIC_API_BG_URL=http://localhost:3002
 NEXT_PUBLIC_ADMIN_URL=http://localhost:3000
-NEXT_PUBLIC_API_URL=http://localhost:3002
-
 ```
-#### ms-mail
-Dans l'application ms-mail, créer un fichier .env avec ces variables la :
 
-```
+### Microservice Mail (`apps/ms-mail/.env`)
+
+```env
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
-SMTP_USER=contact.cinepote@gmail.com
+SMTP_USER=
 SMTP_PASSWORD=
 USE_ETHEREAL=false
 ```
-### Démarrage des services Docker
 
-Toujours à la racine du projet, lancez les services nécessaires :
+---
 
-```
+## Lancement
+
+### 1. Demarrer les services Docker
+
+```bash
 docker compose up
 ```
-### Lancement des applications
 
-Une fois les services Docker démarrés, lancez les applications du projet en mode développement :
-```
+Cela lance PostgreSQL, Adminer (http://localhost:8080) et Redis.
+
+### 2. Lancer les applications
+
+```bash
 pnpm run dev
 ```
+
+| Application    | URL                            |
+|----------------|--------------------------------|
+| Frontend       | http://localhost:3001          |
+| Backend (API)  | http://localhost:3002          |
+| Swagger        | http://localhost:3002/api-docs |
+| TMDB Service   | http://localhost:3333          |
+| Adminer (BDD)  | http://localhost:8080          |

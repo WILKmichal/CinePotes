@@ -46,7 +46,7 @@ describe('SeancesController', () => {
   });
 
   describe('créer une séance', () => {
-    it('devrait appeler le service.create avec le DTO et l\'ID utilisateur', async () => {
+    it("devrait appeler le service.create avec le DTO et l'ID utilisateur", async () => {
       const createSeanceDto = {
         nom: 'Séance Test',
         date: new Date(),
@@ -67,13 +67,15 @@ describe('SeancesController', () => {
       } as any;
 
       jest.spyOn(service, 'create').mockResolvedValue(result);
-      expect(await controller.create(createSeanceDto, { user: { sub: mockUserId } })).toBe(result);
+      expect(
+        await controller.create(createSeanceDto, { user: { sub: mockUserId } }),
+      ).toBe(result);
       expect(service.create).toHaveBeenCalledWith(createSeanceDto, mockUserId);
     });
   });
 
   describe('rejoindre une séance', () => {
-    it('devrait appeler le service.join avec le code et l\'ID utilisateur', async () => {
+    it("devrait appeler le service.join avec le code et l'ID utilisateur", async () => {
       const joinSeanceDto = { code: 'ABC123' };
       const result = {
         participant: {
@@ -100,13 +102,15 @@ describe('SeancesController', () => {
       } as any;
 
       jest.spyOn(service, 'join').mockResolvedValue(result);
-      expect(await controller.join(joinSeanceDto, { user: { sub: mockUserId } })).toBe(result);
+      expect(
+        await controller.join(joinSeanceDto, { user: { sub: mockUserId } }),
+      ).toBe(result);
       expect(service.join).toHaveBeenCalledWith(joinSeanceDto.code, mockUserId);
     });
   });
 
-  describe('récupérer les participants d\'une séance', () => {
-    it('devrait appeler le service.getParticipants avec l\'ID de séance', async () => {
+  describe("récupérer les participants d'une séance", () => {
+    it("devrait appeler le service.getParticipants avec l'ID de séance", async () => {
       const seanceId = '1';
       const participants = [
         {
@@ -133,8 +137,8 @@ describe('SeancesController', () => {
     });
   });
 
-  describe('mettre à jour le statut d\'une séance', () => {
-    it('devrait appeler le service.updateStatut avec l\'ID séance, l\'ID utilisateur et le statut', async () => {
+  describe("mettre à jour le statut d'une séance", () => {
+    it("devrait appeler le service.updateStatut avec l'ID séance, l'ID utilisateur et le statut", async () => {
       const seanceId = '1';
       const updateStatutDto = { statut: SeanceStatut.TERMINEE };
       const result = {
@@ -152,13 +156,21 @@ describe('SeancesController', () => {
       } as any;
 
       jest.spyOn(service, 'updateStatut').mockResolvedValue(result);
-      expect(await controller.updateStatut(seanceId, updateStatutDto, { user: { sub: mockUserId } })).toBe(result);
-      expect(service.updateStatut).toHaveBeenCalledWith(seanceId, mockUserId, updateStatutDto.statut);
+      expect(
+        await controller.updateStatut(seanceId, updateStatutDto, {
+          user: { sub: mockUserId },
+        }),
+      ).toBe(result);
+      expect(service.updateStatut).toHaveBeenCalledWith(
+        seanceId,
+        mockUserId,
+        updateStatutDto.statut,
+      );
     });
   });
 
-  describe('trouver la séance de l\'utilisateur', () => {
-    it('devrait appeler le service.findByProprietaire avec l\'ID utilisateur', async () => {
+  describe("trouver la séance de l'utilisateur", () => {
+    it("devrait appeler le service.findByProprietaire avec l'ID utilisateur", async () => {
       const seance = {
         id: '1',
         nom: 'Séance Test',
@@ -174,17 +186,21 @@ describe('SeancesController', () => {
       } as any;
 
       jest.spyOn(service, 'findByProprietaire').mockResolvedValue(seance);
-      expect(await controller.findMySeance({ user: { sub: mockUserId } })).toBe(seance);
+      expect(await controller.findMySeance({ user: { sub: mockUserId } })).toBe(
+        seance,
+      );
       expect(service.findByProprietaire).toHaveBeenCalledWith(mockUserId);
     });
   });
 
   describe('quitter la séance', () => {
-    it('devrait appeler le service.leave avec l\'ID séance et l\'ID utilisateur', async () => {
+    it("devrait appeler le service.leave avec l'ID séance et l'ID utilisateur", async () => {
       const seanceId = '1';
       const result = { message: 'Séance quittée avec succès' };
       jest.spyOn(service, 'leave').mockResolvedValue(result);
-      const response = await controller.leave(seanceId, { user: { sub: mockUserId } });
+      const response = await controller.leave(seanceId, {
+        user: { sub: mockUserId },
+      });
       expect(response).toEqual(result);
       expect(service.leave).toHaveBeenCalledWith(seanceId, mockUserId);
     });
@@ -235,44 +251,64 @@ describe('SeancesController additional tests', () => {
         max_films: 0,
       };
       jest.spyOn(service, 'create').mockRejectedValue(new Error('Invalid DTO'));
-      await expect(controller.create(invalidDto, { user: { sub: mockUserId } })).rejects.toThrow('Invalid DTO');
+      await expect(
+        controller.create(invalidDto, { user: { sub: mockUserId } }),
+      ).rejects.toThrow('Invalid DTO');
     });
   });
 
   describe('join', () => {
     it('devrait retourner une erreur si le code est invalide', async () => {
       jest.spyOn(service, 'join').mockRejectedValue(new Error('Code invalide'));
-      await expect(controller.join({ code: '' }, { user: { sub: mockUserId } })).rejects.toThrow('Code invalide');
+      await expect(
+        controller.join({ code: '' }, { user: { sub: mockUserId } }),
+      ).rejects.toThrow('Code invalide');
     });
   });
 
   describe('getParticipants', () => {
-    it('devrait retourner une erreur si l\'ID de séance est invalide', async () => {
-      jest.spyOn(service, 'getParticipants').mockRejectedValue(new Error('Séance non trouvée'));
-      await expect(controller.getParticipants('invalid')).rejects.toThrow('Séance non trouvée');
+    it("devrait retourner une erreur si l'ID de séance est invalide", async () => {
+      jest
+        .spyOn(service, 'getParticipants')
+        .mockRejectedValue(new Error('Séance non trouvée'));
+      await expect(controller.getParticipants('invalid')).rejects.toThrow(
+        'Séance non trouvée',
+      );
     });
   });
 
   describe('updateStatut', () => {
     it('devrait retourner une erreur si le statut est invalide', async () => {
-      jest.spyOn(service, 'updateStatut').mockRejectedValue(new Error('Statut invalide'));
+      jest
+        .spyOn(service, 'updateStatut')
+        .mockRejectedValue(new Error('Statut invalide'));
       await expect(
-        controller.updateStatut('1', { statut: SeanceStatut.EN_ATTENTE }, { user: { sub: mockUserId } })
+        controller.updateStatut(
+          '1',
+          { statut: SeanceStatut.EN_ATTENTE },
+          { user: { sub: mockUserId } },
+        ),
       ).rejects.toThrow('Statut invalide');
     });
   });
 
   describe('findMySeance', () => {
-    it('devrait retourner null si aucune séance n\'est trouvée', async () => {
+    it("devrait retourner null si aucune séance n'est trouvée", async () => {
       jest.spyOn(service, 'findByProprietaire').mockResolvedValue(null);
-      expect(await controller.findMySeance({ user: { sub: mockUserId } })).toBeNull();
+      expect(
+        await controller.findMySeance({ user: { sub: mockUserId } }),
+      ).toBeNull();
     });
   });
 
   describe('leave', () => {
-    it('devrait retourner une erreur si l\'utilisateur n\'est pas participant', async () => {
-      jest.spyOn(service, 'leave').mockRejectedValue(new Error('Utilisateur non participant'));
-      await expect(controller.leave('1', { user: { sub: mockUserId } })).rejects.toThrow('Utilisateur non participant');
+    it("devrait retourner une erreur si l'utilisateur n'est pas participant", async () => {
+      jest
+        .spyOn(service, 'leave')
+        .mockRejectedValue(new Error('Utilisateur non participant'));
+      await expect(
+        controller.leave('1', { user: { sub: mockUserId } }),
+      ).rejects.toThrow('Utilisateur non participant');
     });
   });
 });

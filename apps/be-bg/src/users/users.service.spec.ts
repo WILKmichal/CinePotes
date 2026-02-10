@@ -42,10 +42,7 @@ describe('UsersService', () => {
       const result = await service.findOne('test@example.com');
       expect(result).toEqual(mockUser);
       expect(usersRepository.findOne).toHaveBeenCalledWith({
-        where: [
-          { email: 'test@example.com' },
-          { nom: 'test@example.com' },
-        ],
+        where: [{ email: 'test@example.com' }, { nom: 'test@example.com' }],
       });
     });
 
@@ -76,7 +73,11 @@ describe('UsersService', () => {
       usersRepository.create.mockReturnValue(mockUser);
       usersRepository.save.mockResolvedValue(mockUser);
 
-      const result = await service.createUser('John Doe', 'john@example.com', 'password');
+      const result = await service.createUser(
+        'John Doe',
+        'john@example.com',
+        'password',
+      );
 
       expect(bcrypt.hash).toHaveBeenCalledWith('password', 10);
       expect(usersRepository.create).toHaveBeenCalledWith({
