@@ -1,7 +1,6 @@
 services:
   db:
     image: postgres:18
-    restart: always
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: example
@@ -11,7 +10,6 @@ services:
 
   adminer:
     image: adminer
-    restart: always
     ports:
       - 8080:8080
   redis:
