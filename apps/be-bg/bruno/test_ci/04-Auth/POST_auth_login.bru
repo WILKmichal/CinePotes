@@ -16,19 +16,20 @@ headers {
 
 body:json {
   {
-    "username": "Testm_User",
-    "password": "Password123!"
+    "username": "bruno@test.fr",
+    "password": "Test123!"
   }
 }
 
 script:pre-request {
   const response = await bru.runRequest("./04-Auth/POST_auth_register.bru");
-  
 }
 
 script:post-response {
   const data = res.body;
-  bru.setEnvVar("ACCESS_TOKEN", data.access_token);
+  if (data && data.access_token) {
+    bru.setEnvVar("ACCESS_TOKEN", data.access_token);
+  }
 }
 
 tests {
