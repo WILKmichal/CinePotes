@@ -8,6 +8,8 @@ import { User } from '../users/entities/user.entity';
 describe('ListsService', () => {
   let service: ListsService;
 
+  // On mock les deux repositories utilisés par le service
+  // Ca permet de tester la logique métier sans toucher à la BDD
   const mockListeRepository = {
     create: jest.fn(),
     save: jest.fn(),
@@ -25,6 +27,7 @@ describe('ListsService', () => {
     delete: jest.fn(),
   };
 
+  // Données de test réutilisées partout
   const mockUserId = 'user-123';
   const mockListeId = 'liste-456';
   const mockTmdbId = 12345;
@@ -48,6 +51,7 @@ describe('ListsService', () => {
   } as ListeFilm;
 
   beforeEach(async () => {
+    // On recrée le module à chaque test pour avoir un état propre
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ListsService,
@@ -72,6 +76,8 @@ describe('ListsService', () => {
     expect(service).toBeDefined();
   });
 
+  // ---- Récupération de toutes les listes ----
+
   describe('findAll', () => {
     it('doit retourner toutes les listes', async () => {
       mockListeRepository.find.mockResolvedValue([mockListe]);
@@ -82,6 +88,8 @@ describe('ListsService', () => {
       expect(mockListeRepository.find).toHaveBeenCalled();
     });
   });
+
+  // ---- Recherche par ID simple ----
 
   describe('findOneById', () => {
     it('doit retourner une liste par son id', async () => {
@@ -104,6 +112,8 @@ describe('ListsService', () => {
     });
   });
 
+  // ---- Listes par utilisateur (trié par date décroissante) ----
+
   describe('findAllByUser', () => {
     it("doit retourner toutes les listes d'un utilisateur", async () => {
       mockListeRepository.find.mockResolvedValue([mockListe]);
@@ -111,6 +121,7 @@ describe('ListsService', () => {
       const result = await service.findAllByUser(mockUserId);
 
       expect(result).toEqual([mockListe]);
+      // On vérifie que le tri par date est bien appliqué
       expect(mockListeRepository.find).toHaveBeenCalledWith({
         where: { utilisateur_id: mockUserId },
         order: { cree_le: 'DESC' },
@@ -125,6 +136,9 @@ describe('ListsService', () => {
       expect(result).toEqual([]);
     });
   });
+
+  // ---- Recherche par ID + vérification propriétaire ----
+  // Important : on vérifie que l'utilisateur est bien le propriétaire de la liste
 
   describe('findOne', () => {
     it('doit retourner une liste par id et utilisateur', async () => {
@@ -149,6 +163,8 @@ describe('ListsService', () => {
       expect(result).toBeNull();
     });
   });
+
+  // ---- Création d'une liste ----
 
   describe('create', () => {
     it('doit créer une nouvelle liste avec description', async () => {
@@ -181,6 +197,7 @@ describe('ListsService', () => {
       const result = await service.create(mockUserId, 'Ma liste');
 
       expect(result).toEqual(listeWithoutDesc);
+      // La description doit être undefined si pas fournie
       expect(mockListeRepository.create).toHaveBeenCalledWith({
         nom: 'Ma liste',
         description: undefined,
@@ -189,6 +206,60 @@ describe('ListsService', () => {
     });
   });
 
+  // ---- Modification d'une liste (nom et/ou description) ----
+
+  describe('update', () => {
+    it('doit modifier le nom et la description', async () => {
+      const updatedListe = { ...mockListe, nom: 'Nouveau nom', description: 'Nouvelle desc' };
+      mockListeRepository.findOne.mockResolvedValue({ ...mockListe });
+      mockListeRepository.save.mockResolvedValue(updatedListe);
+
+      const result = await service.update(mockListeId, mockUserId, 'Nouveau nom', 'Nouvelle desc');
+
+      expect(result).toEqual(updatedListe);
+      // On vérifie que findOne est appelé avec le bon userId (sécurité)
+      expect(mockListeRepository.findOne).toHaveBeenCalledWith({
+        where: { id: mockListeId, utilisateur_id: mockUserId },
+      });
+      expect(mockListeRepository.save).toHaveBeenCalled();
+    });
+
+    it('doit retourner null si la liste n\'existe pas', async () => {
+      mockListeRepository.findOne.mockResolvedValue(null);
+
+      const result = await service.update(mockListeId, mockUserId, 'Nouveau nom');
+
+      expect(result).toBeNull();
+      // save ne doit pas être appelé si la liste n'existe pas
+      expect(mockListeRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('doit modifier seulement le nom si pas de description', async () => {
+      const liste = { ...mockListe };
+      mockListeRepository.findOne.mockResolvedValue(liste);
+      mockListeRepository.save.mockResolvedValue({ ...liste, nom: 'Nouveau nom' });
+
+      const result = await service.update(mockListeId, mockUserId, 'Nouveau nom');
+
+      expect(result).toBeDefined();
+      expect(mockListeRepository.save).toHaveBeenCalled();
+    });
+
+    it('doit permettre de vider la description', async () => {
+      // Cas où on veut retirer la description d'une liste
+      const liste = { ...mockListe, description: 'Ancienne desc' };
+      mockListeRepository.findOne.mockResolvedValue(liste);
+      mockListeRepository.save.mockResolvedValue({ ...liste, description: '' });
+
+      const result = await service.update(mockListeId, mockUserId, undefined, '');
+
+      expect(result).toBeDefined();
+      expect(mockListeRepository.save).toHaveBeenCalled();
+    });
+  });
+
+  // ---- Suppression d'une liste ----
+
   describe('delete', () => {
     it('doit supprimer une liste et retourner true', async () => {
       mockListeRepository.delete.mockResolvedValue({ affected: 1, raw: {} });
@@ -196,6 +267,7 @@ describe('ListsService', () => {
       const result = await service.delete(mockListeId, mockUserId);
 
       expect(result).toBe(true);
+      // On vérifie que la suppression est filtrée par userId (pas de suppression de liste d'un autre)
       expect(mockListeRepository.delete).toHaveBeenCalledWith({
         id: mockListeId,
         utilisateur_id: mockUserId,
@@ -211,6 +283,7 @@ describe('ListsService', () => {
     });
 
     it('doit gérer affected null', async () => {
+      // Cas edge : TypeORM peut retourner null dans affected
       mockListeRepository.delete.mockResolvedValue({ affected: null, raw: {} });
 
       const result = await service.delete(mockListeId, mockUserId);
@@ -218,6 +291,8 @@ describe('ListsService', () => {
       expect(result).toBe(false);
     });
   });
+
+  // ---- Ajout d'un film à une liste ----
 
   describe('addFilmToList', () => {
     it('doit ajouter un film à une liste', async () => {
@@ -240,6 +315,7 @@ describe('ListsService', () => {
     });
 
     it("doit retourner null si la liste n'appartient pas à l'utilisateur", async () => {
+      // Sécurité : on ne peut pas ajouter un film à la liste de quelqu'un d'autre
       mockListeRepository.findOne.mockResolvedValue(null);
 
       const result = await service.addFilmToList(
@@ -252,6 +328,8 @@ describe('ListsService', () => {
     });
 
     it('doit retourner le film créé si erreur (doublon)', async () => {
+      // Si le film est déjà dans la liste, la contrainte unique renvoie une erreur
+      // mais on retourne quand même l'objet créé (pas de crash)
       const createdFilm = {
         liste_id: mockListeId,
         tmdb_id: mockTmdbId,
@@ -272,6 +350,8 @@ describe('ListsService', () => {
       });
     });
   });
+
+  // ---- Retrait d'un film d'une liste ----
 
   describe('removeFilmFromList', () => {
     it("doit supprimer un film d'une liste et retourner true", async () => {
@@ -339,6 +419,8 @@ describe('ListsService', () => {
     });
   });
 
+  // ---- Récupérer les IDs TMDB des films d'une liste ----
+
   describe('getFilmsInList', () => {
     it("doit retourner tous les ids de films d'une liste", async () => {
       mockListeRepository.findOne.mockResolvedValue(mockListe);
@@ -374,6 +456,9 @@ describe('ListsService', () => {
     });
   });
 
+  // ---- Listes avec films (utilisé pour l'affichage complet côté front) ----
+  // Retourne les listes + les tmdb_id mappés en tableau de numbers
+
   describe('findAllByUserWithFilms', () => {
     it('doit retourner toutes les listes avec leurs films', async () => {
       const liste1 = {
@@ -393,6 +478,7 @@ describe('ListsService', () => {
       const result = await service.findAllByUserWithFilms(mockUserId);
 
       expect(result).toHaveLength(2);
+      // Les films doivent être transformés en tableau d'IDs
       expect(result[0].films).toEqual([111, 222]);
       expect(result[1].films).toEqual([333]);
       expect(mockListeRepository.find).toHaveBeenCalledWith({
@@ -410,6 +496,8 @@ describe('ListsService', () => {
       expect(result).toEqual([]);
     });
   });
+
+  // ---- Suppression par ID (utilisé en interne) ----
 
   describe('remove', () => {
     it('doit supprimer une liste par id', async () => {

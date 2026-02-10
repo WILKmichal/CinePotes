@@ -1,0 +1,29 @@
+meta {
+  name: GET /lists
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{URL}}/lists
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+script:pre-request {
+  await bru.runRequest("04-Auth/POST_auth_login");
+}
+
+tests {
+  test("Status code is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Response is an array", function() {
+    expect(res.body).to.be.an('array');
+  });
+}

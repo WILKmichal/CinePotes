@@ -21,9 +21,9 @@ dist/
 .env.production.local
 .npmrc
 .jestStorage
-coverage/
-coverage-e2e/
-
+**/coverage/
+**/coverage-e2e/
+**/.claude/
 # IDE
 .vscode/
 .idea/
