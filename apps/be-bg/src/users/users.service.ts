@@ -83,5 +83,32 @@ export class UsersService {
     await this.usersRepository.save(user);
     return token;
   }
+    async resetPasswordWithToken(
+    token: string,
+    newPassword: string,
+  ): Promise<boolean> {
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+
+    const user = await this.usersRepository.findOne({
+      where: { rinitialiser_mdp_token_hash: tokenHash },
+    });
+
+    if (!user) return false;
+
+    if (!user.reinitialiser_mdp_expires_at) return false;
+
+    if (user.reinitialiser_mdp_expires_at.getTime() < Date.now()) {
+      return false;
+    }
+
+    user.mot_de_passe_hash = await bcrypt.hash(newPassword, 10);
+
+    // one-time token (sécurité)
+    user.rinitialiser_mdp_token_hash = null;
+    user.reinitialiser_mdp_expires_at = null;
+
+    await this.usersRepository.save(user);
+    return true;
+  }
 
 }

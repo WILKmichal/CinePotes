@@ -1,4 +1,4 @@
-"use admin";
+"use client";
 
 import React, { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -27,6 +27,7 @@ export default function ResetPasswordPage() {
     setMessage(null);
 
     try {
+      console.log("API_BASE =", API_BASE);
       const res = await fetch(`${API_BASE}/auth/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -41,7 +42,7 @@ export default function ResetPasswordPage() {
       }
 
       setMessage("Mot de passe modifié avec succès.");
-      setTimeout(() => router.push("/login"), 1000);
+      setTimeout(() => router.push("/"), 1000);
     } catch {
       setError("Impossible de contacter le serveur.");
     } finally {

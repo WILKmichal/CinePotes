@@ -1,4 +1,4 @@
-import {Body,Controller,Get,HttpStatus,Post,Query,Res,} from '@nestjs/common';
+import {BadRequestException, Body,Controller,Get,HttpStatus,Post,Query,Res,} from '@nestjs/common';
 import type { Response } from 'express';
 import { AuthService } from './auth.service';
 import { UsersService } from '../src/users/users.service';
@@ -73,34 +73,47 @@ export class AuthController {
     return res.redirect('http://localhost:3000/?redirect=http%3A%2F%2Flocalhost%3A3001%2Fauth%2Fcallback');
   }
   @Post('forgot-password')
-async forgotPassword(@Body('email') email: string) {
-  const expires = parseInt(
-    this.configService.get<string>('RESET_PASSWORD_EXPIRES_MINUTES') ?? '30',
-    10,
-  );
-
-  const token = await this.usersService.issuePasswordResetToken(
-    email,
-    10,
-  );
-
-  if (token) {
-    const frontUrl =
-      this.configService.get<string>('FRONT_RESET_PASSWORD_URL') ??
-      'http://localhost:3000/reset-password';
-
-    const resetUrl = `${frontUrl}?token=${encodeURIComponent(token)}`;
-
-    await this.mailService.sendResetPasswordEmail(
-      email,
-      resetUrl,
-      expires,
+  async forgotPassword(@Body('email') email: string) {
+    const expires = Number.parseInt(
+      this.configService.get<string>('RESET_PASSWORD_EXPIRES_MINUTES') ?? '30',
+      10,
     );
-  }
 
-  return {
-    message: 'Si un compte existe, un email a été envoyé',
-  };
-}
+    const token = await this.usersService.issuePasswordResetToken(
+      email,
+      10,
+    );
+
+    if (token) {
+      const frontUrl =
+        this.configService.get<string>('FRONT_RESET_PASSWORD_URL') ??
+        'http://localhost:3000/reset-password';
+
+      const resetUrl = `${frontUrl}?token=${encodeURIComponent(token)}`;
+
+      await this.mailService.sendResetPasswordEmail(
+        email,
+        resetUrl,
+        expires,
+      );
+    }
+
+    return {
+      message: 'Si un compte existe, un email a été envoyé',
+    };
+  }
+  @Post('reset-password')
+  async resetPassword(@Body() body: { token: string; newPassword: string }) {
+    const ok = await this.usersService.resetPasswordWithToken(
+      body.token,
+      body.newPassword,
+    );
+
+    if (!ok) {
+      throw new BadRequestException('Lien invalide ou expiré');
+    }
+
+    return { message: 'Mot de passe réinitialisé avec succès' };
+  }
 
 }

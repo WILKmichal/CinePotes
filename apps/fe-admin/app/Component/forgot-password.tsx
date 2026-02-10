@@ -1,5 +1,4 @@
-"use admin";
-
+'use client';
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -82,7 +81,7 @@ export default function ForgotPasswordPage() {
         <div className="mt-4 text-center">
           <button
             type="button"
-            onClick={() => router.push("/login")}
+            onClick={() => router.push("/")}
             className="text-sm text-gray-600 hover:underline"
           >
             Retour à la connexion
