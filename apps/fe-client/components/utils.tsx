@@ -1,6 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+
+const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL ?? "http://localhost:3000";
+const CALLBACK_URL = "http://localhost:3001/auth/callback";
 
 export interface DetailsFilm {
   id: number;
@@ -16,35 +19,129 @@ export interface FiltresRechercheFilms {
   genre: string;
   annee: string;
 }
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3333";
+function decodeJwt(token: string) {
+  try {
+    const payload = token.split(".")[1];
 
-function Header() {
-  return <header className="fixed inset-x-0 top-0 z-30 mx-auto w-full max-w-screen-md border border-gray-100 bg-white/80 py-3 shadow backdrop-blur-lg md:top-6 md:rounded-3xl lg:max-w-screen-lg">
-            <div className="px-4">
-                <div className="flex items-center justify-between">
-                    <div className="flex shrink-0">
-                      <Link href="/" className="flex items-center" aria-current="page">
-                          <img className="h-7 w-auto" src="https://img.icons8.com/?size=100&id=11860&format=png&color=000000" alt="CinePotes" />
-                          <p className="sr-only">Website Title</p>
-                      </Link>
-                    </div>
-                    <div className="hidden md:flex md:items-center md:justify-center md:gap-5">
-                        <Link aria-current="page"
-                            className="inline-block rounded-lg px-2 py-1 text-sm font-medium text-gray-900 transition-all duration-200 hover:bg-gray-100 hover:text-gray-900"
-                            href="/">Home</Link>
-                        <Link className="inline-block rounded-lg px-2 py-1 text-sm font-medium text-gray-900 transition-all duration-200 hover:bg-gray-100 hover:text-gray-900"
-                            href="/Contact">Contact</Link>
-                        <Link className="inline-block rounded-lg px-2 py-1 text-sm font-medium text-gray-900 transition-all duration-200 hover:bg-gray-100 hover:text-gray-900"
-                            href="/About">About us</Link>
-                    </div>
-                    <div className="flex items-center justify-end gap-3">
-                        <Link className="hidden items-center justify-center rounded-xl bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition-all duration-150 hover:bg-gray-50 sm:inline-flex"
-                            href="/login">Sign in</Link>
-                        <Link className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-                            href="/login">Login</Link>
-                    </div>
-                </div>
-            </div>
-        </header>;
+    const base64 = payload.replaceAll("-", "+").replaceAll("_", "/");
+
+    const json = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => "%" + ("00" + c.codePointAt(0)!.toString(16)).slice(-2))
+        .join("")
+    );
+
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
+
+function getDisplayName(): string | null {
+  if (globalThis.window === undefined) return null;
+  const token = localStorage.getItem("access_token");
+  if (!token) return null;
+  const payload = decodeJwt(token);
+  return payload?.username ?? null;
+}
+
+const emptySubscribe = () => () => {};
+
+export default function Header() {
+  const router = useRouter();
+  const displayName = useSyncExternalStore(
+    emptySubscribe,
+    getDisplayName,
+    () => null // server snapshot
+  );
+
+  const handleLogout = () => {
+    localStorage.removeItem("access_token");
+    router.replace("/");
+  };
+
+  return (
+    <header className="fixed inset-x-0 top-0 z-30 mx-auto w-full max-w-screen-md border border-gray-100 bg-white/80 py-3 shadow backdrop-blur-lg md:top-6 md:rounded-3xl lg:max-w-screen-lg">
+      <div className="px-4">
+        <div className="flex items-center justify-between">
+          <div className="flex shrink-0">
+            <Link href="/" className="flex items-center" aria-current="page">
+              <img
+                className="h-7 w-auto"
+                src="https://img.icons8.com/?size=100&id=11860&format=png&color=000000"
+                alt="CinePotes"
+              />
+              <p className="sr-only">CinePotes</p>
+            </Link>
+          </div>
+
+          <div className="hidden md:flex md:items-center md:justify-center md:gap-5">
+            <Link
+              className="inline-block rounded-lg px-2 py-1 text-sm font-medium text-gray-900 hover:bg-gray-100"
+              href="/"
+            >
+              Home
+            </Link>
+            <Link
+              className="inline-block rounded-lg px-2 py-1 text-sm font-medium text-gray-900 hover:bg-gray-100"
+              href="/lobby"
+            >
+              Lobby
+            </Link>
+            <Link
+              className="inline-block rounded-lg px-2 py-1 text-sm font-medium text-gray-900 hover:bg-gray-100"
+              href="/about"
+            >
+              About us
+            </Link>
+            {displayName && (
+              <Link
+                className="inline-block rounded-lg px-2 py-1 text-sm font-medium text-gray-900 transition-all duration-200 hover:bg-gray-100 hover:text-gray-900"
+                href="/mes-listes"
+              >
+                Mes Listes
+              </Link>
+            )}
+          </div>
+
+          <div className="flex items-center justify-end gap-3">
+            {displayName ? (
+              <>
+                <span className="text-sm font-semibold text-gray-900">
+                  {displayName}
+                </span>
+
+                <button
+                  onClick={handleLogout}
+                  className="rounded-xl bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-800"
+                >
+                  Log out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  className="rounded-xl bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow ring-1 ring-gray-300 hover:bg-gray-50"
+                  href={`${ADMIN_URL}?redirect=${encodeURIComponent(CALLBACK_URL)}`}
+                >
+                  Sign in
+                </Link>
+
+                <Link
+                  className="rounded-xl bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-500"
+                  href={`${ADMIN_URL}?redirect=${encodeURIComponent(CALLBACK_URL)}`}
+                >
+                  Sign up
+                </Link>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </header>
+  );
 }
 
 function Footer() {
@@ -53,21 +150,16 @@ function Footer() {
   <div className="flex flex-col items-center w-full bg-white border-t border-gray-200 shadow-lg p-8 space-y-8">
     <nav className="flex justify-center flex-wrap gap-6 text-gray-500 font-medium">
       <Link className="hover:text-gray-900" href="/">Home</Link>
-      <Link className="hover:text-gray-900" href="/About">About</Link>
+      <Link className="hover:text-gray-900" href="/Lobby">Lobby</Link>
+      <Link className="hover:text-gray-900" href="/about">About</Link>
       <Link className="hover:text-gray-900" href="/Service">Services</Link>
-      <Link className="hover:text-gray-900" href="/Media">Media</Link>
-      <Link className="hover:text-gray-900" href="/Gallery">Gallery</Link>
-      <Link className="hover:text-gray-900" href="/Contact">Contact</Link>
     </nav>
     <div className="flex justify-center space-x-5">
-      <a href="https://facebook.com"><img src="https://img.icons8.com/fluent/30/000000/facebook-new.png" alt="Facebook"/></a>
-      <a href="https://linkedin.com"><img src="https://img.icons8.com/fluent/30/000000/linkedin-2.png" alt="LinkedIn"/></a>
       <a href="https://instagram.com"><img src="https://img.icons8.com/fluent/30/000000/instagram-new.png" alt="Instagram"/></a>
-      <a href="https://messenger.com"><img src="https://img.icons8.com/fluent/30/000000/facebook-messenger--v2.png" alt="Messenger"/></a>
       <a href="https://twitter.com"><img src="https://img.icons8.com/fluent/30/000000/twitter.png" alt="Twitter"/></a>
     </div>
     <p className="text-center text-gray-700 font-medium">
-      &copy; 2022 Company Ltd. All rights reserved.
+      &copy; 2025 Company Ltd. All rights reserved.
     </p>
   </div>
 </footer>
@@ -107,7 +199,7 @@ function useRechercheFilms(
         if (filtres.annee) params.append("annee", filtres.annee);
 
         const response = await fetch(
-          `http://localhost:3333/tmdb/recherche/avancee?${params.toString()}`
+          `${API_URL}/tmdb/recherche/avancee?${params.toString()}`
         );
         if (!response.ok) {
           throw new Error('Failed to fetch films');
@@ -197,7 +289,7 @@ function BarreRecherche() {
       {afficherResultats && (
         <div
           className="
-            absolute top-full left-0 mt-1 z-0 w-full
+            absolute top-full left-0 mt-1 z-50 w-full
             bg-white border border-gray-300 rounded-md shadow-lg
             max-h-96 overflow-y-auto
           "
@@ -223,6 +315,7 @@ function BarreRecherche() {
                 <li key={film.id} className="border-b last:border-b-0">
                   <button
                     type="button"
+                    onMouseDown={(e) => e.preventDefault()}
                     onClick={() => router.push(`/films/${film.id}`)}
                     className="
                       w-full p-3 flex gap-3 items-center cursor-pointer text-left
@@ -276,16 +369,16 @@ function useRechercheFilms2(requete: string) {
       setError(null);
       try {
         console.log(`🔍 Recherche: "${requete}"`);
-        
+
         const response = await fetch(
-          `http://localhost:3333/tmdb/recherche?query=${encodeURIComponent(requete)}`
+          `${API_URL}/tmdb/recherche?query=${encodeURIComponent(requete)}`
         );
         if (!response.ok) {
           throw new Error(`Erreur ${response.status}`);
         }
         const data = await response.json();
         console.log(`${data.length} résultat(s) trouvé(s)`);
-        
+
         setResultats(data);
       } catch (err) {
         console.error('Erreur recherche:', err);

@@ -1,0 +1,29 @@
+meta {
+  name: GET /tmdb/movies
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{URL}}/tmdb/movies?ids=550,299536
+  body: none
+  auth: none
+}
+
+params:query {
+  ids: 550,299536
+}
+
+tests {
+  test("Status code is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response is an array", function() {
+    expect(res.body).to.be.an('array');
+  });
+  
+  test("Array contains movies", function() {
+    expect(res.body.length).to.be.greaterThan(0);
+  });
+}

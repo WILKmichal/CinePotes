@@ -1,15 +1,16 @@
 import { Module } from '@nestjs/common';
-import { TmdbService } from './tmdb.service';
 import { TmdbController } from './tmdb.controller';
-import { RedisModule } from '../redis/redis.module';
 import { ConfigModule } from '@nestjs/config';
+import { TmdbMsClient } from './tmdb-ms.client';
 
 @Module({
-  imports: [RedisModule,ConfigModule.forRoot({
-  isGlobal: true,
-  envFilePath: '.env',
-})],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+    }),
+  ],
   controllers: [TmdbController],
-  providers: [TmdbService],
+  providers: [TmdbMsClient],
 })
 export class TmdbModule {}

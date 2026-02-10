@@ -1,0 +1,38 @@
+meta {
+  name: POST /auth/register
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{URL}}/auth/register
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "email": "tesmt@example.com",
+    "password": "Password123!",
+    "nom": "Testm_User",
+    "role": "admin"
+  }
+}
+
+tests {
+  test("Status code is 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+  
+  test("Response contains user object", function() {
+    expect(res.body).to.have.property('user');
+  });
+  
+  test("User has email", function() {
+    expect(res.body.user).to.have.property('email');
+  });
+}

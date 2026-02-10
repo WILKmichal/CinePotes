@@ -1,0 +1,25 @@
+meta {
+  name: GET /tmdb/recherche
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{URL}}/tmdb/recherche?query=Avatar
+  body: none
+  auth: none
+}
+
+params:query {
+  query: Avatar
+}
+
+tests {
+  test("Status code is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response is an array", function() {
+    expect(res.body).to.be.an('array');
+  });
+}

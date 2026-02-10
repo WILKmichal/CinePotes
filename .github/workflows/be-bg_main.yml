@@ -1,14 +1,14 @@
 name: Main workflow be-bg
 
 permissions:
-    contents: write
+    contents: write 
 
 on:
   pull_request:
     branches:
        - main 
     paths:
-      - "apps/be-bg/*"
+      - "apps/be-bg/**"
 
 jobs:
     commit-lint:

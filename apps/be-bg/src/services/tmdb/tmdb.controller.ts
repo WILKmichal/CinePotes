@@ -1,13 +1,19 @@
-// tmdb.controller.ts
-import {Controller, Get, HttpException, HttpStatus, Param, ParseIntPipe,Query,} from '@nestjs/common';
-import { DetailsFilm } from './types/tmdb.types';
-import { TmdbService } from './tmdb.service';
+import {
+  Controller,
+  Get,
+  HttpException,
+  HttpStatus,
+  Param,
+  ParseIntPipe,
+  Query,
+} from '@nestjs/common';
+import { DetailsFilm } from '../../../../types/tmdb.types';
+import { TmdbMsClient } from './tmdb-ms.client';
 
 @Controller('tmdb')
 export class TmdbController {
-  constructor(private readonly tmdbService: TmdbService) {}
+  constructor(private readonly tmdbMs: TmdbMsClient) {}
 
-  // Static routes 
   // Récupérer plusieurs films par leurs IDs
   @Get('movies')
   getMovies(@Query('ids') ids: string): Promise<DetailsFilm[]> {
@@ -24,13 +30,16 @@ export class TmdbController {
       throw new HttpException('ids invalide', HttpStatus.BAD_REQUEST);
     }
 
-    return this.tmdbService.obtenirPlusieursFilms(filmIds);
+    // Forward vers ms-tmdb (même route)
+    return this.tmdbMs.get<DetailsFilm[]>('/tmdb/movies', {
+      ids: filmIds.join(','),
+    });
   }
 
   // Films populaires
   @Get('films/populaires')
   getPopularMovies(): Promise<DetailsFilm[]> {
-    return this.tmdbService.obtenirFilmsPopulaires();
+    return this.tmdbMs.get<DetailsFilm[]>('/tmdb/films/populaires');
   }
 
   // Recherche
@@ -42,15 +51,17 @@ export class TmdbController {
         HttpStatus.BAD_REQUEST,
       );
     }
-    return this.tmdbService.rechercherFilms(query);
+
+    return this.tmdbMs.get<DetailsFilm[]>('/tmdb/recherche', { query });
   }
+
+  // Recherche avancée
   @Get('recherche/avancee')
   rechercherFilmsAvancee(
     @Query('titre') titre?: string,
     @Query('annee') annee?: string,
     @Query('genre') genre?: string,
   ): Promise<DetailsFilm[]> {
-
     if (!titre && !annee && !genre) {
       throw new HttpException(
         'Au moins un critère est requis: titre, annee ou genre',
@@ -72,16 +83,16 @@ export class TmdbController {
       );
     }
 
-    return this.tmdbService.rechercherFilmsAvancee({
+    return this.tmdbMs.get<DetailsFilm[]>('/tmdb/recherche/avancee', {
       titre: titre?.trim(),
       annee: annee?.trim(),
       genre: genre?.trim(),
     });
   }
 
-  // route Dynamque 
+  // route dynamique
   @Get(':id')
   getMovie(@Param('id', ParseIntPipe) id: number): Promise<DetailsFilm> {
-    return this.tmdbService.obtenirDetailsFilm(id);
+    return this.tmdbMs.get<DetailsFilm>(`/tmdb/${id}`);
   }
 }

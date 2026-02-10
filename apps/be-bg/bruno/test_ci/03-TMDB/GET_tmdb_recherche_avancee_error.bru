@@ -1,0 +1,21 @@
+meta {
+  name: GET /tmdb/recherche/avancee (error - no criteria)
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{URL}}/tmdb/recherche/avancee
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status code is 400", function() {
+    expect(res.getStatus()).to.equal(400);
+  });
+  
+  test("Error message mentions criteria required", function() {
+    expect(res.body.message).to.include('Au moins un critère est requis');
+  });
+}

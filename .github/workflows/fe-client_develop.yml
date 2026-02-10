@@ -3,12 +3,12 @@ name: Develop workflow fe-client
 permissions:
     contents: write
 
-on:
+on: 
   pull_request:
     branches:
        - develop
     paths:
-      - "apps/fe-client/*"
+      - "apps/fe-client/**"
 
 jobs:
     commit-lint:

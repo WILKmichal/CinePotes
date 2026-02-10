@@ -1,0 +1,25 @@
+meta {
+  name: GET /tmdb/recherche (error - query too short)
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{URL}}/tmdb/recherche?query=ab
+  body: none
+  auth: none
+}
+
+params:query {
+  query: ab
+}
+
+tests {
+  test("Status code is 400", function() {
+    expect(res.getStatus()).to.equal(400);
+  });
+  
+  test("Error message mentions minimum length", function() {
+    expect(res.body.message).to.include('3 caractères');
+  });
+}
