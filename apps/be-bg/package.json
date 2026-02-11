@@ -95,7 +95,8 @@
     },
     "collectCoverageFrom": [
       "**/*.(t|j)s",
-      "!**/*.entity.ts"
+      "!**/*.entity.ts",
+      "!**/nats/**"
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",

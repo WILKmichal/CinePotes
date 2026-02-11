@@ -19,7 +19,7 @@ export class UsersService {
    */
   async findOne(usernameOrEmail: string): Promise<User | null> {
     return this.usersRepository.findOne({
-      where: [{ email: usernameOrEmail }, { nom: usernameOrEmail }]
+      where: [{ email: usernameOrEmail }, { nom: usernameOrEmail }],
     });
   }
 
@@ -41,9 +41,9 @@ export class UsersService {
       role,
       email_verifie: false,
       email_verification_token: randomUUID(),
-    }
-    
-    if(process.env.VERIFICATION_MAIL === 'FALSE') {
+    };
+
+    if (process.env.VERIFICATION_MAIL === 'FALSE') {
       newUser.email_verification_token = null;
       newUser.email_verifie = true;
     }
@@ -86,11 +86,11 @@ export class UsersService {
     user.reinitialiser_mdp_expires_at = new Date(
       Date.now() + expiresInMinutes * 60 * 1000,
     );
-    
+
     await this.usersRepository.save(user);
     return token;
   }
-    async resetPasswordWithToken(
+  async resetPasswordWithToken(
     token: string,
     newPassword: string,
   ): Promise<boolean> {
@@ -117,5 +117,4 @@ export class UsersService {
     await this.usersRepository.save(user);
     return true;
   }
-
 }

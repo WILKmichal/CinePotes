@@ -123,9 +123,7 @@ export class AuthController {
   /* ================= RESET PASSWORD ================= */
 
   @Post('reset-password')
-  async resetPassword(
-    @Body() body: { token: string; newPassword: string },
-  ) {
+  async resetPassword(@Body() body: { token: string; newPassword: string }) {
     const ok = await this.usersService.resetPasswordWithToken(
       body.token,
       body.newPassword,

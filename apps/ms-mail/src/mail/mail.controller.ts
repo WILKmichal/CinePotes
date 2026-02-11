@@ -51,11 +51,9 @@ export class MailController {
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Envoyer un email de réinitialisation' })
-  async resetPassword(@Body() body: {
-    email: string;
-    resetUrl: string;
-    expiresInMinutes: number;
-  }) {
+  async resetPassword(
+    @Body() body: { email: string; resetUrl: string; expiresInMinutes: number },
+  ) {
     const html = pageReiniMotDePasse(body.resetUrl, body.expiresInMinutes);
 
     await this.mailService.sendEmail(

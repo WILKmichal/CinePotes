@@ -65,5 +65,4 @@ export class User {
 
   @Column({ type: 'timestamp', nullable: true })
   reinitialiser_mdp_expires_at: Date | null;
-
 }

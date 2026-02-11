@@ -18,4 +18,7 @@ async function bootstrap() {
   console.log('ms-exemple connecte a NATS et en ecoute');
 }
 
-bootstrap();
+bootstrap().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
