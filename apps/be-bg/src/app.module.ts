@@ -3,7 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TestController } from './test.controller';
 import { TmdbModule } from './services/tmdb/tmdb.module';
-import { AuthModule } from '../auth/auth.module';
+import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { SeancesModule } from './seances/seances.module';
 import { ListsModule } from './lists/lists.module';

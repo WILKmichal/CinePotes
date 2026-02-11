@@ -33,9 +33,7 @@ export default function LoginPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        email: username,
-        username,
-        usernameOrEmail: username,
+        username: username, // ✅ uniquement ce que le DTO attend
         password,
       }),
     });
@@ -49,7 +47,8 @@ export default function LoginPage() {
       return;
     }
 
-    const token = data?.access_token ?? data?.token ?? data?.accessToken ?? null;
+    const token =
+      data?.access_token ?? data?.token ?? data?.accessToken ?? null;
 
     if (!token) {
       setError("Réponse inattendue du serveur (token manquant).");
@@ -58,6 +57,7 @@ export default function LoginPage() {
 
     onLoginSuccess(token);
   };
+
 
   const doRegister = async () => {
     const res = await fetch(`${API_BASE}/auth/register`, {
