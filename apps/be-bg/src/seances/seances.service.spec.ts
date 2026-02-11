@@ -10,7 +10,6 @@ describe('SeancesService', () => {
   let service: SeancesService;
   let seanceRepository: jest.Mocked<Repository<Seance>>;
   let participantRepository: jest.Mocked<Repository<Participant>>;
-
   const mockSeanceRepository = {
     create: jest.fn(),
     save: jest.fn(),
