@@ -44,6 +44,7 @@ export class User {
   @Column({ type: 'uuid', nullable: true })
   email_verification_token: string | null;
 
+
   @CreateDateColumn({ type: 'timestamp', default: () => 'NOW()' })
   cree_le: Date;
 
@@ -59,4 +60,11 @@ export class User {
 
   @OneToMany(() => Liste, (liste) => liste.utilisateur)
   listes: Liste[];
+
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  rinitialiser_mdp_token_hash: string | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  reinitialiser_mdp_expires_at: Date | null;
+
 }

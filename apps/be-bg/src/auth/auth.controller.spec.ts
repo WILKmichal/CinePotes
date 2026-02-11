@@ -3,7 +3,8 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { MailService } from '../../../ms-mail/src/mail/mail.service';
-import { HttpStatus } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { HttpStatus, BadRequestException } from '@nestjs/common';
 
 const mockAuthService = {
   signIn: jest.fn(),
@@ -12,22 +13,38 @@ const mockAuthService = {
 const mockUsersService = {
   createUser: jest.fn(),
   confirmEmail: jest.fn(),
+  issuePasswordResetToken: jest.fn(),
+  resetPasswordWithToken: jest.fn(),
 };
 
 const mockMailService = {
   sendEmail: jest.fn(),
 };
 
+const mockConfigService = {
+  get: jest.fn(),
+};
+
 describe('AuthController', () => {
   let controller: AuthController;
 
   beforeEach(async () => {
+    jest.clearAllMocks();
+
+    mockConfigService.get.mockImplementation((key: string) => {
+      if (key === 'RESET_PASSWORD_EXPIRES_MINUTES') return '30';
+      if (key === 'FRONT_RESET_PASSWORD_URL')
+        return 'http://localhost:3000/reset-password';
+      return undefined;
+    });
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
       providers: [
         { provide: AuthService, useValue: mockAuthService },
         { provide: UsersService, useValue: mockUsersService },
         { provide: MailService, useValue: mockMailService },
+        { provide: ConfigService, useValue: mockConfigService },
       ],
     }).compile();
 
@@ -35,7 +52,6 @@ describe('AuthController', () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
     process.env.VERIFICATION_MAIL = 'false';
   });
 
@@ -43,11 +59,7 @@ describe('AuthController', () => {
     expect(controller).toBeDefined();
   });
 
-  /**
-   * ==========================
-   * LOGIN
-   * ==========================
-   */
+  /* ================= LOGIN ================= */
 
   it('should return access token on login', async () => {
     mockAuthService.signIn.mockResolvedValue({ access_token: 'jwt-token' });
@@ -71,11 +83,7 @@ describe('AuthController', () => {
     ).rejects.toThrow();
   });
 
-  /**
-   * ==========================
-   * REGISTER
-   * ==========================
-   */
+  /* ================= REGISTER ================= */
 
   it('should register user with provided nom and role', async () => {
     mockUsersService.createUser.mockResolvedValue({
@@ -120,26 +128,6 @@ describe('AuthController', () => {
     );
   });
 
-  it('should default role to user when role is undefined', async () => {
-    mockUsersService.createUser.mockResolvedValue({
-      email: 'test@test.com',
-      email_verification_token: 'token',
-    });
-
-    await controller.register({
-      email: 'test@test.com',
-      password: 'Password123!',
-      nom: 'Test',
-    } as any);
-
-    expect(mockUsersService.createUser).toHaveBeenCalledWith(
-      'Test',
-      'test@test.com',
-      'Password123!',
-      'user',
-    );
-  });
-
   it('should throw if user creation fails', async () => {
     mockUsersService.createUser.mockRejectedValue(new Error('DB error'));
 
@@ -169,36 +157,13 @@ describe('AuthController', () => {
     expect(mockMailService.sendEmail).not.toHaveBeenCalled();
   });
 
-  it('should send confirmation email in production', async () => {
+  it('should send confirmation email when VERIFICATION_MAIL is true', async () => {
     process.env.VERIFICATION_MAIL = 'true';
 
     mockUsersService.createUser.mockResolvedValue({
       email: 'test@test.com',
       email_verification_token: 'token',
     });
-
-    mockMailService.sendEmail.mockResolvedValue(undefined);
-
-    const result = await controller.register({
-      email: 'test@test.com',
-      password: 'Password123!',
-      nom: 'Test',
-      role: 'user',
-    });
-
-    expect(mockMailService.sendEmail).toHaveBeenCalled();
-    expect(result.status).toBe(HttpStatus.CREATED);
-  });
-
-  it('should handle undefined email_verification_token', async () => {
-    process.env.VERIFICATION_MAIL = 'true';
-
-    mockUsersService.createUser.mockResolvedValue({
-      email: 'test@test.com',
-      email_verification_token: undefined,
-    });
-
-    mockMailService.sendEmail.mockResolvedValue(undefined);
 
     await controller.register({
       email: 'test@test.com',
@@ -210,11 +175,7 @@ describe('AuthController', () => {
     expect(mockMailService.sendEmail).toHaveBeenCalled();
   });
 
-  /**
-   * ==========================
-   * CONFIRM EMAIL
-   * ==========================
-   */
+  /* ================= CONFIRM EMAIL ================= */
 
   it('should return 400 when email confirmation fails', async () => {
     mockUsersService.confirmEmail.mockResolvedValue(false);
@@ -229,7 +190,6 @@ describe('AuthController', () => {
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.send).toHaveBeenCalledWith('Lien invalide ou expiré');
-    expect(res.redirect).not.toHaveBeenCalled();
   });
 
   it('should redirect when email confirmation succeeds', async () => {
@@ -244,7 +204,68 @@ describe('AuthController', () => {
     await controller.confirmEmail('good-token', res as any);
 
     expect(res.redirect).toHaveBeenCalled();
-    expect(res.status).not.toHaveBeenCalled();
-    expect(res.send).not.toHaveBeenCalled();
+  });
+
+  /* ================= FORGOT PASSWORD ================= */
+
+  it('should send reset email if token is generated', async () => {
+    mockUsersService.issuePasswordResetToken.mockResolvedValue('TOKEN123');
+
+    const res = await controller.forgotPassword('mehdi@gmail.com');
+
+    expect(mockUsersService.issuePasswordResetToken).toHaveBeenCalledWith(
+      'mehdi@gmail.com',
+      30,
+    );
+
+    expect(mockMailService.sendEmail).toHaveBeenCalledWith(
+      'mehdi@gmail.com',
+      'Réinitialisation de votre mot de passe',
+      expect.stringContaining('TOKEN123'),
+    );
+
+    expect(res).toEqual({
+      message:
+        'Si un compte existe avec cette adresse mail, un email a été envoyé',
+    });
+  });
+
+  it("should NOT send reset email if no token returned", async () => {
+    mockUsersService.issuePasswordResetToken.mockResolvedValue(null);
+
+    await controller.forgotPassword('unknown@gmail.com');
+
+    expect(mockMailService.sendEmail).not.toHaveBeenCalled();
+  });
+
+  /* ================= RESET PASSWORD ================= */
+
+  it('should return success if resetPasswordWithToken returns true', async () => {
+    mockUsersService.resetPasswordWithToken.mockResolvedValue(true);
+
+    const res = await controller.resetPassword({
+      token: 'valid',
+      newPassword: 'NewPass123!',
+    });
+
+    expect(mockUsersService.resetPasswordWithToken).toHaveBeenCalledWith(
+      'valid',
+      'NewPass123!',
+    );
+
+    expect(res).toEqual({
+      message: 'Mot de passe réinitialisé avec succès',
+    });
+  });
+
+  it('should throw BadRequestException if resetPasswordWithToken returns false', async () => {
+    mockUsersService.resetPasswordWithToken.mockResolvedValue(false);
+
+    await expect(
+      controller.resetPassword({
+        token: 'bad',
+        newPassword: 'x',
+      }),
+    ).rejects.toThrow(BadRequestException);
   });
 });

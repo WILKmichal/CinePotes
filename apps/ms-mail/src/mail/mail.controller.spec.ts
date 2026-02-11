@@ -3,6 +3,11 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { MailController } from './mail.controller';
 import { MailService } from './mail.service';
+import { pageReiniMotDePasse } from './app/page';
+
+jest.mock('./app/page', () => ({
+  pageReiniMotDePasse: jest.fn(),
+}));
 
 describe('MailController', () => {
   let app: INestApplication;
@@ -100,3 +105,76 @@ describe('MailController', () => {
       .expect({ connected: false, message: 'Connexion SMTP échouée' });
   });
 });
+
+describe('MailController - reset-password (with mocks)', () => {
+  let controller: MailController;
+
+  // ✅ mock du service
+  const mailServiceMock = {
+    sendEmail: jest.fn(),
+    verifyConnection: jest.fn(),
+  };
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [MailController],
+      providers: [
+        {
+          provide: MailService,
+          useValue: mailServiceMock,
+        },
+      ],
+    }).compile();
+
+    controller = module.get<MailController>(MailController);
+  });
+
+  it('doit générer le HTML et appeler sendEmail avec les bons paramètres', async () => {
+    // Arrange
+    (pageReiniMotDePasse as jest.Mock).mockReturnValue('<p>HTML_RESET</p>');
+    mailServiceMock.sendEmail.mockResolvedValue(undefined);
+
+    const body = {
+      email: 'test@example.com',
+      resetUrl: 'http://localhost:3000/reset-password?token=abc',
+      expiresInMinutes: 30,
+    };
+
+    // Act
+    const result = await controller.resetPassword(body);
+
+    // Assert
+    expect(pageReiniMotDePasse).toHaveBeenCalledTimes(1);
+    expect(pageReiniMotDePasse).toHaveBeenCalledWith(
+      body.resetUrl,
+      body.expiresInMinutes,
+    );
+
+    expect(mailServiceMock.sendEmail).toHaveBeenCalledTimes(1);
+    expect(mailServiceMock.sendEmail).toHaveBeenCalledWith(
+      body.email,
+      'Réinitialisation de votre mot de passe',
+      '<p>HTML_RESET</p>',
+    );
+
+    expect(result).toEqual({ message: 'Reset password email envoyé' });
+  });
+
+  it('doit propager une erreur si sendEmail échoue', async () => {
+    // Arrange
+    (pageReiniMotDePasse as jest.Mock).mockReturnValue('<p>HTML_RESET</p>');
+    mailServiceMock.sendEmail.mockRejectedValue(new Error("SMTP down"));
+
+    const body = {
+      email: 'test@example.com',
+      resetUrl: 'http://localhost:3000/reset-password?token=abc',
+      expiresInMinutes: 30,
+    };
+
+    // Act + Assert
+    await expect(controller.resetPassword(body)).rejects.toThrow('SMTP down');
+  });
+});
+

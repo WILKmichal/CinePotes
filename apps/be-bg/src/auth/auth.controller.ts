@@ -7,6 +7,7 @@ import {
   Query,
   Res,
   HttpCode,
+  BadRequestException,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { AuthService } from './auth.service';
@@ -15,20 +16,26 @@ import { MailService } from '../../../ms-mail/src/mail/mail.service';
 import { UserRole } from 'src/users/entities/user.entity';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { ConfigService } from '@nestjs/config';
 
 @Controller('auth')
 export class AuthController {
   constructor(
+    private readonly configService: ConfigService,
     private readonly authService: AuthService,
     private readonly usersService: UsersService,
     private readonly mailService: MailService,
   ) {}
+
+  /* ================= LOGIN ================= */
 
   @Post('login')
   @HttpCode(200)
   async login(@Body() body: LoginDto) {
     return this.authService.signIn(body.username, body.password);
   }
+
+  /* ================= REGISTER ================= */
 
   @Post('register')
   async register(@Body() body: RegisterDto) {
@@ -42,7 +49,7 @@ export class AuthController {
       role,
     );
 
-    if (process.env.VERIFICATION_MAIL === 'true') {
+    if (process.env.VERIFICATION_MAIL !== 'true') {
       const confirmUrl = `http://localhost:3002/auth/confirm-email?token=${encodeURIComponent(
         user.email_verification_token ?? '',
       )}`;
@@ -62,6 +69,8 @@ export class AuthController {
     };
   }
 
+  /* ================= CONFIRM EMAIL ================= */
+
   @Get('confirm-email')
   async confirmEmail(@Query('token') token: string, @Res() res: Response) {
     const ok = await this.usersService.confirmEmail(token);
@@ -73,5 +82,59 @@ export class AuthController {
     return res.redirect(
       'http://localhost:3000/?redirect=http%3A%2F%2Flocalhost%3A3001%2Fauth%2Fcallback',
     );
+  }
+
+  /* ================= FORGOT PASSWORD ================= */
+
+  @Post('forgot-password')
+  async forgotPassword(@Body('email') email: string) {
+    const expiresInMinutes = Number.parseInt(
+      this.configService.get<string>('RESET_PASSWORD_EXPIRES_MINUTES') ?? '30',
+      10,
+    );
+
+    const token = await this.usersService.issuePasswordResetToken(
+      email,
+      expiresInMinutes,
+    );
+
+    if (token) {
+      const frontUrl =
+        this.configService.get<string>('FRONT_RESET_PASSWORD_URL') ??
+        'http://localhost:3000/reset-password';
+
+      const resetUrl = `${frontUrl}?token=${encodeURIComponent(token)}`;
+
+      await this.mailService.sendEmail(
+        email,
+        'Réinitialisation de votre mot de passe',
+        `Cliquez ici pour réinitialiser votre mot de passe :
+         ${resetUrl}
+         (valide ${expiresInMinutes} minutes)`,
+      );
+    }
+
+    return {
+      message:
+        'Si un compte existe avec cette adresse mail, un email a été envoyé',
+    };
+  }
+
+  /* ================= RESET PASSWORD ================= */
+
+  @Post('reset-password')
+  async resetPassword(
+    @Body() body: { token: string; newPassword: string },
+  ) {
+    const ok = await this.usersService.resetPasswordWithToken(
+      body.token,
+      body.newPassword,
+    );
+
+    if (!ok) {
+      throw new BadRequestException('Lien invalide ou expiré');
+    }
+
+    return { message: 'Mot de passe réinitialisé avec succès' };
   }
 }

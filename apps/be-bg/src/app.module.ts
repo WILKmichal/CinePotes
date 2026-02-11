@@ -14,6 +14,7 @@ import { Seance } from './seances/entities/seance.entity';
 import { Participant } from './seances/entities/participant.entity';
 import { Liste } from './lists/entities/liste.entity';
 import { ListeFilm } from './lists/entities/liste-film.entity';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { ListeFilm } from './lists/entities/liste-film.entity';
     UsersModule,
     SeancesModule,
     ListsModule,
+    MailModule,
   ],
   controllers: [AppController, TestController],
   providers: [AppService],

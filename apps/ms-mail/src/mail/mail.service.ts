@@ -39,7 +39,7 @@ export class MailService {
     const mailOptions = {
       from: fromEmail,
       to: toEmail,
-      subject: 'Votre lien personnel',
+      subject,
       text: ``,
       html: this.buildEmailTemplate(content),
     };

@@ -9,6 +9,8 @@ GET /tmdb/{id}
 POST /auth/login
 POST /auth/register
 GET /auth/confirm-email
+POST /auth/forgot-password
+POST /auth/reset-password
 POST /seances
 POST /seances/join
 GET /seances/{id}/participants

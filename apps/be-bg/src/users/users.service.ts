@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { User, UserRole } from './entities/user.entity';
 
 @Injectable()
@@ -19,7 +19,7 @@ export class UsersService {
    */
   async findOne(usernameOrEmail: string): Promise<User | null> {
     return this.usersRepository.findOne({
-      where: [{ email: usernameOrEmail }, { nom: usernameOrEmail }],
+      where: [{ email: usernameOrEmail }, { nom: usernameOrEmail }]
     });
   }
 
@@ -71,4 +71,51 @@ export class UsersService {
     await this.usersRepository.save(user);
     return true;
   }
+  async issuePasswordResetToken(
+    email: string,
+    expiresInMinutes = 30,
+  ): Promise<string | null> {
+    const user = await this.usersRepository.findOne({ where: { email } });
+
+    if (!user) return null;
+
+    const token = randomBytes(32).toString('hex');
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+
+    user.rinitialiser_mdp_token_hash = tokenHash;
+    user.reinitialiser_mdp_expires_at = new Date(
+      Date.now() + expiresInMinutes * 60 * 1000,
+    );
+    
+    await this.usersRepository.save(user);
+    return token;
+  }
+    async resetPasswordWithToken(
+    token: string,
+    newPassword: string,
+  ): Promise<boolean> {
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+
+    const user = await this.usersRepository.findOne({
+      where: { rinitialiser_mdp_token_hash: tokenHash },
+    });
+
+    if (!user) return false;
+
+    if (!user.reinitialiser_mdp_expires_at) return false;
+
+    if (user.reinitialiser_mdp_expires_at.getTime() < Date.now()) {
+      return false;
+    }
+
+    user.mot_de_passe_hash = await bcrypt.hash(newPassword, 10);
+
+    // one-time token (sécurité)
+    user.rinitialiser_mdp_token_hash = null;
+    user.reinitialiser_mdp_expires_at = null;
+
+    await this.usersRepository.save(user);
+    return true;
+  }
+
 }
