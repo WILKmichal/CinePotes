@@ -14,6 +14,8 @@ import { Seance } from './seances/entities/seance.entity';
 import { Participant } from './seances/entities/participant.entity';
 import { Liste } from './lists/entities/liste.entity';
 import { ListeFilm } from './lists/entities/liste-film.entity';
+import { NatsModule } from './nats/nats.module';
+import { NatsExempleController } from './nats/nats-exemple.controller';
 
 @Module({
   imports: [
@@ -32,8 +34,9 @@ import { ListeFilm } from './lists/entities/liste-film.entity';
     UsersModule,
     SeancesModule,
     ListsModule,
+    NatsModule,
   ],
-  controllers: [AppController, TestController],
+  controllers: [AppController, TestController, NatsExempleController],
   providers: [AppService],
 })
 export class AppModule implements OnModuleInit {
