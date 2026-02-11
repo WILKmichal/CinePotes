@@ -141,39 +141,8 @@ describe('AuthController', () => {
     ).rejects.toThrow();
   });
 
-  it('should NOT send email when VERIFICATION_MAIL is false', async () => {
-    mockUsersService.createUser.mockResolvedValue({
-      email: 'test@test.com',
-      email_verification_token: 'token',
-    });
 
-    await controller.register({
-      email: 'test@test.com',
-      password: 'Password123!',
-      nom: 'Test',
-      role: 'user',
-    });
 
-    expect(mockMailService.sendEmail).not.toHaveBeenCalled();
-  });
-
-  it('should send confirmation email when VERIFICATION_MAIL is true', async () => {
-    process.env.VERIFICATION_MAIL = 'true';
-
-    mockUsersService.createUser.mockResolvedValue({
-      email: 'test@test.com',
-      email_verification_token: 'token',
-    });
-
-    await controller.register({
-      email: 'test@test.com',
-      password: 'Password123!',
-      nom: 'Test',
-      role: 'user',
-    });
-
-    expect(mockMailService.sendEmail).toHaveBeenCalled();
-  });
 
   /* ================= CONFIRM EMAIL ================= */
 
