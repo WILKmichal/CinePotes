@@ -36,7 +36,7 @@ describe('AuthController', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
-    process.env.NODE_ENV = 'test';
+    process.env.VERIFICATION_MAIL = 'false';
   });
 
   it('should be defined', () => {
@@ -153,7 +153,7 @@ describe('AuthController', () => {
     ).rejects.toThrow();
   });
 
-  it('should NOT send email when NODE_ENV is test', async () => {
+  it('should NOT send email when VERIFICATION_MAIL is false', async () => {
     mockUsersService.createUser.mockResolvedValue({
       email: 'test@test.com',
       email_verification_token: 'token',
@@ -170,7 +170,7 @@ describe('AuthController', () => {
   });
 
   it('should send confirmation email in production', async () => {
-    process.env.NODE_ENV = 'production';
+    process.env.VERIFICATION_MAIL = 'true';
 
     mockUsersService.createUser.mockResolvedValue({
       email: 'test@test.com',
@@ -191,7 +191,7 @@ describe('AuthController', () => {
   });
 
   it('should handle undefined email_verification_token', async () => {
-    process.env.NODE_ENV = 'production';
+    process.env.VERIFICATION_MAIL = 'true';
 
     mockUsersService.createUser.mockResolvedValue({
       email: 'test@test.com',
