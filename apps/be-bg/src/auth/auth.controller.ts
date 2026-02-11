@@ -42,7 +42,7 @@ export class AuthController {
       role,
     );
 
-    if (process.env.VERIFICATION_MAIL !== 'test') {
+    if (process.env.VERIFICATION_MAIL === 'true') {
       const confirmUrl = `http://localhost:3002/auth/confirm-email?token=${encodeURIComponent(
         user.email_verification_token ?? '',
       )}`;
