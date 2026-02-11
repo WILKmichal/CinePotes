@@ -30,7 +30,6 @@ describe('bootstrap function', () => {
   it('should parse APP_PORT as number', () => {
     process.env.APP_PORT = '3002';
     const port = Number(process.env.APP_PORT);
-
     expect(port).toBe(3002);
     expect(typeof port).toBe('number');
   });
@@ -38,7 +37,6 @@ describe('bootstrap function', () => {
   it('should handle different port numbers', () => {
     process.env.APP_PORT = '8080';
     const port = Number(process.env.APP_PORT);
-
     expect(port).toBe(8080);
   });
 

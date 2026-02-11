@@ -25,24 +25,32 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/");
+    location.href = `http://localhost:3001/auth/callback?token=${encodeURIComponent(token)}`;
   };
 
   const doLogin = async () => {
     const res = await fetch(`${API_BASE}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({
+        email: username,
+        username,
+        usernameOrEmail: username,
+        password,
+      }),
     });
 
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-      setError(data?.message || "Identifiants incorrects.");
+      const msg =
+        Array.isArray(data?.message) ? data.message.join(" / ") : data?.message;
+      setError(msg || "Identifiants incorrects.");
       return;
     }
 
-    const token = data?.access_token ?? data?.token ?? null;
+    const token = data?.access_token ?? data?.token ?? data?.accessToken ?? null;
+
     if (!token) {
       setError("Réponse inattendue du serveur (token manquant).");
       return;
@@ -61,7 +69,9 @@ export default function LoginPage() {
     const data = await res.json().catch(() => ({}));
 
     if (!(res.ok || res.status === 201)) {
-      setError(data?.message || "Erreur lors de la création du compte.");
+      const msg =
+        Array.isArray(data?.message) ? data.message.join(" / ") : data?.message;
+      setError(msg || "Erreur lors de la création du compte.");
       return;
     }
 
@@ -72,6 +82,8 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
+
     setError("");
     setLoading(true);
 
@@ -89,10 +101,11 @@ export default function LoginPage() {
     }
   };
 
-  const getButtonText = () => {
-    if (loading) return "Traitement...";
-    return mode === "login" ? "Se connecter" : "S'inscrire";
-  };
+  const buttonText = loading
+    ? "Traitement..."
+    : mode === "login"
+    ? "Se connecter"
+    : "S'inscrire";
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
@@ -193,6 +206,18 @@ export default function LoginPage() {
             />
           </div>
 
+          {mode === "login" && (
+            <div className="text-right">
+              <button
+                type="button"
+                onClick={() => router.push("/forgot-password")}
+                className="text-sm text-blue-600 hover:underline"
+              >
+                Mot de passe oublié ?
+              </button>
+            </div>
+          )}
+
           {mode === "register" && (
             <div>
               <label
@@ -218,8 +243,8 @@ export default function LoginPage() {
             type="submit"
             disabled={loading}
             className="w-full bg-blue-600 text-white font-semibold py-2 rounded-lg hover:bg-blue-700 transition duration-200 shadow-md disabled:opacity-60"
-          >
-            {getButtonText()}
+          > 
+            {buttonText}
           </button>
         </form>
       </div>
