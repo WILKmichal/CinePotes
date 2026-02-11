@@ -171,11 +171,7 @@ describe('ListsService', () => {
       mockListeRepository.create.mockReturnValue(mockListe);
       mockListeRepository.save.mockResolvedValue(mockListe);
 
-      const result = await service.create(
-        mockUserId,
-        'Ma liste',
-        'Description',
-      );
+      const result = await service.create(mockUserId, 'Ma liste', 'Description');
 
       expect(result).toEqual(mockListe);
       expect(mockListeRepository.create).toHaveBeenCalledWith({
@@ -300,11 +296,7 @@ describe('ListsService', () => {
       mockListeFilmRepository.create.mockReturnValue(mockListeFilm);
       mockListeFilmRepository.save.mockResolvedValue(mockListeFilm);
 
-      const result = await service.addFilmToList(
-        mockListeId,
-        mockTmdbId,
-        mockUserId,
-      );
+      const result = await service.addFilmToList(mockListeId, mockTmdbId, mockUserId);
 
       expect(result).toEqual(mockListeFilm);
       expect(mockListeFilmRepository.create).toHaveBeenCalledWith({
@@ -318,11 +310,7 @@ describe('ListsService', () => {
       // Sécurité : on ne peut pas ajouter un film à la liste de quelqu'un d'autre
       mockListeRepository.findOne.mockResolvedValue(null);
 
-      const result = await service.addFilmToList(
-        mockListeId,
-        mockTmdbId,
-        mockUserId,
-      );
+      const result = await service.addFilmToList(mockListeId, mockTmdbId, mockUserId);
 
       expect(result).toBeNull();
     });
@@ -338,11 +326,7 @@ describe('ListsService', () => {
       mockListeFilmRepository.create.mockReturnValue(createdFilm);
       mockListeFilmRepository.save.mockRejectedValue(new Error('Duplicate'));
 
-      const result = await service.addFilmToList(
-        mockListeId,
-        mockTmdbId,
-        mockUserId,
-      );
+      const result = await service.addFilmToList(mockListeId, mockTmdbId, mockUserId);
 
       expect(result).toMatchObject({
         liste_id: mockListeId,
@@ -361,11 +345,7 @@ describe('ListsService', () => {
         raw: {},
       });
 
-      const result = await service.removeFilmFromList(
-        mockListeId,
-        mockTmdbId,
-        mockUserId,
-      );
+      const result = await service.removeFilmFromList(mockListeId, mockTmdbId, mockUserId);
 
       expect(result).toBe(true);
       expect(mockListeFilmRepository.delete).toHaveBeenCalledWith({
@@ -377,11 +357,7 @@ describe('ListsService', () => {
     it("doit retourner false si la liste n'appartient pas à l'utilisateur", async () => {
       mockListeRepository.findOne.mockResolvedValue(null);
 
-      const result = await service.removeFilmFromList(
-        mockListeId,
-        mockTmdbId,
-        mockUserId,
-      );
+      const result = await service.removeFilmFromList(mockListeId, mockTmdbId, mockUserId);
 
       expect(result).toBe(false);
     });
@@ -393,11 +369,7 @@ describe('ListsService', () => {
         raw: {},
       });
 
-      const result = await service.removeFilmFromList(
-        mockListeId,
-        mockTmdbId,
-        mockUserId,
-      );
+      const result = await service.removeFilmFromList(mockListeId, mockTmdbId, mockUserId);
 
       expect(result).toBe(false);
     });
@@ -409,11 +381,7 @@ describe('ListsService', () => {
         raw: {},
       });
 
-      const result = await service.removeFilmFromList(
-        mockListeId,
-        mockTmdbId,
-        mockUserId,
-      );
+      const result = await service.removeFilmFromList(mockListeId, mockTmdbId, mockUserId);
 
       expect(result).toBe(false);
     });

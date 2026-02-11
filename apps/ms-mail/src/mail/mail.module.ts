@@ -1,4 +1,3 @@
-/* istanbul ignore file */
 import { Module } from '@nestjs/common';
 import { MailService } from './mail.service';
 import { MailController } from './mail.controller';

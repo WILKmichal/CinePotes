@@ -21,7 +21,7 @@ import {
   ApiBearerAuth,
   ApiParam,
 } from '@nestjs/swagger';
-import { AuthGuard } from '../../auth/auth.guard';
+import { AuthGuard } from '../auth/auth.guard';
 import { ListsService } from './lists.service';
 import { CreateListDto } from './dto/create-list.dto';
 import { AddFilmDto } from './dto/add-film.dto';

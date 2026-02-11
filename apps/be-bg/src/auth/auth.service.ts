@@ -1,5 +1,5 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { UsersService } from '../src/users/users.service';
+import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 
@@ -23,10 +23,7 @@ export class AuthService {
       );
     }
 
-    const passwordMatches = await bcrypt.compare(
-      pass,
-      user.mot_de_passe_hash,
-    );
+    const passwordMatches = await bcrypt.compare(pass, user.mot_de_passe_hash);
 
     if (!passwordMatches) {
       throw new UnauthorizedException('Mot de passe invalide');
@@ -34,7 +31,7 @@ export class AuthService {
 
     const payload = {
       sub: user.id,
-      username: user.email, // 🔥 IMPORTANT
+      username: user.email,
       role: user.role,
     };
 
@@ -42,5 +39,4 @@ export class AuthService {
       access_token: await this.jwtService.signAsync(payload),
     };
   }
-
 }
