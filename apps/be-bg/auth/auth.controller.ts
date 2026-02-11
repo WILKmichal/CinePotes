@@ -6,6 +6,7 @@ import { UserRole } from '../src/users/entities/user.entity';
 import { ConfigService } from '@nestjs/config';
 import { MailAdapter } from '../src/mail/mail.adapter';
 
+
 interface RegisterDto {
   nom?: string;
   email: string;
