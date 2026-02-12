@@ -3,8 +3,7 @@ dotenv.config();
 
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
-import { AppController } from './app.controller';
-import { MailService } from './mail.service';
+import { MailProcessor } from './mail.processor';
 
 @Module({
   imports: [
@@ -16,7 +15,6 @@ import { MailService } from './mail.service';
     }),
     BullModule.registerQueue({ name: 'mail' }),
   ],
-  controllers: [AppController],
-  providers: [MailService],
+  providers: [MailProcessor],
 })
 export class AppModule {}

@@ -10,14 +10,14 @@ export class AppController {
 
   // be-bg emet 'notif.confirm-email' quand un utilisateur s'inscrit
   @EventPattern('notif.confirm-email')
-  handleConfirmEmail(@Payload() data: ConfirmEmailDto) {
-    this.mailService.handleConfirmEmail(data.email, data.nom, data.confirmUrl);
+  async handleConfirmEmail(@Payload() data: ConfirmEmailDto) {
+    await this.mailService.handleConfirmEmail(data.email, data.nom, data.confirmUrl);
   }
 
   // be-bg emet 'notif.reset-password' quand un utilisateur demande un reset de mdp
   @EventPattern('notif.reset-password')
-  handleResetPassword(@Payload() data: ResetPasswordDto) {
-    this.mailService.handleResetPassword(
+  async handleResetPassword(@Payload() data: ResetPasswordDto) {
+    await this.mailService.handleResetPassword(
       data.email,
       data.resetUrl,
       data.expiresInMinutes,

@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git fetch:*)"
+      "Bash(git fetch:*)",
+      "Bash(powershell -Command \"Start-Sleep -Seconds 5; Invoke-RestMethod -Uri ''http://localhost:3002/auth/register'' -Method POST -ContentType ''application/json'' -Body ''{\"\"email\"\":\"\"test-debug2@test.com\"\",\"\"password\"\":\"\"Test1234!\"\"}''\")",
+      "Bash(powershell:*)"
     ]
   }
 }

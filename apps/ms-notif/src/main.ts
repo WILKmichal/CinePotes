@@ -1,5 +1,4 @@
 import * as dotenv from 'dotenv';
-import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { AppModule } from './app.module';
@@ -19,8 +18,6 @@ async function bootstrap() {
       },
     },
   );
-
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
 
   await app.listen();
   console.log('ms-notif connecte a NATS et en ecoute');

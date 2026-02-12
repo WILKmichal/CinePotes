@@ -1,4 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 import { confirmEmailTemplate } from './templates/confirm-email.template';
 import { resetPasswordTemplate } from './templates/reset-password.template';
 
@@ -6,16 +8,23 @@ import { resetPasswordTemplate } from './templates/reset-password.template';
 export class MailService {
   private readonly logger = new Logger(MailService.name);
 
-  handleConfirmEmail(email: string, nom: string, confirmUrl: string) {
+  constructor(@InjectQueue('mail') private readonly mailQueue: Queue) {}
+
+  async handleConfirmEmail(email: string, nom: string, confirmUrl: string) {
     const html = confirmEmailTemplate(nom, confirmUrl);
 
     this.logger.log(`[confirm-email] Template construit pour ${email}`);
-    this.logger.debug(html);
 
-    // TODO: envoyer dans la queue BullMQ pour le Worker Gmail
+    await this.mailQueue.add('send-mail', {
+      to: email,
+      subject: 'CinéPotes - Confirmez votre email',
+      html,
+    });
+
+    this.logger.log(`[confirm-email] Job ajouté dans la queue pour ${email}`);
   }
 
-  handleResetPassword(
+  async handleResetPassword(
     email: string,
     resetUrl: string,
     expiresInMinutes: number,
@@ -23,8 +32,13 @@ export class MailService {
     const html = resetPasswordTemplate(resetUrl, expiresInMinutes);
 
     this.logger.log(`[reset-password] Template construit pour ${email}`);
-    this.logger.debug(html);
 
-    // TODO: envoyer dans la queue BullMQ pour le Worker Gmail
+    await this.mailQueue.add('send-mail', {
+      to: email,
+      subject: 'CinéPotes - Réinitialisation du mot de passe',
+      html,
+    });
+
+    this.logger.log(`[reset-password] Job ajouté dans la queue pour ${email}`);
   }
 }
