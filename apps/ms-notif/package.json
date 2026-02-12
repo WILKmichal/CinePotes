@@ -21,10 +21,12 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@nestjs/bullmq": "^11.0.4",
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
     "@nestjs/microservices": "^11.1.13",
     "@nestjs/platform-express": "^11.0.1",
+    "bullmq": "^5.63.2",
     "dotenv": "^17.2.3",
     "nats": "^2.29.3",
     "reflect-metadata": "^0.2.2",
