@@ -28,6 +28,7 @@
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",
     "@nestjs/jwt": "^11.0.1",
+    "@nestjs/microservices": "^11.1.13",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/swagger": "^11.2.3",
@@ -41,6 +42,7 @@
     "dotenv": "^17.2.3",
     "ioredis": "^5.8.2",
     "mysql2": "^3.16.1",
+    "nats": "^2.29.3",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "pg": "^8.16.3",
@@ -93,7 +95,8 @@
     },
     "collectCoverageFrom": [
       "**/*.(t|j)s",
-      "!**/*.entity.ts"
+      "!**/*.entity.ts",
+      "!**/nats/**"
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",

@@ -10,7 +10,6 @@ import { MailService } from '../../../ms-mail/src/mail/mail.service';
 import * as dotenv from 'dotenv';
 import { MailModule } from '../mail/mail.module';
 
-
 dotenv.config();
 @Module({
   imports: [

@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { writeFileSync } from 'node:fs';
 import { validateEnvironmentVariables } from './config.validation';
 
@@ -13,6 +14,15 @@ async function bootstrap() {
   validateEnvironmentVariables();
 
   const app = await NestFactory.create(AppModule);
+
+  // Connecte be-bg à NATS en écoute pour recevoir des messages (@EventPattern)
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.NATS,
+    options: {
+      servers: [process.env.NATS_URL ?? 'nats://localhost:4222'],
+    },
+  });
+  await app.startAllMicroservices();
 
   // Active la validation automatique des DTOs
   app.useGlobalPipes(

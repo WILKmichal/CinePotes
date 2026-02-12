@@ -165,7 +165,7 @@ describe('MailController - reset-password (with mocks)', () => {
   it('doit propager une erreur si sendEmail échoue', async () => {
     // Arrange
     (pageReiniMotDePasse as jest.Mock).mockReturnValue('<p>HTML_RESET</p>');
-    mailServiceMock.sendEmail.mockRejectedValue(new Error("SMTP down"));
+    mailServiceMock.sendEmail.mockRejectedValue(new Error('SMTP down'));
 
     const body = {
       email: 'test@example.com',
@@ -177,4 +177,3 @@ describe('MailController - reset-password (with mocks)', () => {
     await expect(controller.resetPassword(body)).rejects.toThrow('SMTP down');
   });
 });
-

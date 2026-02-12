@@ -68,10 +68,7 @@ export class SeancesController {
   }
   // DELETE /seances/:id/leave - Quitter une séance
   @Delete(':id/leave')
-  leave(
-    @Param('id') id: string,
-    @Req() request: AuthenticatedRequest,
-  ) {
+  leave(@Param('id') id: string, @Req() request: AuthenticatedRequest) {
     const userId = request.user.sub;
     return this.seancesService.leave(id, userId);
   }
