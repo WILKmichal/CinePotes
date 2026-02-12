@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   HttpStatus,
+  Inject,
   Post,
   Query,
   Res,
@@ -12,11 +13,11 @@ import {
 import type { Response } from 'express';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
-import { MailService } from '../../../ms-mail/src/mail/mail.service';
 import { UserRole } from 'src/users/entities/user.entity';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ConfigService } from '@nestjs/config';
+import { ClientProxy } from '@nestjs/microservices';
 
 @Controller('auth')
 export class AuthController {
@@ -24,7 +25,7 @@ export class AuthController {
     private readonly configService: ConfigService,
     private readonly authService: AuthService,
     private readonly usersService: UsersService,
-    private readonly mailService: MailService,
+    @Inject('NATS_SERVICE') private readonly natsClient: ClientProxy,
   ) {}
 
   /* ================= LOGIN ================= */
@@ -54,13 +55,11 @@ export class AuthController {
         user.email_verification_token ?? '',
       )}`;
 
-      await this.mailService.sendEmail(
-        body.email,
-        'Confirmation de votre compte CinéPotes',
-        `<h2>Bienvenue ${nom} 🎬</h2>
-<p>Merci de confirmer votre email :</p>
-<a href="${confirmUrl}">Confirmer mon email</a>`,
-      );
+      this.natsClient.emit('notif.confirm-email', {
+        email: body.email,
+        nom,
+        confirmUrl,
+      });
     }
 
     return {
@@ -105,13 +104,11 @@ export class AuthController {
 
       const resetUrl = `${frontUrl}?token=${encodeURIComponent(token)}`;
 
-      await this.mailService.sendEmail(
+      this.natsClient.emit('notif.reset-password', {
         email,
-        'Réinitialisation de votre mot de passe',
-        `Cliquez ici pour réinitialiser votre mot de passe :
-         ${resetUrl}
-         (valide ${expiresInMinutes} minutes)`,
-      );
+        resetUrl,
+        expiresInMinutes,
+      });
     }
 
     return {
