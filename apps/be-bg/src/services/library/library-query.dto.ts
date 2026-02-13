@@ -23,7 +23,7 @@ export class TmdbQueryDto {
   })
   query?: string;
 
-  // recherche avancee
+  // recherche-avancee
   @IsOptional()
   @Transform(trimIfString)
   @IsString()
