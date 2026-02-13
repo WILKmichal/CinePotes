@@ -1,14 +1,17 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { SeancesService } from './seances.service';
 import { SeancesController } from './seances.controller';
-import { Seance } from './entities/seance.entity';
-import { Participant } from './entities/participant.entity';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Seance, Participant])],
+  imports: [
+    ClientsModule.register([{
+      name: 'NATS_SERVICE',
+      transport: Transport.NATS,
+      options: {
+        servers: [process.env.NATS_URL ?? 'nats://localhost:4222'],
+      },
+    }]),
+  ],
   controllers: [SeancesController],
-  providers: [SeancesService],
-  exports: [SeancesService],
 })
 export class SeancesModule {}

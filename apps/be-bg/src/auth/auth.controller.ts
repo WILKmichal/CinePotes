@@ -13,7 +13,7 @@ import type { Response } from 'express';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { MailService } from '../../../ms-mail/src/mail/mail.service';
-import { UserRole } from 'src/users/entities/user.entity';
+import { UserRole } from 'schemas/user.entity';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ConfigService } from '@nestjs/config';

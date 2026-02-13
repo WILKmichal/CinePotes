@@ -1,14 +1,10 @@
-import {
-  Injectable,
-  NotFoundException,
-  ConflictException,
-} from '@nestjs/common';
+import { Injectable} from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { randomBytes } from 'node:crypto';
-import { CreateSeanceDto } from './dto/create-seance.dto';
-import { Seance, SeanceStatut } from './entities/seance.entity';
-import { Participant } from './entities/participant.entity';
+import { Seance, SeanceStatut } from 'schemas/seance.entity';
+import { Participant } from 'schemas/participant.entity';
 
 @Injectable()
 export class SeancesService {
@@ -36,14 +32,12 @@ export class SeancesService {
 
   // Crée une nouvelle séance
   async create(
-    createSeanceDto: CreateSeanceDto,
+    createSeanceDto: { nom: string; date: Date; max_films: number },
     proprietaire_id: string,
   ): Promise<Seance> {
     const existingSeance = await this.findByProprietaire(proprietaire_id);
     if (existingSeance) {
-      throw new ConflictException(
-        "Vous avez déjà une séance active. Veuillez la terminer avant d'en créer une nouvelle.",
-      );
+      throw new RpcException({ statusCode: 409, message: "Vous avez déjà une séance active..." });
     }
     const seance = this.seancesRepository.create({
       nom: createSeanceDto.nom,
@@ -55,7 +49,16 @@ export class SeancesService {
       est_actif: true,
     });
 
-    return this.seancesRepository.save(seance);
+    const savedSeance = await this.seancesRepository.save(seance);
+
+    // Ajouter le propriétaire comme participant automatiquement
+    const participant = this.participantsRepository.create({
+      seance_id: savedSeance.id,
+      utilisateur_id: proprietaire_id,
+    });
+    await this.participantsRepository.save(participant);
+
+    return savedSeance;
   }
 
   // Rejoindre une séance via son code
@@ -66,7 +69,7 @@ export class SeancesService {
     const seance = await this.findByCode(code);
 
     if (seance.statut !== SeanceStatut.EN_ATTENTE) {
-      throw new ConflictException("La séance n'accepte plus de participants");
+      throw new RpcException({ statusCode: 400, message : 'Impossible de rejoindre une séance déjà commencée ou terminée' });
     }
 
     // Vérifier si l'utilisateur a déjà rejoint
@@ -76,7 +79,7 @@ export class SeancesService {
     });
 
     if (existingParticipant) {
-      throw new ConflictException('Vous avez déjà rejoint cette séance');
+      throw new RpcException({ statusCode: 409, message: 'Vous avez déjà rejoint cette séance' });
     }
 
     const participant = this.participantsRepository.create({
@@ -104,20 +107,33 @@ export class SeancesService {
     });
 
     if (!seance) {
-      throw new NotFoundException(`Séance avec le code ${code} introuvable`);
+      throw new RpcException({ statusCode : 404, message: 'Séance introuvable' });
     }
 
     return seance;
   }
 
   // Récupère les participants d'une séance avec les infos utilisateur
-  async getParticipants(seance_id: string): Promise<Participant[]> {
-    return this.participantsRepository.find({
-      where: { seance_id },
-      relations: ['utilisateur'],
-      order: { a_rejoint_le: 'ASC' },
-    });
-  }
+async getParticipants(seance_id: string): Promise<any[]> {
+  const participants = await this.participantsRepository.find({
+    where: { seance_id },
+    relations: ['utilisateur'],
+    order: { a_rejoint_le: 'ASC' },
+  });
+
+  return participants.map(p => ({
+    id: p.id,
+    seance_id: p.seance_id,
+    utilisateur_id: p.utilisateur_id,
+    a_rejoint_le: p.a_rejoint_le,
+    utilisateur: {
+      id: p.utilisateur.id,
+      nom: p.utilisateur.nom,
+      email: p.utilisateur.email,
+    },
+  }));
+}
+
   // Quitter une séance (suppression d'un participant)
   async leave(seance_id: string, utilisateur_id: string) {
     const result = await this.participantsRepository.delete({
@@ -126,9 +142,7 @@ export class SeancesService {
     });
 
     if (result.affected === 0) {
-      throw new NotFoundException(
-        "Vous n'êtes pas participant de cette séance",
-      );
+       throw new RpcException({ statusCode: 404, message: 'Vous n\'avez pas rejoint cette séance' });
     }
 
     return { message: 'Vous avez quitté la séance' };
@@ -146,7 +160,7 @@ export class SeancesService {
     });
 
     if (!seance) {
-      throw new NotFoundException('Séance introuvable ou non autorisé');
+      throw new RpcException({ statusCode: 404, message: 'Séance introuvable ou vous n\'êtes pas le propriétaire' });
     }
 
     seance.statut = nouveauStatut;

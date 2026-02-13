@@ -2,5 +2,16 @@
   "name": "schemas",
   "version": "1.0.0",
   "main": "index.ts",
-  "types": "index.ts"
+  "types": "index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./seance.entity": "./seance.entity.ts",
+    "./participant.entity": "./participant.entity.ts",
+    "./user.entity": "./user.entity.ts",
+    "./liste.entity": "./liste.entity.ts",
+    "./liste-film.entity": "./liste-film.entity.ts"
+  },
+  "dependencies": {
+    "typeorm": "^0.3.28"
+  }
 }

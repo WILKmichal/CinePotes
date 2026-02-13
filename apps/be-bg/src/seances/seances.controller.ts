@@ -8,68 +8,113 @@ import {
   Delete,
   UseGuards,
   Req,
+  HttpException,
+  Inject,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { SeancesService } from './seances.service';
-
-interface AuthenticatedRequest {
-  user: { sub: string };
-}
+import { ClientProxy } from '@nestjs/microservices';
+import { firstValueFrom } from 'rxjs';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { CreateSeanceDto } from './dto/create-seance.dto';
 import { JoinSeanceDto } from './dto/join-seance.dto';
 import { UpdateStatutDto } from './dto/update-statut.dto';
 
+interface AuthenticatedRequest {
+  user: { sub: string };
+}
+
+@ApiTags('Seances')
+@ApiBearerAuth()
 @Controller('seances')
 @UseGuards(AuthGuard('jwt'))
 export class SeancesController {
-  constructor(private readonly seancesService: SeancesService) {}
+  constructor(
+    @Inject('NATS_SERVICE') private readonly natsClient: ClientProxy,
+  ) {}
 
-  //POST /seances - Crée une nouvelle séance
+  @ApiOperation({ summary: 'Créer une nouvelle séance' })
   @Post()
   create(
     @Body() createSeanceDto: CreateSeanceDto,
     @Req() request: AuthenticatedRequest,
   ) {
-    const userId = request.user.sub; // Récupère l'ID utilisateur depuis le JWT
-    return this.seancesService.create(createSeanceDto, userId);
+    return firstValueFrom(
+      this.natsClient.send('seances.create', {
+        dto: createSeanceDto,
+        userId: request.user.sub,
+      }),
+    ).catch((err) => {
+      throw new HttpException(err.message, err.statusCode || 500);
+    });
   }
 
-  //POST /seances/join - Rejoindre une séance via son code
+  @ApiOperation({ summary: 'Rejoindre une séance via son code' })
   @Post('join')
   join(
     @Body() joinSeanceDto: JoinSeanceDto,
     @Req() request: AuthenticatedRequest,
   ) {
-    const userId = request.user.sub;
-    return this.seancesService.join(joinSeanceDto.code, userId);
+    return firstValueFrom(
+      this.natsClient.send('seances.join', {
+        code: joinSeanceDto.code,
+        userId: request.user.sub,
+      }),
+    ).catch((err) => {
+      throw new HttpException(err.message, err.statusCode || 500);
+    });
   }
 
-  //GET /seances/:id/participants - Récupère la liste des participants d'une séance
+  @ApiOperation({ summary: 'Récupérer les participants d\'une séance' })
+  @ApiParam({ name: 'id', description: 'ID de la séance (UUID)' })
   @Get(':id/participants')
   getParticipants(@Param('id') id: string) {
-    return this.seancesService.getParticipants(id);
+    return firstValueFrom(
+      this.natsClient.send('seances.participants', { seanceId: id }),
+    ).catch((err) => {
+      throw new HttpException(err.message, err.statusCode || 500);
+    });
   }
-  //PATCH /seances/:id/statut - Met à jour le statut d'une séance (seulement par le propriétaire)
+
+  @ApiOperation({ summary: 'Mettre à jour le statut d\'une séance' })
+  @ApiParam({ name: 'id', description: 'ID de la séance (UUID)' })
   @Patch(':id/statut')
   updateStatut(
     @Param('id') id: string,
     @Body() updateStatutDto: UpdateStatutDto,
     @Req() request: AuthenticatedRequest,
   ) {
-    const userId = request.user.sub;
-    return this.seancesService.updateStatut(id, userId, updateStatutDto.statut);
+    return firstValueFrom(
+      this.natsClient.send('seances.updateStatut', {
+        seanceId: id,
+        userId: request.user.sub,
+        statut: updateStatutDto.statut,
+      }),
+    ).catch((err) => {
+      throw new HttpException(err.message, err.statusCode || 500);
+    });
   }
 
-  // GET /seances/self - Récupère la séance créée par l'utilisateur connecté
+  @ApiOperation({ summary: 'Récupérer mes séances' })
   @Get('self')
   findMySeance(@Req() req: AuthenticatedRequest) {
-    const userId = req.user.sub;
-    return this.seancesService.findByProprietaire(userId);
+    return firstValueFrom(
+      this.natsClient.send('seances.self', { userId: req.user.sub }),
+    ).catch((err) => {
+      throw new HttpException(err.message, err.statusCode || 500);
+    });
   }
-  // DELETE /seances/:id/leave - Quitter une séance
+
+  @ApiOperation({ summary: 'Quitter une séance' })
+  @ApiParam({ name: 'id', description: 'ID de la séance (UUID)' })
   @Delete(':id/leave')
   leave(@Param('id') id: string, @Req() request: AuthenticatedRequest) {
-    const userId = request.user.sub;
-    return this.seancesService.leave(id, userId);
+    return firstValueFrom(
+      this.natsClient.send('seances.leave', {
+        seanceId: id,
+        userId: request.user.sub,
+      }),
+    ).catch((err) => {
+      throw new HttpException(err.message, err.statusCode || 500);
+    });
   }
 }

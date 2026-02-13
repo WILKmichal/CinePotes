@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Liste } from './entities/liste.entity';
-import { ListeFilm } from './entities/liste-film.entity';
+import { Liste } from 'schemas/liste.entity';
+import { ListeFilm } from 'schemas/liste-film.entity';
 
 @Injectable()
 export class ListsService {

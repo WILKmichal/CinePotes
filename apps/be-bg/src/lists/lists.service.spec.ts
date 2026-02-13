@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { ListsService } from './lists.service';
-import { Liste } from './entities/liste.entity';
-import { ListeFilm } from './entities/liste-film.entity';
-import { User } from '../users/entities/user.entity';
+import { Liste } from 'schemas/liste.entity';
+import { ListeFilm } from 'schemas/liste-film.entity';
+import { User } from 'schemas/user.entity';
 
 describe('ListsService', () => {
   let service: ListsService;
