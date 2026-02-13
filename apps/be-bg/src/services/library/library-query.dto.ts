@@ -1,6 +1,10 @@
 import { IsOptional, IsString, Matches, MinLength } from 'class-validator';
 import { Transform } from 'class-transformer';
 
+const trimIfString = ({ value }: { value: unknown }): unknown => {
+  return typeof value === 'string' ? value.trim() : value;
+};
+
 export class TmdbQueryDto {
   // ids = "1,2,3"
   @IsOptional()
@@ -12,7 +16,7 @@ export class TmdbQueryDto {
 
   // recherche simple
   @IsOptional()
-  @Transform(({ value }) => value?.trim())
+  @Transform(trimIfString)
   @IsString()
   @MinLength(3, {
     message: 'La recherche doit contenir au moins 3 caractères',
@@ -21,7 +25,7 @@ export class TmdbQueryDto {
 
   // recherche avancée
   @IsOptional()
-  @Transform(({ value }) => value?.trim())
+  @Transform(trimIfString)
   @IsString()
   @MinLength(2, {
     message: 'Le titre doit contenir au moins 2 caractères',
@@ -29,14 +33,14 @@ export class TmdbQueryDto {
   titre?: string;
 
   @IsOptional()
-  @Transform(({ value }) => value?.trim())
+  @Transform(trimIfString)
   @Matches(/^\d{4}$/, {
     message: "L'année doit être au format YYYY (ex: 2019)",
   })
   annee?: string;
 
   @IsOptional()
-  @Transform(({ value }) => value?.trim())
+  @Transform(trimIfString)
   @IsString()
   genre?: string;
 }
