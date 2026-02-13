@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
-import { MailService } from '../../../ms-mail/src/mail/mail.service';
 import { ConfigService } from '@nestjs/config';
 import { HttpStatus, BadRequestException } from '@nestjs/common';
 
@@ -17,8 +16,8 @@ const mockUsersService = {
   resetPasswordWithToken: jest.fn(),
 };
 
-const mockMailService = {
-  sendEmail: jest.fn(),
+const mockNatsClient = {
+  emit: jest.fn(),
 };
 
 const mockConfigService = {
@@ -43,7 +42,7 @@ describe('AuthController', () => {
       providers: [
         { provide: AuthService, useValue: mockAuthService },
         { provide: UsersService, useValue: mockUsersService },
-        { provide: MailService, useValue: mockMailService },
+        { provide: 'NATS_SERVICE', useValue: mockNatsClient },
         { provide: ConfigService, useValue: mockConfigService },
       ],
     }).compile();
@@ -187,10 +186,13 @@ describe('AuthController', () => {
       30,
     );
 
-    expect(mockMailService.sendEmail).toHaveBeenCalledWith(
-      'mehdi@gmail.com',
-      'Réinitialisation de votre mot de passe',
-      expect.stringContaining('TOKEN123'),
+    expect(mockNatsClient.emit).toHaveBeenCalledWith(
+      'notif.reset-password',
+      expect.objectContaining({
+        email: 'mehdi@gmail.com',
+        resetUrl: expect.stringContaining('TOKEN123'),
+        expiresInMinutes: 30,
+      }),
     );
 
     expect(res).toEqual({
@@ -204,7 +206,7 @@ describe('AuthController', () => {
 
     await controller.forgotPassword('unknown@gmail.com');
 
-    expect(mockMailService.sendEmail).not.toHaveBeenCalled();
+    expect(mockNatsClient.emit).not.toHaveBeenCalled();
   });
 
   /* ================= RESET PASSWORD ================= */
