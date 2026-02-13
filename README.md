@@ -77,22 +77,31 @@ TMDB_MS_URL=http://localhost:3333/
 
 > Generez votre propre cle TMDB sur [themoviedb.org](https://www.themoviedb.org/).
 
+### Microservice Notification (`apps/ms-notif/.env`)
+
+```env
+NATS_URL=nats://localhost:4222
+REDIS_HOST=localhost
+REDIS_PORT=6379
+```
+
+### Worker Gmail (`apps/worker-gmail/.env`)
+
+```env
+REDIS_HOST=localhost
+REDIS_PORT=6379
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASSWORD=
+```
+
 ### Frontend client (`apps/fe-client/.env`)
 
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:3333
 NEXT_PUBLIC_API_BG_URL=http://localhost:3002
 NEXT_PUBLIC_ADMIN_URL=http://localhost:3000
-```
-
-### Microservice Mail (`apps/ms-mail/.env`)
-
-```env
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=
-SMTP_PASSWORD=
-USE_ETHEREAL=false
 ```
 
 ---
@@ -105,7 +114,7 @@ USE_ETHEREAL=false
 docker compose up
 ```
 
-Cela lance PostgreSQL, Adminer (http://localhost:8080) et Redis.
+Cela lance PostgreSQL, Adminer (http://localhost:8080), Redis, Redis Commander (http://localhost:8081) et NATS.
 
 ### 2. Lancer les applications
 
@@ -113,10 +122,14 @@ Cela lance PostgreSQL, Adminer (http://localhost:8080) et Redis.
 pnpm run dev
 ```
 
-| Application    | URL                            |
-|----------------|--------------------------------|
-| Frontend       | http://localhost:3001          |
-| Backend (API)  | http://localhost:3002          |
-| Swagger        | http://localhost:3002/api-docs |
-| TMDB Service   | http://localhost:3333          |
-| Adminer (BDD)  | http://localhost:8080          |
+| Application          | URL                            |
+|----------------------|--------------------------------|
+| Frontend             | http://localhost:3001          |
+| Backend (API)        | http://localhost:3002          |
+| Swagger              | http://localhost:3002/api-docs |
+| TMDB Service         | http://localhost:3333          |
+| ms-notif (NATS)      | Microservice (pas de HTTP)     |
+| worker-gmail (Redis) | Worker (pas de HTTP)           |
+| Adminer (BDD)        | http://localhost:8080          |
+| Redis Commander      | http://localhost:8081          |
+| NATS Monitoring      | http://localhost:8222          |

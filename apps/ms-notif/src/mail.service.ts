@@ -19,6 +19,9 @@ export class MailService {
       to: email,
       subject: 'CinéPotes - Confirmez votre email',
       html,
+    }, {
+      removeOnComplete: { age: 3600 },  // supprime après 1h
+      removeOnFail: { age: 86400 },     // supprime après 24h
     });
 
     this.logger.log(`[confirm-email] Job ajouté dans la queue pour ${email}`);
@@ -37,6 +40,9 @@ export class MailService {
       to: email,
       subject: 'CinéPotes - Réinitialisation du mot de passe',
       html,
+    }, {
+      removeOnComplete: { age: 3600 },  // supprime après 1h
+      removeOnFail: { age: 86400 },     // supprime après 24h
     });
 
     this.logger.log(`[reset-password] Job ajouté dans la queue pour ${email}`);
