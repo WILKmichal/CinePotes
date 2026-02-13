@@ -29,6 +29,7 @@ describe('MailProcessor', () => {
     expect(processor).toBeDefined();
   });
 
+  // Quand un job arrive dans la queue, on envoie le mail avec les bonnes infos
   it('should send an email with correct parameters', async () => {
     const job = {
       data: {
@@ -48,6 +49,7 @@ describe('MailProcessor', () => {
     });
   });
 
+  // Si le SMTP plante, l'erreur doit remonter pour que BullMQ retry
   it('should throw if sendMail fails', async () => {
     sendMailMock.mockRejectedValueOnce(new Error('SMTP error'));
 

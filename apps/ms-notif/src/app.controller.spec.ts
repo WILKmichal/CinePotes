@@ -28,39 +28,37 @@ describe('AppController', () => {
     expect(controller).toBeDefined();
   });
 
-  describe('handleConfirmEmail', () => {
-    it('should call mailService.handleConfirmEmail with correct params', async () => {
-      const data = {
-        email: 'user@test.com',
-        nom: 'Jean',
-        confirmUrl: 'http://localhost/confirm',
-      };
+  // On recoit un event NATS confirm-email, on delegue au service
+  it('should delegate confirm-email event to MailService', async () => {
+    const data = {
+      email: 'user@test.com',
+      nom: 'Jean',
+      confirmUrl: 'http://localhost/confirm',
+    };
 
-      await controller.handleConfirmEmail(data as any);
+    await controller.handleConfirmEmail(data as any);
 
-      expect(mailService.handleConfirmEmail).toHaveBeenCalledWith(
-        'user@test.com',
-        'Jean',
-        'http://localhost/confirm',
-      );
-    });
+    expect(mailService.handleConfirmEmail).toHaveBeenCalledWith(
+      'user@test.com',
+      'Jean',
+      'http://localhost/confirm',
+    );
   });
 
-  describe('handleResetPassword', () => {
-    it('should call mailService.handleResetPassword with correct params', async () => {
-      const data = {
-        email: 'user@test.com',
-        resetUrl: 'http://localhost/reset',
-        expiresInMinutes: 30,
-      };
+  // Pareil pour reset-password
+  it('should delegate reset-password event to MailService', async () => {
+    const data = {
+      email: 'user@test.com',
+      resetUrl: 'http://localhost/reset',
+      expiresInMinutes: 30,
+    };
 
-      await controller.handleResetPassword(data as any);
+    await controller.handleResetPassword(data as any);
 
-      expect(mailService.handleResetPassword).toHaveBeenCalledWith(
-        'user@test.com',
-        'http://localhost/reset',
-        30,
-      );
-    });
+    expect(mailService.handleResetPassword).toHaveBeenCalledWith(
+      'user@test.com',
+      'http://localhost/reset',
+      30,
+    );
   });
 });
