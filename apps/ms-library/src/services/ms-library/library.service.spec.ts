@@ -1,5 +1,5 @@
 import { HttpStatus } from '@nestjs/common';
-import { TmdbService } from './tmdb.service';
+import { TmdbService } from './library.service';
 import { RedisService } from '../redis/redis.service';
 import axios from 'axios';
 
@@ -229,7 +229,7 @@ describe('TmdbService', () => {
       expect(getSpyRedis).toHaveBeenCalledWith('tmdb:recherche:test');
     });
 
-    it('doit mettre en cache 3600 secondes', async () => {
+    it('doit mettre en cache 7200 secondes', async () => {
       jest.spyOn(redisMock, 'get').mockResolvedValueOnce(null);
 
       const getSpyAxios = jest.spyOn(mockedAxios, 'get');
@@ -240,7 +240,7 @@ describe('TmdbService', () => {
       const setSpy = jest.spyOn(redisMock, 'set');
 
       const res = await service.rechercherFilms('abc');
-      expect(setSpy).toHaveBeenCalledWith('tmdb:recherche:abc', res, 3600);
+      expect(setSpy).toHaveBeenCalledWith('tmdb:recherche:abc', res, 7200);
     });
   });
 
@@ -273,7 +273,7 @@ describe('TmdbService', () => {
       expect(res.map((x) => x.id)).toEqual([1]);
     });
 
-    it('si genre inconnu: renvoie [] et cache 600s', async () => {
+    it('si genre inconnu: renvoie [] et cache 7200s', async () => {
       jest
         .spyOn(redisMock, 'get')
         .mockResolvedValueOnce(null)
@@ -296,7 +296,7 @@ describe('TmdbService', () => {
       expect(setSpy).toHaveBeenCalledWith(
         expect.stringContaining('tmdb:recherche_avancee:'),
         [],
-        600,
+        7200,
       );
     });
     it('si résultat en cache: renvoie le cache et n’appelle pas axios', async () => {
@@ -316,13 +316,12 @@ describe('TmdbService', () => {
       expect(res).toEqual(cached);
       expect(axiosGetSpy).not.toHaveBeenCalled();
     });
-    it('sans titre: doit appeler discover/movie avec annee+genre, mapper puis mettre en cache (1800s)', async () => {
+    it('sans titre: doit appeler discover/movie avec annee+genre, mapper puis mettre en cache (7200s)', async () => {
       // Arrange
       jest
         .spyOn(redisMock, 'get')
         // 1) cache recherche avancée => miss
         .mockResolvedValueOnce(null)
-        // 2) cache genres => hit (باش ما يديرش axios على /genre/movie/list)
         .mockResolvedValueOnce([{ id: 28, name: 'Action' }]);
 
       const getSpy = jest.spyOn(mockedAxios, 'get');
@@ -387,7 +386,7 @@ describe('TmdbService', () => {
       expect(setSpy).toHaveBeenCalledWith(
         expect.stringContaining('tmdb:recherche_avancee:'),
         res,
-        1800,
+        7200,
       );
     });
   });

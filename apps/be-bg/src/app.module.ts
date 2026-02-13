@@ -2,7 +2,6 @@ import { Module, OnModuleInit } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TestController } from './test.controller';
-import { TmdbModule } from './services/tmdb/tmdb.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { SeancesModule } from './seances/seances.module';
@@ -14,10 +13,10 @@ import { Seance } from './seances/entities/seance.entity';
 import { Participant } from './seances/entities/participant.entity';
 import { Liste } from './lists/entities/liste.entity';
 import { ListeFilm } from './lists/entities/liste-film.entity';
-import { NatsModule } from './nats/nats.module';
 import { NatsExempleController } from './nats/nats-exemple.controller';
 import { MailModule } from './mail/mail.module';
-
+import { TmdbModule } from './services/library/library.module';
+import { NatsModule } from './nats/nats.module';
 @Module({
   imports: [
     TypeOrmModule.forRoot({
