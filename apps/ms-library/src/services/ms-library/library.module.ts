@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
-import { TmdbService } from './library.service';
+import { LibraryService } from './library.service';
 import { RedisModule } from '../redis/redis.module';
 import { ConfigModule } from '@nestjs/config';
-import { TmdbNatsController } from './library.nats.controller';
+import { LibraryNatsController } from './library.nats.controller';
 
 @Module({
   imports: [
@@ -12,7 +12,7 @@ import { TmdbNatsController } from './library.nats.controller';
       envFilePath: '.env',
     }),
   ],
-  controllers: [TmdbNatsController],
-  providers: [TmdbService],
+  controllers: [LibraryNatsController],
+  providers: [LibraryService],
 })
-export class TmdbModule {}
+export class LibraryModule {}

@@ -13,7 +13,7 @@ export function useFilms() {
     const fetchFilms = async () => {
       try {
         const response = await fetch(
-          `${API_URL}/tmdb/films/populaires`
+          `${API_URL}/library/films/populaires`
         );
 
         if (!response.ok) {

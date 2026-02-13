@@ -6,13 +6,13 @@ import {
   ParseIntPipe,
   Query,
 } from '@nestjs/common';
-import { DetailsFilm, TMDB_PATTERNS } from '../../../../types/tmdb.types';
+import { DetailsFilm, TMDB_PATTERNS } from '../../../../types/library.types';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { TmdbQueryDto } from './library-query.dto';
 
-@Controller('tmdb')
-export class TmdbController {
+@Controller('library')
+export class LibraryController {
   constructor(@Inject('NATS_SERVICE') private readonly nats: ClientProxy) {}
 
   // Récupérer plusieurs films par leurs IDs
