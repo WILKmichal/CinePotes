@@ -1,9 +1,9 @@
-import * as dotenv from 'dotenv';
+import * as dotenv from "dotenv";
 dotenv.config();
 
-import { Module } from '@nestjs/common';
-import { BullModule } from '@nestjs/bullmq';
-import { MailProcessor } from './mail.processor';
+import { Module } from "@nestjs/common";
+import { BullModule } from "@nestjs/bullmq";
+import { MailProcessor } from "./mail.processor";
 
 @Module({
   imports: [
@@ -13,7 +13,7 @@ import { MailProcessor } from './mail.processor';
         port: Number(process.env.REDIS_PORT!),
       },
     }),
-    BullModule.registerQueue({ name: 'mail' }),
+    BullModule.registerQueue({ name: "mail" }),
   ],
   providers: [MailProcessor],
 })

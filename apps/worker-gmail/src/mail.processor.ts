@@ -1,7 +1,7 @@
-import { Processor, WorkerHost } from '@nestjs/bullmq';
-import { Logger } from '@nestjs/common';
-import { Job } from 'bullmq';
-import * as nodemailer from 'nodemailer';
+import { Processor, WorkerHost } from "@nestjs/bullmq";
+import { Logger } from "@nestjs/common";
+import { Job } from "bullmq";
+import * as nodemailer from "nodemailer";
 
 interface SendMailData {
   to: string;
@@ -9,7 +9,7 @@ interface SendMailData {
   html: string;
 }
 
-@Processor('mail')
+@Processor("mail")
 export class MailProcessor extends WorkerHost {
   private readonly logger = new Logger(MailProcessor.name);
   private readonly transporter: nodemailer.Transporter;

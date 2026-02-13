@@ -1,4 +1,4 @@
-import { baseTemplate } from './base.template';
+import { baseTemplate } from "./base.template";
 
 export function resetPasswordTemplate(
   resetUrl: string,

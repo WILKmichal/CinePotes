@@ -1,8 +1,8 @@
-import * as dotenv from 'dotenv';
-import { NestFactory } from '@nestjs/core';
-import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-import { AppModule } from './app.module';
-import { validateEnvironmentVariables } from './config.validation';
+import * as dotenv from "dotenv";
+import { NestFactory } from "@nestjs/core";
+import { MicroserviceOptions, Transport } from "@nestjs/microservices";
+import { AppModule } from "./app.module";
+import { validateEnvironmentVariables } from "./config.validation";
 
 dotenv.config();
 
@@ -20,7 +20,7 @@ async function bootstrap() {
   );
 
   await app.listen();
-  console.log('ms-notif connecte a NATS et en ecoute');
+  console.log("ms-notif connecte a NATS et en ecoute");
 }
 
 bootstrap().catch((err) => {

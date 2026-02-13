@@ -1,8 +1,8 @@
 export function validateEnvironmentVariables(): void {
   const requiredVars = {
-    NATS_URL: 'URL du broker NATS (e.g., nats://localhost:4222)',
-    REDIS_HOST: 'Host Redis pour BullMQ (e.g., localhost)',
-    REDIS_PORT: 'Port Redis pour BullMQ (e.g., 6379)',
+    NATS_URL: "URL du broker NATS (e.g., nats://localhost:4222)",
+    REDIS_HOST: "Host Redis pour BullMQ (e.g., localhost)",
+    REDIS_PORT: "Port Redis pour BullMQ (e.g., 6379)",
   };
 
   const missing = Object.entries(requiredVars)
@@ -10,8 +10,8 @@ export function validateEnvironmentVariables(): void {
     .map(([key, description]) => `  • ${key}: ${description}`);
 
   if (missing.length > 0) {
-    console.error('\n❌ Missing required environment variables:\n');
-    console.error(missing.join('\n'));
+    console.error("\n❌ Missing required environment variables:\n");
+    console.error(missing.join("\n"));
     process.exit(1);
   }
 }

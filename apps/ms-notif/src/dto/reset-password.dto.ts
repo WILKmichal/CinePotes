@@ -1,4 +1,4 @@
-import { IsEmail, IsNumber, IsUrl, Min } from 'class-validator';
+import { IsEmail, IsNumber, IsUrl, Min } from "class-validator";
 
 export class ResetPasswordDto {
   @IsEmail()

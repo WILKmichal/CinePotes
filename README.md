@@ -64,7 +64,7 @@ SMTP_PASSWORD=
 USE_ETHEREAL=false
 ```
 
-### Microservice TMDB (`apps/ms-tmdb/.env`)
+### Microservice Library (`apps/ms-library/.env`)
 
 ```env
 PORT=3333
@@ -73,6 +73,7 @@ REDIS_URL=redis://localhost:6379
 REDIS_HOST=localhost
 REDIS_PORT=6379
 TMDB_MS_URL=http://localhost:3333/
+NATS_URL=nats://localhost:4222
 ```
 
 > Generez votre propre cle TMDB sur [themoviedb.org](https://www.themoviedb.org/).
@@ -127,7 +128,7 @@ pnpm run dev
 | Frontend             | http://localhost:3001          |
 | Backend (API)        | http://localhost:3002          |
 | Swagger              | http://localhost:3002/api-docs |
-| TMDB Service         | http://localhost:3333          |
+| ms-library (NATS)    | Microservice (pas de HTTP)     |
 | ms-notif (NATS)      | Microservice (pas de HTTP)     |
 | worker-gmail (Redis) | Worker (pas de HTTP)           |
 | Adminer (BDD)        | http://localhost:8080          |
