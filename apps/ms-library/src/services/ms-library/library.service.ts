@@ -1,42 +1,15 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import axios, { AxiosError } from 'axios';
 import { RedisService } from '../redis/redis.service';
-import { DetailsFilm } from '../../../../types/tmdb.types';
-
-export type TmdbStatusMessage = { status_message?: string };
-
-export type TmdbMovie = {
-  id: number;
-  title: string;
-  overview?: string | null;
-  release_date?: string | null;
-  poster_path?: string | null;
-  vote_average?: number | null;
-  genre_ids?: number[];
-};
-
-export type TmdbListResponse<T> = {
-  results: T[];
-};
-
-export type TmdbGenresResponse = {
-  genres: Array<{ id: number; name: string }>;
-};
-
-export type RechercheAvanceeFiltres = {
-  titre?: string;
-  annee?: string;
-  genre?: string;
-};
-
-export type DiscoverMovieParams = {
-  api_key: string;
-  language: string;
-  sort_by: 'popularity.desc';
-  page: number;
-  primary_release_year?: string;
-  with_genres?: number;
-};
+import {
+  DetailsFilm,
+  DiscoverMovieParams,
+  RechercheAvanceeFiltres,
+  TmdbGenresResponse,
+  TmdbListResponse,
+  TmdbMovie,
+  TmdbStatusMessage,
+} from '../../../../types/tmdb.types';
 
 @Injectable()
 export class TmdbService {
@@ -116,7 +89,7 @@ export class TmdbService {
       );
 
       const genres = reponse.data.genres ?? [];
-      await this.redisService.set(cleCache, genres, 86400);
+      await this.redisService.set(cleCache, genres, 7200);
       return genres;
     } catch (error) {
       this.handleTmdbError(error);
@@ -217,7 +190,7 @@ export class TmdbService {
       );
 
       const films = this.mapperFilmsTmdb(reponse.data.results);
-      await this.redisService.set(cleCache, films, 3600);
+      await this.redisService.set(cleCache, films, 7200);
       return films;
     } catch (error) {
       this.handleTmdbError(error);
@@ -262,7 +235,7 @@ export class TmdbService {
         if (genre) {
           const genreId = await this.trouverGenreIdParNom(genre);
           if (!genreId) {
-            await this.redisService.set(cleCache, [], 600);
+            await this.redisService.set(cleCache, [], 7200);
             return [];
           }
           results = results.filter((m) =>
@@ -271,7 +244,7 @@ export class TmdbService {
         }
 
         const films = this.mapperFilmsTmdb(results);
-        await this.redisService.set(cleCache, films, 1800);
+        await this.redisService.set(cleCache, films, 7200);
         return films;
       }
 
@@ -288,7 +261,7 @@ export class TmdbService {
       if (genre) {
         const genreId = await this.trouverGenreIdParNom(genre);
         if (!genreId) {
-          await this.redisService.set(cleCache, [], 600);
+          await this.redisService.set(cleCache, [], 7200);
           return [];
         }
         params.with_genres = genreId;
@@ -302,7 +275,7 @@ export class TmdbService {
       );
 
       const films = this.mapperFilmsTmdb(reponse.data.results ?? []);
-      await this.redisService.set(cleCache, films, 1800);
+      await this.redisService.set(cleCache, films, 7200);
       return films;
     } catch (error) {
       this.handleTmdbError(error);
