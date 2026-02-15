@@ -199,7 +199,7 @@ function useRechercheFilms(
         if (filtres.annee) params.append("annee", filtres.annee);
 
         const response = await fetch(
-          `${API_URL}/tmdb/recherche/avancee?${params.toString()}`
+          `${API_URL}/library/recherche/avancee?${params.toString()}`
         );
         if (!response.ok) {
           throw new Error('Failed to fetch films');
@@ -371,7 +371,7 @@ function useRechercheFilms2(requete: string) {
         console.log(`🔍 Recherche: "${requete}"`);
 
         const response = await fetch(
-          `${API_URL}/tmdb/recherche?query=${encodeURIComponent(requete)}`
+          `${API_URL}/library/recherche?query=${encodeURIComponent(requete)}`
         );
         if (!response.ok) {
           throw new Error(`Erreur ${response.status}`);

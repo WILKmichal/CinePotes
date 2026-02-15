@@ -1,40 +1,40 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { TmdbService } from './library.service';
-import { DetailsFilm } from '../../../../types/tmdb.types';
+import { LibraryService } from './library.service';
+import { DetailsFilm } from '../../../../types/library.types';
 
 @Controller()
-export class TmdbNatsController {
-  constructor(private readonly tmdb: TmdbService) {}
+export class LibraryNatsController {
+  constructor(private readonly tmdb: LibraryService) {}
 
-  @MessagePattern('tmdb.details')
+  @MessagePattern('library.details')
   obtenirDetails(@Payload() data: { id: number }) {
     return this.tmdb.obtenirDetailsFilm(data.id);
   }
 
-  @MessagePattern('tmdb.movies')
+  @MessagePattern('library.movies')
   obtenirMovies(@Payload() data: { ids: number[] }): Promise<DetailsFilm[]> {
     return this.tmdb.obtenirPlusieursFilms(data.ids);
   }
 
-  @MessagePattern('tmdb.films.populaires')
+  @MessagePattern('library.films.populaires')
   obtenirPopulaires() {
     return this.tmdb.obtenirFilmsPopulaires();
   }
 
-  @MessagePattern('tmdb.recherche')
+  @MessagePattern('library.recherche')
   rechercher(@Payload() data: { query: string }) {
     return this.tmdb.rechercherFilms(data.query);
   }
 
-  @MessagePattern('tmdb.recherche.avancee')
+  @MessagePattern('library.recherche.avancee')
   rechercherAvancee(
     @Payload() data: { titre?: string; annee?: string; genre?: string },
   ) {
     return this.tmdb.rechercherFilmsAvancee(data);
   }
 
-  @MessagePattern('tmdb.obtenir.plusieurs.films')
+  @MessagePattern('library.obtenir.plusieurs.films')
   obtenirPlusieurs(@Payload() data: { ids: number[] }) {
     return this.tmdb.obtenirPlusieursFilms(data.ids);
   }

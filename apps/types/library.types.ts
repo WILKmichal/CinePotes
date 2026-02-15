@@ -12,11 +12,11 @@ export interface DetailsFilm {
   note_moyenne: number;
 }
 export const TMDB_PATTERNS = {
-  MOVIES: 'tmdb.movies',
-  POPULAIRES: 'tmdb.films.populaires',
-  RECHERCHE: 'tmdb.recherche',
-  RECHERCHE_AVANCEE: 'tmdb.recherche.avancee',
-  DETAILS: 'tmdb.details',
+  MOVIES: 'library.movies',
+  POPULAIRES: 'library.films.populaires',
+  RECHERCHE: 'library.recherche',
+  RECHERCHE_AVANCEE: 'library.recherche.avancee',
+  DETAILS: 'library.details',
 } as const;
 
 export type TmdbStatusMessage = { status_message?: string };

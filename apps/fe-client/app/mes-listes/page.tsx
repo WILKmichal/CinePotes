@@ -87,7 +87,7 @@ export default function MesListesPage() {
 
   const fetchFilmInfo = async (tmdbId: number) => {
     try {
-      const res = await fetch(`${API_TMDB}/tmdb/${tmdbId}`);
+      const res = await fetch(`${API_TMDB}/library/${tmdbId}`);
       if (res.ok) {
         const data = await res.json();
         setFilmsCache((prev) => ({

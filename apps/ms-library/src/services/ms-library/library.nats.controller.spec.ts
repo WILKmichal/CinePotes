@@ -1,15 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { TmdbNatsController } from './library.nats.controller';
-import { TmdbService } from './library.service';
-import { DetailsFilm } from '../../../../types/tmdb.types';
+import { LibraryNatsController } from './library.nats.controller';
+import { LibraryService } from './library.service';
+import { DetailsFilm } from '../../../../types/library.types';
 
-//  On mock TmdbService (aucun appel TMDB / Redis)
+//  On mock LibraryService (aucun appel TMDB / Redis)
 //  On vérifie que chaque handler appelle la bonne méthode avec les bons parametres
-describe('TmdbNatsController', () => {
-  let controller: TmdbNatsController;
+describe('LibraryNatsController', () => {
+  let controller: LibraryNatsController;
 
   // Mock de service : on ne teste pas le service ici, seulement le routing
-  const tmdbServiceMock = {
+  const libraryServiceMock = {
     obtenirDetailsFilm: jest.fn(),
     obtenirPlusieursFilms: jest.fn(),
     obtenirFilmsPopulaires: jest.fn(),
@@ -20,18 +20,18 @@ describe('TmdbNatsController', () => {
   beforeEach(async () => {
     // On construit un module de test Nest
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [TmdbNatsController],
+      controllers: [LibraryNatsController],
       providers: [
         {
           // injection du vrai token Nest (classe)
-          provide: TmdbService,
+          provide: LibraryService,
           // remplacé par notre mock
-          useValue: tmdbServiceMock,
+          useValue: libraryServiceMock,
         },
       ],
     }).compile();
 
-    controller = module.get(TmdbNatsController);
+    controller = module.get(LibraryNatsController);
   });
 
   afterEach(() => {
@@ -40,7 +40,7 @@ describe('TmdbNatsController', () => {
   });
 
   describe('obtenirDetails', () => {
-    it('doit appeler tmdb.obtenirDetailsFilm avec data.id', async () => {
+    it('doit appeler library.obtenirDetailsFilm avec data.id', async () => {
       // Réponse mockée du service
       const film: DetailsFilm = {
         id: 10,
@@ -52,14 +52,14 @@ describe('TmdbNatsController', () => {
       };
 
       // Le service retourne une Promise (ou valeur) : on mock la résolution
-      tmdbServiceMock.obtenirDetailsFilm.mockResolvedValueOnce(film);
+      libraryServiceMock.obtenirDetailsFilm.mockResolvedValueOnce(film);
 
       // Appel du handler (comme si NATS envoyait {id:10})
       const result = await controller.obtenirDetails({ id: 10 });
 
       // Vérification routing
-      expect(tmdbServiceMock.obtenirDetailsFilm).toHaveBeenCalledTimes(1);
-      expect(tmdbServiceMock.obtenirDetailsFilm).toHaveBeenCalledWith(10);
+      expect(libraryServiceMock.obtenirDetailsFilm).toHaveBeenCalledTimes(1);
+      expect(libraryServiceMock.obtenirDetailsFilm).toHaveBeenCalledWith(10);
 
       // Vérification retour
       expect(result).toEqual(film);
@@ -87,12 +87,12 @@ describe('TmdbNatsController', () => {
         },
       ];
 
-      tmdbServiceMock.obtenirPlusieursFilms.mockResolvedValueOnce(films);
+      libraryServiceMock.obtenirPlusieursFilms.mockResolvedValueOnce(films);
 
       const result = await controller.obtenirMovies({ ids: [1, 2] });
 
-      expect(tmdbServiceMock.obtenirPlusieursFilms).toHaveBeenCalledTimes(1);
-      expect(tmdbServiceMock.obtenirPlusieursFilms).toHaveBeenCalledWith([
+      expect(libraryServiceMock.obtenirPlusieursFilms).toHaveBeenCalledTimes(1);
+      expect(libraryServiceMock.obtenirPlusieursFilms).toHaveBeenCalledWith([
         1, 2,
       ]);
       expect(result).toEqual(films);
@@ -103,12 +103,12 @@ describe('TmdbNatsController', () => {
     it('doit appeler tmdb.obtenirFilmsPopulaires', async () => {
       const films: DetailsFilm[] = [];
 
-      tmdbServiceMock.obtenirFilmsPopulaires.mockResolvedValueOnce(films);
+      libraryServiceMock.obtenirFilmsPopulaires.mockResolvedValueOnce(films);
 
       const result = await controller.obtenirPopulaires();
 
-      expect(tmdbServiceMock.obtenirFilmsPopulaires).toHaveBeenCalledTimes(1);
-      expect(tmdbServiceMock.obtenirFilmsPopulaires).toHaveBeenCalledWith();
+      expect(libraryServiceMock.obtenirFilmsPopulaires).toHaveBeenCalledTimes(1);
+      expect(libraryServiceMock.obtenirFilmsPopulaires).toHaveBeenCalledWith();
       expect(result).toEqual(films);
     });
   });
@@ -117,12 +117,12 @@ describe('TmdbNatsController', () => {
     it('doit appeler tmdb.rechercherFilms avec data.query', async () => {
       const films: DetailsFilm[] = [];
 
-      tmdbServiceMock.rechercherFilms.mockResolvedValueOnce(films);
+      libraryServiceMock.rechercherFilms.mockResolvedValueOnce(films);
 
       const result = await controller.rechercher({ query: 'batman' });
 
-      expect(tmdbServiceMock.rechercherFilms).toHaveBeenCalledTimes(1);
-      expect(tmdbServiceMock.rechercherFilms).toHaveBeenCalledWith('batman');
+      expect(libraryServiceMock.rechercherFilms).toHaveBeenCalledTimes(1);
+      expect(libraryServiceMock.rechercherFilms).toHaveBeenCalledWith('batman');
       expect(result).toEqual(films);
     });
   });
@@ -132,12 +132,12 @@ describe('TmdbNatsController', () => {
       const films: DetailsFilm[] = [];
       const payload = { titre: 'Matrix', annee: '1999', genre: 'Action' };
 
-      tmdbServiceMock.rechercherFilmsAvancee.mockResolvedValueOnce(films);
+      libraryServiceMock.rechercherFilmsAvancee.mockResolvedValueOnce(films);
 
       const result = await controller.rechercherAvancee(payload);
 
-      expect(tmdbServiceMock.rechercherFilmsAvancee).toHaveBeenCalledTimes(1);
-      expect(tmdbServiceMock.rechercherFilmsAvancee).toHaveBeenCalledWith(
+      expect(libraryServiceMock.rechercherFilmsAvancee).toHaveBeenCalledTimes(1);
+      expect(libraryServiceMock.rechercherFilmsAvancee).toHaveBeenCalledWith(
         payload,
       );
       expect(result).toEqual(films);
@@ -157,12 +157,12 @@ describe('TmdbNatsController', () => {
         },
       ];
 
-      tmdbServiceMock.obtenirPlusieursFilms.mockResolvedValueOnce(films);
+      libraryServiceMock.obtenirPlusieursFilms.mockResolvedValueOnce(films);
 
       const result = await controller.obtenirPlusieurs({ ids: [3] });
 
-      expect(tmdbServiceMock.obtenirPlusieursFilms).toHaveBeenCalledTimes(1);
-      expect(tmdbServiceMock.obtenirPlusieursFilms).toHaveBeenCalledWith([3]);
+      expect(libraryServiceMock.obtenirPlusieursFilms).toHaveBeenCalledTimes(1);
+      expect(libraryServiceMock.obtenirPlusieursFilms).toHaveBeenCalledWith([3]);
       expect(result).toEqual(films);
     });
   });
