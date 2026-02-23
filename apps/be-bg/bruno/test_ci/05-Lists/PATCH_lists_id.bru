@@ -1,0 +1,35 @@
+meta {
+  name: PATCH /lists/{id}
+  type: http
+  seq: 9
+}
+
+patch {
+  url: {{URL}}/lists/{{LIST_ID}}
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+body:json {
+  {
+    "nom": "Ma liste renommée"
+  }
+}
+
+script:pre-request {
+  await bru.runRequest("05-Lists/POST_lists");
+}
+
+tests {
+  test("Status code is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+}

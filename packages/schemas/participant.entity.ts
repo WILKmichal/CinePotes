@@ -8,7 +8,7 @@ import {
   Unique,
 } from 'typeorm';
 import { Seance } from './seance.entity';
-import { User } from '../../users/entities/user.entity';
+import { User } from './user.entity';
 
 @Entity('participant')
 @Unique('uk_participant', ['seance_id', 'utilisateur_id'])

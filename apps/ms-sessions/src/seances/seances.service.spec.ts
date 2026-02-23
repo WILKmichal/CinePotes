@@ -3,8 +3,8 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { SeancesService } from './seances.service';
-import { Seance, SeanceStatut } from './entities/seance.entity';
-import { Participant } from './entities/participant.entity';
+import { Seance, SeanceStatut } from 'schemas/seance.entity';
+import { Participant } from 'schemas/participant.entity';
 
 describe('SeancesService', () => {
   let service: SeancesService;

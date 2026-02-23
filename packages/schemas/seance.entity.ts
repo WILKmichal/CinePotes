@@ -9,15 +9,16 @@ import {
   JoinColumn,
   Check,
 } from 'typeorm';
-import { User } from '../../users/entities/user.entity';
+import { User } from './user.entity';
 import { Participant } from './participant.entity';
 
-export enum SeanceStatut {
-  EN_ATTENTE = 'en_attente',
-  EN_COURS = 'en_cours',
-  TERMINEE = 'terminee',
-  ANNULEE = 'annulee',
-}
+export const SeanceStatut = {
+  EN_ATTENTE: 'en_attente',
+  EN_COURS: 'en_cours',
+  TERMINEE: 'terminee',
+  ANNULEE: 'annulee',
+} as const;
+export type SeanceStatut = (typeof SeanceStatut)[keyof typeof SeanceStatut];
 
 @Entity('seance')
 @Check('"max_films" > 0 AND "max_films" <= 5')
@@ -39,7 +40,7 @@ export class Seance {
 
   @Column({
     type: 'enum',
-    enum: SeanceStatut,
+    enum: Object.values(SeanceStatut),
     nullable: false,
   })
   statut: SeanceStatut;

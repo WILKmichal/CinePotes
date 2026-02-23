@@ -6,15 +6,16 @@ import {
   UpdateDateColumn,
   OneToMany,
 } from 'typeorm';
-import { Seance } from '../../seances/entities/seance.entity';
-import { Participant } from '../../seances/entities/participant.entity';
-import { Liste } from '../../lists/entities/liste.entity';
+import { Seance } from './seance.entity';
+import { Participant } from './participant.entity';
+import { Liste } from './liste.entity';
 
-export enum UserRole {
-  ADMIN = 'admin',
-  USER = 'user',
-  CHEF = 'chef',
-}
+export const UserRole = {
+  ADMIN: 'admin',
+  USER: 'user',
+  CHEF: 'chef',
+} as const;
+export type UserRole = (typeof UserRole)[keyof typeof UserRole];
 
 @Entity('utilisateur')
 export class User {
@@ -32,7 +33,7 @@ export class User {
 
   @Column({
     type: 'enum',
-    enum: UserRole,
+    enum: Object.values(UserRole),
     nullable: false,
   })
   role: UserRole;

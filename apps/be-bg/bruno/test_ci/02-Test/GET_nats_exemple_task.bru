@@ -1,0 +1,21 @@
+meta {
+  name: GET /nats-exemple/task
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{URL}}/nats-exemple/task?taskId=123
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status code is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Response contains message", function() {
+    expect(res.body).to.have.property('message');
+  });
+}

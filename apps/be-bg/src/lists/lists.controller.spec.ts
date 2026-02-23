@@ -2,8 +2,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ListsController } from './lists.controller';
 import { ListsService } from './lists.service';
-import { Liste } from './entities/liste.entity';
-import { ListeFilm } from './entities/liste-film.entity';
+import { Liste } from 'schemas/liste.entity';
+import { ListeFilm } from 'schemas/liste-film.entity';
 import {
   BadRequestException,
   NotFoundException,

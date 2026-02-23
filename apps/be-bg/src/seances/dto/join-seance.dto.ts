@@ -1,11 +1,9 @@
 import { IsString, Length } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class JoinSeanceDto {
+  @ApiProperty({ example: 'ABC123', description: 'Code unique de la séance à rejoindre (6 caractères)' })
   @IsString()
   @Length(6, 6)
-  code: string; // Code unique de la séance à rejoindre (6 caractères)
-
-  // utilisateur_id → sera récupéré depuis le JWT
-  // seance_id → sera trouvé via le code dans le service
-  // a_rejoint_le → géré par la BDD (DEFAULT NOW())
+  code: string;
 }

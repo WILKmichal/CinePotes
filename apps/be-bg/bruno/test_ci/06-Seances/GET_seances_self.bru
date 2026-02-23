@@ -1,0 +1,25 @@
+meta {
+  name: GET /seances/self
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{URL}}/seances/self
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+script:pre-request {
+  await bru.runRequest("06-Seances/POST_seances");
+}
+
+tests {
+  test("Status code is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+}
