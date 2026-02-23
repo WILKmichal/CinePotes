@@ -231,4 +231,56 @@ describe('SeancesController', () => {
       ).rejects.toThrow(HttpException);
     });
   });
+
+  describe('erreurs RPC sans statusCode (fallback 500)', () => {
+    const errorSansCode = { message: 'Erreur inconnue' };
+
+    it('create devrait utiliser 500 par défaut', async () => {
+      mockNatsClient.send.mockReturnValue(throwError(() => errorSansCode));
+
+      await expect(
+        controller.create({ nom: 'Test', date: new Date(), max_films: 5 }, { user: { sub: mockUserId } }),
+      ).rejects.toThrow(HttpException);
+    });
+
+    it('join devrait utiliser 500 par défaut', async () => {
+      mockNatsClient.send.mockReturnValue(throwError(() => errorSansCode));
+
+      await expect(
+        controller.join({ code: 'ABC123' }, { user: { sub: mockUserId } }),
+      ).rejects.toThrow(HttpException);
+    });
+
+    it('getParticipants devrait utiliser 500 par défaut', async () => {
+      mockNatsClient.send.mockReturnValue(throwError(() => errorSansCode));
+
+      await expect(
+        controller.getParticipants('1'),
+      ).rejects.toThrow(HttpException);
+    });
+
+    it('updateStatut devrait utiliser 500 par défaut', async () => {
+      mockNatsClient.send.mockReturnValue(throwError(() => errorSansCode));
+
+      await expect(
+        controller.updateStatut('1', { statut: 'TERMINEE' } as any, { user: { sub: mockUserId } }),
+      ).rejects.toThrow(HttpException);
+    });
+
+    it('findMySeance devrait utiliser 500 par défaut', async () => {
+      mockNatsClient.send.mockReturnValue(throwError(() => errorSansCode));
+
+      await expect(
+        controller.findMySeance({ user: { sub: mockUserId } }),
+      ).rejects.toThrow(HttpException);
+    });
+
+    it('leave devrait utiliser 500 par défaut', async () => {
+      mockNatsClient.send.mockReturnValue(throwError(() => errorSansCode));
+
+      await expect(
+        controller.leave('1', { user: { sub: mockUserId } }),
+      ).rejects.toThrow(HttpException);
+    });
+  });
 });
