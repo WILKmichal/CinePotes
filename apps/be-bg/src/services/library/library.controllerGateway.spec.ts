@@ -1,14 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ClientProxy } from '@nestjs/microservices';
 import { of } from 'rxjs';
-import { TMDB_PATTERNS, DetailsFilm } from '../../../../types/tmdb.types';
-import { TmdbController } from './library.controllerGateway';
+import { TMDB_PATTERNS, DetailsFilm } from '../../../../types/library.types';
+import { LibraryController } from './library.controllerGateway';
 
 //On mock le ClientProxy (NATS) pour éviter tout vrai broker NATS
 //On vérifie que le controller envoie les bons "patterns" + payloads
 
-describe('TmdbController (Gateway)', () => {
-  let controller: TmdbController;
+describe('LibraryController (Gateway)', () => {
+  let controller: LibraryController;
 
   // On typpe le mock comme un ClientProxy mocké par Jest
   let natsMock: jest.Mocked<ClientProxy>;
@@ -24,7 +24,7 @@ describe('TmdbController (Gateway)', () => {
     // On crée un module de test Nest qui instancie le controller
     // et lui injecte notre mock à la place du vrai NATS client.
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [TmdbController],
+      controllers: [LibraryController],
       providers: [
         {
           provide: 'NATS_SERVICE', // token utilisé dans le controller: @Inject('NATS_SERVICE')
@@ -33,7 +33,7 @@ describe('TmdbController (Gateway)', () => {
       ],
     }).compile();
 
-    controller = module.get(TmdbController);
+    controller = module.get(LibraryController);
   });
 
   afterEach(() => {

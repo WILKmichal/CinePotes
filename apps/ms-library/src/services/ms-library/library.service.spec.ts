@@ -1,5 +1,5 @@
 import { HttpStatus } from '@nestjs/common';
-import { TmdbService } from './library.service';
+import { LibraryService } from './library.service';
 import { RedisService } from '../redis/redis.service';
 import axios from 'axios';
 
@@ -7,8 +7,8 @@ jest.mock('axios');
 
 const mockedAxios = axios as unknown as jest.Mocked<typeof axios>;
 
-describe('TmdbService', () => {
-  let service: TmdbService;
+describe('LibraryService', () => {
+  let service: LibraryService;
 
   const redisMock = {
     get: jest.fn(),
@@ -26,7 +26,7 @@ describe('TmdbService', () => {
 
     jest.spyOn(mockedAxios, 'isAxiosError').mockReturnValue(false);
 
-    service = new TmdbService(redisMock as unknown as RedisService);
+    service = new LibraryService(redisMock as unknown as RedisService);
   });
 
   afterEach(() => {
@@ -51,7 +51,7 @@ describe('TmdbService', () => {
       expect(getSpy).not.toHaveBeenCalled();
     });
 
-    it('doit appeler TMDB si cache absent, mapper puis set en cache', async () => {
+    it('doit appeler library si cache absent, mapper puis set en cache', async () => {
       jest.spyOn(redisMock, 'get').mockResolvedValueOnce(null);
 
       const getSpy = jest.spyOn(mockedAxios, 'get');
@@ -79,7 +79,7 @@ describe('TmdbService', () => {
         note_moyenne: 8.8,
       });
 
-      expect(setSpy).toHaveBeenCalledWith('tmdb:film:10', film, 7200);
+      expect(setSpy).toHaveBeenCalledWith('library:film:10', film, 7200);
     });
 
     it('affiche_url doit être null si poster_path absent', async () => {
@@ -101,7 +101,7 @@ describe('TmdbService', () => {
       expect(film.affiche_url).toBeNull();
     });
 
-    it('doit transformer une erreur 404 TMDB en HttpException NOT_FOUND', async () => {
+    it('doit transformer une erreur 404 library en HttpException NOT_FOUND', async () => {
       jest.spyOn(redisMock, 'get').mockResolvedValueOnce(null);
 
       jest.spyOn(mockedAxios, 'isAxiosError').mockReturnValueOnce(true);
@@ -116,7 +116,7 @@ describe('TmdbService', () => {
       });
     });
 
-    it('doit transformer une erreur 401 TMDB en HttpException UNAUTHORIZED', async () => {
+    it('doit transformer une erreur 401 library en HttpException UNAUTHORIZED', async () => {
       jest.spyOn(redisMock, 'get').mockResolvedValueOnce(null);
 
       jest.spyOn(mockedAxios, 'isAxiosError').mockReturnValueOnce(true);
@@ -131,7 +131,7 @@ describe('TmdbService', () => {
       });
     });
 
-    it('doit transformer une erreur 429 TMDB en HttpException TOO_MANY_REQUESTS', async () => {
+    it('doit transformer une erreur 429 library en HttpException TOO_MANY_REQUESTS', async () => {
       jest.spyOn(redisMock, 'get').mockResolvedValueOnce(null);
 
       jest.spyOn(mockedAxios, 'isAxiosError').mockReturnValueOnce(true);
@@ -188,7 +188,7 @@ describe('TmdbService', () => {
       expect(getSpy).not.toHaveBeenCalled();
     });
 
-    it('doit récupérer TMDB, limiter à 10 et mettre en cache', async () => {
+    it('doit récupérer library, limiter à 10 et mettre en cache', async () => {
       jest.spyOn(redisMock, 'get').mockResolvedValueOnce(null);
 
       const getSpy = jest.spyOn(mockedAxios, 'get');
@@ -210,7 +210,7 @@ describe('TmdbService', () => {
       const res = await service.obtenirFilmsPopulaires();
       expect(res).toHaveLength(10);
 
-      expect(setSpy).toHaveBeenCalledWith('tmdb:films:populaires', res, 7200);
+      expect(setSpy).toHaveBeenCalledWith('library:films:populaires', res, 7200);
     });
   });
 
@@ -226,7 +226,7 @@ describe('TmdbService', () => {
       const getSpyRedis = jest.spyOn(redisMock, 'get');
 
       await service.rechercherFilms('  TeSt  ');
-      expect(getSpyRedis).toHaveBeenCalledWith('tmdb:recherche:test');
+      expect(getSpyRedis).toHaveBeenCalledWith('library:recherche:test');
     });
 
     it('doit mettre en cache 7200 secondes', async () => {
@@ -240,7 +240,7 @@ describe('TmdbService', () => {
       const setSpy = jest.spyOn(redisMock, 'set');
 
       const res = await service.rechercherFilms('abc');
-      expect(setSpy).toHaveBeenCalledWith('tmdb:recherche:abc', res, 7200);
+      expect(setSpy).toHaveBeenCalledWith('library:recherche:abc', res, 7200);
     });
   });
 
@@ -294,7 +294,7 @@ describe('TmdbService', () => {
       expect(res).toEqual([]);
 
       expect(setSpy).toHaveBeenCalledWith(
-        expect.stringContaining('tmdb:recherche_avancee:'),
+        expect.stringContaining('library:recherche_avancee:'),
         [],
         7200,
       );
@@ -384,7 +384,7 @@ describe('TmdbService', () => {
       ]);
 
       expect(setSpy).toHaveBeenCalledWith(
-        expect.stringContaining('tmdb:recherche_avancee:'),
+        expect.stringContaining('library:recherche_avancee:'),
         res,
         7200,
       );

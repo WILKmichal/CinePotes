@@ -9,10 +9,10 @@ import {
   TmdbListResponse,
   TmdbMovie,
   TmdbStatusMessage,
-} from '../../../../types/tmdb.types';
+} from '../../../../types/library.types';
 
 @Injectable()
-export class TmdbService {
+export class LibraryService {
   private readonly urltmdb = 'https://api.themoviedb.org/3';
   private readonly imageBaseUrl = 'https://image.tmdb.org/t/p/w500';
 
@@ -40,13 +40,13 @@ export class TmdbService {
     if (axios.isAxiosError(error)) {
       const err = error as AxiosError<TmdbStatusMessage>;
       const status = err.response?.status;
-      const message = err.response?.data?.status_message ?? 'Erreur TMDB';
+      const message = err.response?.data?.status_message ?? 'Erreur library';
 
       if (status === 404) {
         throw new HttpException('Film introuvable', HttpStatus.NOT_FOUND);
       }
       if (status === 401) {
-        throw new HttpException('Clé TMDB invalide', HttpStatus.UNAUTHORIZED);
+        throw new HttpException('Clé library invalide', HttpStatus.UNAUTHORIZED);
       }
       if (status === 429) {
         throw new HttpException(
@@ -61,15 +61,15 @@ export class TmdbService {
       );
     }
 
-    console.error('TMDB unknown error:', error);
+    console.error('library unknown error:', error);
     throw new HttpException(
-      'Erreur lors de la communication avec TMDB',
+      'Erreur lors de la communication avec library',
       HttpStatus.INTERNAL_SERVER_ERROR,
     );
   }
 
   private async obtenirGenres(): Promise<Array<{ id: number; name: string }>> {
-    const cleCache = 'tmdb:genres:movie';
+    const cleCache = 'library:genres:movie';
 
     const enCache =
       await this.redisService.get<Array<{ id: number; name: string }>>(
@@ -105,7 +105,7 @@ export class TmdbService {
   }
 
   async obtenirDetailsFilm(id: number): Promise<DetailsFilm> {
-    const cleCache = `tmdb:film:${id}`;
+    const cleCache = `library:film:${id}`;
 
     const enCache = await this.redisService.get<DetailsFilm>(cleCache);
     if (enCache) return enCache;
@@ -144,7 +144,7 @@ export class TmdbService {
   }
 
   async obtenirFilmsPopulaires(): Promise<DetailsFilm[]> {
-    const cleCache = 'tmdb:films:populaires';
+    const cleCache = 'library:films:populaires';
 
     const enCache = await this.redisService.get<DetailsFilm[]>(cleCache);
     if (enCache) return enCache;
@@ -171,7 +171,7 @@ export class TmdbService {
 
   async rechercherFilms(query: string): Promise<DetailsFilm[]> {
     const requete = query.toLowerCase().trim();
-    const cleCache = `tmdb:recherche:${requete}`;
+    const cleCache = `library:recherche:${requete}`;
 
     const enCache = await this.redisService.get<DetailsFilm[]>(cleCache);
     if (enCache) return enCache;
@@ -204,7 +204,7 @@ export class TmdbService {
     const annee = filtres.annee?.trim();
     const genre = filtres.genre?.trim();
 
-    const cleCache = `tmdb:recherche_avancee:${JSON.stringify({
+    const cleCache = `library:recherche_avancee:${JSON.stringify({
       titre: titre || '',
       annee: annee || '',
       genre: genre || '',

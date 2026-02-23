@@ -16,7 +16,7 @@ import { ListeFilm } from 'schemas/liste-film.entity';
 import { NatsModule } from './nats/nats.module';
 import { NatsExempleController } from './nats/nats-exemple.controller';
 import { MailModule } from './mail/mail.module';
-import { TmdbModule } from './services/library/library.module';
+import { LibraryModule } from './services/library/library.module';
 
 @Module({
   imports: [
@@ -30,7 +30,7 @@ import { TmdbModule } from './services/library/library.module';
       entities: [User, Seance, Participant, Liste, ListeFilm],
       synchronize: true,
     }),
-    TmdbModule,
+    LibraryModule,
     AuthModule,
     UsersModule,
     SeancesModule,

@@ -16,7 +16,7 @@ export default function Page() {
   useEffect(() => {
     const fetchFilm = async () => {
       try {
-        const res = await fetch(`${API_URL}/tmdb/${id}`);
+        const res = await fetch(`${API_URL}/library/${id}`);
         if (!res.ok) throw new Error(`Erreur ${res.status}`);
         const data = await res.json();
         setFilm(data);

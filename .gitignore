@@ -24,6 +24,7 @@ dist/
 **/coverage/
 **/coverage-e2e/
 **/.claude/
+
 # IDE
 .vscode/
 .idea/
