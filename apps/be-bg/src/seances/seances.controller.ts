@@ -23,6 +23,11 @@ interface AuthenticatedRequest {
   user: { sub: string };
 }
 
+interface RpcError {
+  message: string;
+  statusCode: number;
+}
+
 @ApiTags('Seances')
 @ApiBearerAuth()
 @Controller('seances')
@@ -43,7 +48,7 @@ export class SeancesController {
         dto: createSeanceDto,
         userId: request.user.sub,
       }),
-    ).catch((err) => {
+    ).catch((err: RpcError) => {
       throw new HttpException(err.message, err.statusCode || 500);
     });
   }
@@ -59,7 +64,7 @@ export class SeancesController {
         code: joinSeanceDto.code,
         userId: request.user.sub,
       }),
-    ).catch((err) => {
+    ).catch((err: RpcError) => {
       throw new HttpException(err.message, err.statusCode || 500);
     });
   }
@@ -70,7 +75,7 @@ export class SeancesController {
   getParticipants(@Param('id') id: string) {
     return firstValueFrom(
       this.natsClient.send('seances.participants', { seanceId: id }),
-    ).catch((err) => {
+    ).catch((err: RpcError) => {
       throw new HttpException(err.message, err.statusCode || 500);
     });
   }
@@ -89,7 +94,7 @@ export class SeancesController {
         userId: request.user.sub,
         statut: updateStatutDto.statut,
       }),
-    ).catch((err) => {
+    ).catch((err: RpcError) => {
       throw new HttpException(err.message, err.statusCode || 500);
     });
   }
@@ -99,7 +104,7 @@ export class SeancesController {
   findMySeance(@Req() req: AuthenticatedRequest) {
     return firstValueFrom(
       this.natsClient.send('seances.self', { userId: req.user.sub }),
-    ).catch((err) => {
+    ).catch((err: RpcError) => {
       throw new HttpException(err.message, err.statusCode || 500);
     });
   }
@@ -113,7 +118,7 @@ export class SeancesController {
         seanceId: id,
         userId: request.user.sub,
       }),
-    ).catch((err) => {
+    ).catch((err: RpcError) => {
       throw new HttpException(err.message, err.statusCode || 500);
     });
   }

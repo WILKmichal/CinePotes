@@ -4,11 +4,11 @@ GET /test/hello
 GET /nats-exemple/ping
 GET /nats-exemple/ask
 GET /nats-exemple/task
-GET /tmdb/movies
-GET /tmdb/films/populaires
-GET /tmdb/recherche
-GET /tmdb/recherche/avancee
-GET /tmdb/{id}
+GET /library/movies
+GET /library/films/populaires
+GET /library/recherche
+GET /library/recherche/avancee
+GET /library/{id}
 POST /auth/login
 POST /auth/register
 GET /auth/confirm-email

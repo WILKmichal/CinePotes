@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SeancesController } from './seances.controller';
-import { of } from 'rxjs';
+import { HttpException } from '@nestjs/common';
+import { of, throwError } from 'rxjs';
 
 // On crée un faux ClientProxy NATS pour les tests
 // Au lieu de vraiment envoyer des messages à NATS, on simule les réponses
@@ -176,6 +177,58 @@ describe('SeancesController', () => {
         seanceId,
         userId: mockUserId,
       });
+    });
+  });
+
+  describe('gestion des erreurs RPC', () => {
+    const rpcError = { message: 'Erreur test', statusCode: 409 };
+
+    it('create devrait convertir une RpcException en HttpException', async () => {
+      mockNatsClient.send.mockReturnValue(throwError(() => rpcError));
+
+      await expect(
+        controller.create({ nom: 'Test', date: new Date(), max_films: 5 }, { user: { sub: mockUserId } }),
+      ).rejects.toThrow(HttpException);
+    });
+
+    it('join devrait convertir une RpcException en HttpException', async () => {
+      mockNatsClient.send.mockReturnValue(throwError(() => rpcError));
+
+      await expect(
+        controller.join({ code: 'ABC123' }, { user: { sub: mockUserId } }),
+      ).rejects.toThrow(HttpException);
+    });
+
+    it('getParticipants devrait convertir une RpcException en HttpException', async () => {
+      mockNatsClient.send.mockReturnValue(throwError(() => rpcError));
+
+      await expect(
+        controller.getParticipants('1'),
+      ).rejects.toThrow(HttpException);
+    });
+
+    it('updateStatut devrait convertir une RpcException en HttpException', async () => {
+      mockNatsClient.send.mockReturnValue(throwError(() => rpcError));
+
+      await expect(
+        controller.updateStatut('1', { statut: 'TERMINEE' } as any, { user: { sub: mockUserId } }),
+      ).rejects.toThrow(HttpException);
+    });
+
+    it('findMySeance devrait convertir une RpcException en HttpException', async () => {
+      mockNatsClient.send.mockReturnValue(throwError(() => rpcError));
+
+      await expect(
+        controller.findMySeance({ user: { sub: mockUserId } }),
+      ).rejects.toThrow(HttpException);
+    });
+
+    it('leave devrait convertir une RpcException en HttpException', async () => {
+      mockNatsClient.send.mockReturnValue(throwError(() => rpcError));
+
+      await expect(
+        controller.leave('1', { user: { sub: mockUserId } }),
+      ).rejects.toThrow(HttpException);
     });
   });
 });

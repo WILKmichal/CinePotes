@@ -1,0 +1,43 @@
+meta {
+  name: POST /seances/join
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{URL}}/seances/join
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+body:json {
+  {
+    "code": "{{SEANCE_CODE}}"
+  }
+}
+
+script:pre-request {
+  await bru.runRequest("06-Seances/POST_seances");
+}
+
+tests {
+  test("Status code is 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("Response contains participant", function() {
+    expect(res.body).to.have.property('participant');
+  });
+
+  test("Response contains seance", function() {
+    expect(res.body).to.have.property('seance');
+  });
+}
