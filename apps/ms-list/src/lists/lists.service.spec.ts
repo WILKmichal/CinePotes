@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { ListsService } from './lists.service';
-import { Liste } from './entities/liste.entity';
-import { ListeFilm } from './entities/liste-film.entity';
+import { Liste } from 'schemas/liste.entity';
+import { ListeFilm } from 'schemas/liste-film.entity';
 
 describe('ListsService', () => {
   let service: ListsService;
@@ -39,14 +39,14 @@ describe('ListsService', () => {
     cree_le: new Date(),
     maj_le: new Date(),
     films: [],
-  } as Liste;
+  } as unknown as Liste;
 
   const mockListeFilm = {
     id: 'listefilm-789',
     liste_id: mockListeId,
     tmdb_id: mockTmdbId,
     cree_le: new Date(),
-  } as ListeFilm;
+  } as unknown as ListeFilm;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -300,7 +300,7 @@ describe('ListsService', () => {
       const createdFilm = {
         liste_id: mockListeId,
         tmdb_id: mockTmdbId,
-      } as ListeFilm;
+      } as unknown as ListeFilm;
       mockListeRepository.findOne.mockResolvedValue(mockListe);
       mockListeFilmRepository.create.mockReturnValue(createdFilm);
       mockListeFilmRepository.save.mockRejectedValue(new Error('Duplicate'));
@@ -356,8 +356,8 @@ describe('ListsService', () => {
     it("doit retourner tous les ids de films d'une liste", async () => {
       mockListeRepository.findOne.mockResolvedValue(mockListe);
       mockListeFilmRepository.find.mockResolvedValue([
-        { ...mockListeFilm, tmdb_id: 123 } as ListeFilm,
-        { ...mockListeFilm, tmdb_id: 456 } as ListeFilm,
+        { ...mockListeFilm, tmdb_id: 123 } as unknown as ListeFilm,
+        { ...mockListeFilm, tmdb_id: 456 } as unknown as ListeFilm,
       ]);
 
       const result = await service.getFilmsInList(mockListeId, mockUserId);
@@ -381,16 +381,19 @@ describe('ListsService', () => {
       const liste1 = {
         ...mockListe,
         id: 'liste-1',
-        films: [{ tmdb_id: 111 }, { tmdb_id: 222 }] as ListeFilm[],
+        films: [{ tmdb_id: 111 }, { tmdb_id: 222 }] as unknown as ListeFilm[],
       };
       const liste2 = {
         ...mockListe,
         id: 'liste-2',
         nom: 'Liste 2',
-        films: [{ tmdb_id: 333 }] as ListeFilm[],
+        films: [{ tmdb_id: 333 }] as unknown as ListeFilm[],
       };
 
-      mockListeRepository.find.mockResolvedValue([liste1, liste2] as Liste[]);
+      mockListeRepository.find.mockResolvedValue([
+        liste1,
+        liste2,
+      ] as unknown as Liste[]);
 
       const result = await service.findAllByUserWithFilms(mockUserId);
 

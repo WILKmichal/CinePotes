@@ -530,6 +530,9 @@ importers:
       rxjs:
         specifier: ^7.8.1
         version: 7.8.2
+      schemas:
+        specifier: workspace:*
+        version: link:../../packages/schemas
       typeorm:
         specifier: ^0.3.22
         version: 0.3.28(ioredis@5.8.2)(mysql2@3.16.1)(pg@8.17.1)(sqlite3@5.1.7)(ts-node@10.9.2(@types/node@22.19.1)(typescript@5.9.3))
