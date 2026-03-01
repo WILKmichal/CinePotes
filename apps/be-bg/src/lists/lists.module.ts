@@ -1,14 +1,9 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { ListsController } from './lists.controller';
-import { ListsService } from './lists.service';
-import { Liste } from 'schemas/liste.entity';
-import { ListeFilm } from 'schemas/liste-film.entity';
+import { NatsModule } from '../nats/nats.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Liste, ListeFilm])],
+  imports: [NatsModule],
   controllers: [ListsController],
-  providers: [ListsService],
-  exports: [ListsService],
 })
 export class ListsModule {}

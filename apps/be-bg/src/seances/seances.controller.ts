@@ -14,7 +14,12 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiParam } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+} from '@nestjs/swagger';
 import { CreateSeanceDto } from './dto/create-seance.dto';
 import { JoinSeanceDto } from './dto/join-seance.dto';
 import { UpdateStatutDto } from './dto/update-statut.dto';
@@ -69,7 +74,7 @@ export class SeancesController {
     });
   }
 
-  @ApiOperation({ summary: 'Récupérer les participants d\'une séance' })
+  @ApiOperation({ summary: "Récupérer les participants d'une séance" })
   @ApiParam({ name: 'id', description: 'ID de la séance (UUID)' })
   @Get(':id/participants')
   getParticipants(@Param('id') id: string) {
@@ -80,7 +85,7 @@ export class SeancesController {
     });
   }
 
-  @ApiOperation({ summary: 'Mettre à jour le statut d\'une séance' })
+  @ApiOperation({ summary: "Mettre à jour le statut d'une séance" })
   @ApiParam({ name: 'id', description: 'ID de la séance (UUID)' })
   @Patch(':id/statut')
   updateStatut(

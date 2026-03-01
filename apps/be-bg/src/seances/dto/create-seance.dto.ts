@@ -6,7 +6,10 @@ export class CreateSeanceDto {
   @IsString()
   nom: string;
 
-  @ApiProperty({ example: '2026-03-15T20:00:00.000Z', description: 'Date de la séance' })
+  @ApiProperty({
+    example: '2026-03-15T20:00:00.000Z',
+    description: 'Date de la séance',
+  })
   @IsDateString()
   date: Date;
 
