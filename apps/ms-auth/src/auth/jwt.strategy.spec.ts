@@ -8,12 +8,7 @@ describe('JwtStrategy', () => {
   });
 
   it('should return payload when validate is called', () => {
-    const payload = {
-      sub: 1,
-      email: 'test@test.com',
-    };
-
-    // couvre la seule méthode
+    const payload = { sub: 1, email: 'test@test.com' };
     expect(strategy.validate(payload)).toEqual(payload);
   });
 });
