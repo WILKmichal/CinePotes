@@ -3,6 +3,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { HttpStatus, BadRequestException } from '@nestjs/common';
+import { AuthGuard } from '../../../be-bg/src/auth/auth.guard';
 
 const mockAuthService = { signIn: jest.fn() };
 const mockUsersService = {
@@ -10,7 +11,10 @@ const mockUsersService = {
   confirmEmail: jest.fn(),
   issuePasswordResetToken: jest.fn(),
   resetPasswordWithToken: jest.fn(),
+  findProfileById: jest.fn(),
+  updateProfileNom: jest.fn(),
 };
+
 const mockNatsClient = { emit: jest.fn() };
 
 describe('AuthController', () => {
@@ -25,7 +29,10 @@ describe('AuthController', () => {
         { provide: UsersService, useValue: mockUsersService },
         { provide: 'NATS_SERVICE', useValue: mockNatsClient },
       ],
-    }).compile();
+    })
+    .overrideGuard(AuthGuard)
+    .useValue({ canActivate: () => true })
+    .compile();
     controller = module.get<AuthController>(AuthController);
   });
 
@@ -97,5 +104,43 @@ describe('AuthController', () => {
   it('should throw BadRequestException on invalid token', async () => {
     mockUsersService.resetPasswordWithToken.mockResolvedValue(false);
     await expect(controller.resetPassword({ token: 'bad', newPassword: 'x' })).rejects.toThrow(BadRequestException);
+  });
+  it('should return user profile on meById', async () => {
+    const mockUser = {
+      id: 'u1',
+      nom: 'Mehdi',
+      email: 'mehdi@test.com',
+      role: 'user',
+      email_verifie: true,
+      cree_le: new Date(),
+    };
+
+    mockUsersService.findProfileById.mockResolvedValue(mockUser);
+
+    const result = await controller.meById({ userId: 'u1' });
+
+    expect(mockUsersService.findProfileById).toHaveBeenCalledWith('u1');
+    expect(result).toEqual(mockUser);
+  });
+
+  it('should trim and update name on updateName', async () => {
+    const updatedUser = {
+      id: 'u1',
+      nom: 'NouveauNom',
+      email: 'mehdi@test.com',
+      role: 'user',
+      email_verifie: true,
+      cree_le: new Date(),
+    };
+
+    mockUsersService.updateProfileNom.mockResolvedValue(updatedUser);
+
+    const result = await controller.updateName({
+      userId: 'u1',
+      nom: '   NouveauNom   ',
+    });
+
+    expect(mockUsersService.updateProfileNom).toHaveBeenCalledWith('u1', 'NouveauNom');
+    expect(result).toEqual(updatedUser);
   });
 });

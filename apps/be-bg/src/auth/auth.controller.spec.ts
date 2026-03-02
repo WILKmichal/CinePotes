@@ -247,4 +247,67 @@ describe('AuthController', () => {
       }),
     ).rejects.toThrow(HttpException);
   });
+
+    it('should return current user profile on me()', async () => {
+      mockNatsClient.send.mockReturnValue(
+        of({
+          id: 'u1',
+          nom: 'Mehdi',
+          email: 'mehdi@test.com',
+          role: 'user',
+          email_verifie: true,
+          cree_le: '2026-03-02T00:00:00.000Z',
+        }),
+      );
+
+      const req = { user: { sub: 'u1' } };
+
+      const result = await controller.me(req);
+
+      expect(mockNatsClient.send).toHaveBeenCalledWith('auth.me', {
+        userId: 'u1',
+      });
+
+      expect(result).toEqual({
+        id: 'u1',
+        nom: 'Mehdi',
+        email: 'mehdi@test.com',
+        role: 'user',
+        email_verifie: true,
+        cree_le: '2026-03-02T00:00:00.000Z',
+      });
+    });
+
+  it('should update user name on updateMe()', async () => {
+    mockNatsClient.send.mockReturnValue(
+      of({
+        id: 'u1',
+        nom: 'NouveauNom',
+        email: 'mehdi@test.com',
+        role: 'user',
+        email_verifie: true,
+        cree_le: '2026-03-02T00:00:00.000Z',
+      }),
+    );
+
+    const req = { user: { sub: 'u1' } };
+    const body = { nom: '   NouveauNom   ' };
+
+    const result = await controller.updateMe(req, body);
+
+    expect(mockNatsClient.send).toHaveBeenCalledWith('auth.update-name', {
+      userId: 'u1',
+      nom: 'NouveauNom',
+    });
+
+    expect(result).toEqual({
+      id: 'u1',
+      nom: 'NouveauNom',
+      email: 'mehdi@test.com',
+      role: 'user',
+      email_verifie: true,
+      cree_le: '2026-03-02T00:00:00.000Z',
+    });
+  });
+
 });

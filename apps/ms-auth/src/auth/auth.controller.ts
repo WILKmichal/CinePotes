@@ -104,17 +104,6 @@ export class AuthController {
     return { status: 'ok', service: 'ms-auth' };
   }
 
-  @Get('me')
-  @UseGuards(AuthGuard)
-  async me(@Req() req: { user: { sub: string } }) {
-    const user = await this.usersService.findProfileById(req.user.sub);
-
-    if (!user) {
-      throw new UnauthorizedException('Utilisateur introuvable');
-    }
-
-    return user;
-  }
   @MessagePattern('auth.me')
   async meById(@Payload() data: { userId: string }) {
     const user = await this.usersService.findProfileById(data.userId);
@@ -136,8 +125,4 @@ export class AuthController {
 
     return user;
   }
-
-
-
-
 }
