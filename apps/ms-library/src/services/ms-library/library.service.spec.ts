@@ -210,7 +210,11 @@ describe('LibraryService', () => {
       const res = await service.obtenirFilmsPopulaires();
       expect(res).toHaveLength(10);
 
-      expect(setSpy).toHaveBeenCalledWith('library:films:populaires', res, 7200);
+      expect(setSpy).toHaveBeenCalledWith(
+        'library:films:populaires',
+        res,
+        7200,
+      );
     });
   });
 
