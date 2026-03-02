@@ -937,7 +937,6 @@ importers:
         specifier: ^8.20.0
         version: 8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
 
-<<<<<<< HEAD
   apps/ms-sessions:
     dependencies:
       '@nestjs/common':
@@ -1056,8 +1055,6 @@ importers:
         specifier: ^8.20.0
         version: 8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
 
-=======
->>>>>>> origin/develop
   packages/schemas:
     dependencies:
       typeorm:
