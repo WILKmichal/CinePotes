@@ -1,10 +1,11 @@
-import { BadRequestException, HttpStatus, Inject, Controller } from '@nestjs/common';
+import { BadRequestException, HttpStatus, Inject, Controller, UseGuards, Get, Req, UnauthorizedException } from '@nestjs/common';
 import { MessagePattern, Payload, ClientProxy } from '@nestjs/microservices';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { UserRole } from 'schemas/user.entity';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { AuthGuard } from '../../../be-bg/src/auth/auth.guard';
 
 @Controller()
 export class AuthController {
@@ -101,5 +102,17 @@ export class AuthController {
   @MessagePattern('auth.ping')
   ping() {
     return { status: 'ok', service: 'ms-auth' };
+  }
+
+  @Get('me')
+  @UseGuards(AuthGuard)
+  async me(@Req() req: { user: { sub: string } }) {
+    const user = await this.usersService.findProfileById(req.user.sub);
+
+    if (!user) {
+      throw new UnauthorizedException('Utilisateur introuvable');
+    }
+
+    return user;
   }
 }

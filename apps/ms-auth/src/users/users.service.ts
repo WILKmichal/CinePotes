@@ -86,4 +86,19 @@ export class UsersService {
     await this.usersRepository.save(user);
     return true;
   }
+
+  async findProfileById(id: string) {
+    return this.usersRepository.findOne({
+      where: { id },
+      select: {
+        id: true,
+        nom: true,
+        email: true,
+        role: true,
+        email_verifie: true,
+        cree_le: true,
+      },
+    });
+  }
+
 }
