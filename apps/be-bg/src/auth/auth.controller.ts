@@ -9,12 +9,17 @@ import {
   Res,
   HttpCode,
   HttpException,
+  UseGuards, 
+  Req, 
+  UnauthorizedException
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { ConfigService } from '@nestjs/config';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { AuthGuard } from './auth.guard';
+
 
 interface MicroserviceError {
   message?: string;
@@ -164,4 +169,13 @@ export class AuthController {
 
     return new HttpException(fallbackMessage, fallbackStatus);
   }
+
+  @Get('me')
+  @UseGuards(AuthGuard)
+  async me(@Req() req: { user: { sub: string } }) {
+    return await firstValueFrom(
+      this.natsClient.send('auth.me', { userId: req.user.sub }),
+    );
+  }
+
 }

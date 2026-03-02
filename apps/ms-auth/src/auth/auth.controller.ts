@@ -115,4 +115,16 @@ export class AuthController {
 
     return user;
   }
+  @MessagePattern('auth.me')
+  async meById(@Payload() data: { userId: string }) {
+    const user = await this.usersService.findProfileById(data.userId);
+
+    if (!user) {
+      throw new UnauthorizedException('Utilisateur introuvable');
+    }
+
+    return user;
+  }
+
+
 }

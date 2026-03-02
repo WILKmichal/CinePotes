@@ -34,7 +34,10 @@ export default function ProfilePage() {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        if (!res.ok) throw new Error("Impossible de charger le profil");
+        if (!res.ok) {
+            const txt = await res.text();
+            throw new Error(`HTTP ${res.status} - ${txt}`);
+        }
         const data: Profile = await res.json();
         setProfile(data);
       } catch (e) {
@@ -61,7 +64,7 @@ export default function ProfilePage() {
             {!loading && !error && profile && (
               <div className="space-y-3 text-center">
                 <img
-                  src="/profileImage.png"
+                  src="https://img.icons8.com/fluent/48/000000/user-male-circle.png"
                   alt="Profile"
                   className="h-24 w-24 rounded-full object-cover border border-gray-300 mx-auto"
                 />
