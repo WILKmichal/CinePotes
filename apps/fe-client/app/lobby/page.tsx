@@ -291,24 +291,22 @@ export default function LobbyPage() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      // Si on revient du classement, on veut une nouvelle session : ignorer toute séance existante
-      const skipRedirect = sessionStorage.getItem("skip_redirect") === "1";
-      if (skipRedirect) {
-        sessionStorage.removeItem("skip_redirect");
-        setHasNoSession(true);
-        return;
-      }
-
       if (res.ok) {
         const data: Seance | null = await res.json();
         if (data) {
-          if (data.statut === "en_cours") {
+          // Redirection auto vers /selection uniquement depuis le polling (pas navigation manuelle)
+          if (data.statut === "en_cours" && !showLoader) {
             router.push(`/selection?seanceId=${data.id}`);
             return;
           }
-          setHasNoSession(false);
-          setSeance(data);
-          await fetchParticipants(data.id);
+          // Si séance en cours et navigation manuelle : afficher le lobby normalement
+          if (data.statut !== "en_cours") {
+            setHasNoSession(false);
+            setSeance(data);
+            await fetchParticipants(data.id);
+          } else {
+            setHasNoSession(true);
+          }
           return;
         }
       }
@@ -323,8 +321,13 @@ export default function LobbyPage() {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (res2.ok) {
-            if (joinedSeance.statut === "en_cours") {
+            if (joinedSeance.statut === "en_cours" && !showLoader) {
               router.push(`/selection?seanceId=${joinedSeance.id}`);
+              return;
+            }
+            if (joinedSeance.statut === "en_cours") {
+              localStorage.removeItem("joined_seance");
+              setHasNoSession(true);
               return;
             }
             setHasNoSession(false);
@@ -349,9 +352,14 @@ export default function LobbyPage() {
 
   useEffect(() => {
     loadSeance(true);
+  }, [loadSeance]);
+
+  // Polling uniquement quand une séance est active (pas sur le formulaire)
+  useEffect(() => {
+    if (hasNoSession) return;
     const interval = setInterval(() => loadSeance(false), 5000);
     return () => clearInterval(interval);
-  }, [loadSeance]);
+  }, [hasNoSession, loadSeance]);
 
   const handleCopyCode = async () => {
     if (!seance) return;

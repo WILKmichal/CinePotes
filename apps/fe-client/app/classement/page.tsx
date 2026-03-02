@@ -29,6 +29,17 @@ const getToken = () => {
   return localStorage.getItem("access_token");
 };
 
+const getUserId = () => {
+  const token = getToken();
+  if (!token) return null;
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload.sub as string;
+  } catch {
+    return null;
+  }
+};
+
 function rankIcon(i: number): string {
   if (i === 0) return "🥇";
   if (i === 1) return "🥈";
@@ -135,6 +146,31 @@ function ClassementContent() {
     }, 3000);
   };
 
+  const handleQuit = async () => {
+    const token = getToken();
+    const userId = getUserId();
+    // Vérifier si on est proprio
+    const selfRes = await fetch(`${API_URL}/seances/self`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const seance = selfRes.ok ? await selfRes.json() : null;
+    const isOwner = seance?.proprietaire_id === userId;
+
+    if (isOwner) {
+      await fetch(`${API_URL}/seances/${seanceId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } else {
+      await fetch(`${API_URL}/seances/${seanceId}/leave`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    }
+    localStorage.removeItem("joined_seance");
+    router.push("/lobby");
+  };
+
   function renderContent() {
     if (resultat) {
       return (
@@ -169,14 +205,10 @@ function ClassementContent() {
             ))}
           </ol>
           <button
-            onClick={() => {
-              localStorage.removeItem("joined_seance");
-              sessionStorage.setItem("skip_redirect", "1");
-              router.push("/lobby");
-            }}
-            className="w-full bg-[#1B3A5C] text-white py-3 rounded-xl font-semibold hover:bg-[#14305a] transition-colors"
+            onClick={handleQuit}
+            className="w-full bg-[#C84B31] text-white py-3 rounded-xl font-semibold hover:bg-[#b03a24] transition-colors"
           >
-            Nouvelle session
+            🚪 Quitter la session
           </button>
         </div>
       );
