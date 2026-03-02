@@ -8,6 +8,8 @@ import { Seance } from 'schemas/seance.entity';
 import { User } from 'schemas/user.entity';
 import { Liste } from 'schemas/liste.entity';
 import { ListeFilm } from 'schemas/liste-film.entity';
+import { PropositionFilm } from 'schemas/proposition-film.entity';
+import { VoteClassement } from 'schemas/vote-classement.entity';
 
 @Module({
   imports: [
@@ -18,7 +20,7 @@ import { ListeFilm } from 'schemas/liste-film.entity';
       username: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      entities: [Seance, Participant, User, Liste, ListeFilm],
+      entities: [Seance, Participant, User, Liste, ListeFilm, PropositionFilm, VoteClassement],
       synchronize: true,
     }),
     SeancesModule,
