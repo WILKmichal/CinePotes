@@ -1,23 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
-import { UsersService } from '../users/users.service';
 import { ConfigService } from '@nestjs/config';
-import { HttpStatus, BadRequestException } from '@nestjs/common';
-
-const mockAuthService = {
-  signIn: jest.fn(),
-};
-
-const mockUsersService = {
-  createUser: jest.fn(),
-  confirmEmail: jest.fn(),
-  issuePasswordResetToken: jest.fn(),
-  resetPasswordWithToken: jest.fn(),
-};
+import { HttpException, HttpStatus } from '@nestjs/common';
+import { of, throwError } from 'rxjs';
 
 const mockNatsClient = {
-  emit: jest.fn(),
+  send: jest.fn(),
 };
 
 const mockConfigService = {
@@ -32,26 +20,18 @@ describe('AuthController', () => {
 
     mockConfigService.get.mockImplementation((key: string) => {
       if (key === 'RESET_PASSWORD_EXPIRES_MINUTES') return '30';
-      if (key === 'FRONT_RESET_PASSWORD_URL')
-        return 'http://localhost:3000/reset-password';
       return undefined;
     });
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
       providers: [
-        { provide: AuthService, useValue: mockAuthService },
-        { provide: UsersService, useValue: mockUsersService },
         { provide: 'NATS_SERVICE', useValue: mockNatsClient },
         { provide: ConfigService, useValue: mockConfigService },
       ],
     }).compile();
 
     controller = module.get<AuthController>(AuthController);
-  });
-
-  afterEach(() => {
-    process.env.VERIFICATION_MAIL = 'false';
   });
 
   it('should be defined', () => {
@@ -61,92 +41,88 @@ describe('AuthController', () => {
   /* ================= LOGIN ================= */
 
   it('should return access token on login', async () => {
-    mockAuthService.signIn.mockResolvedValue({ access_token: 'jwt-token' });
+    mockNatsClient.send.mockReturnValue(
+      of({ access_token: 'jwt-token' }),
+    );
 
     const result = await controller.login({
       username: 'test@example.com',
       password: 'Password123!',
     });
 
+    expect(mockNatsClient.send).toHaveBeenCalledWith(
+      'auth.login',
+      {
+        username: 'test@example.com',
+        password: 'Password123!',
+      },
+    );
+
     expect(result).toEqual({ access_token: 'jwt-token' });
   });
 
   it('should propagate login error', async () => {
-    mockAuthService.signIn.mockRejectedValue(new Error('Unauthorized'));
+    mockNatsClient.send.mockReturnValue(
+      throwError(() => ({
+        message: 'Unauthorized',
+        statusCode: 401,
+      })),
+    );
 
     await expect(
       controller.login({
         username: 'test@example.com',
         password: 'bad',
       }),
-    ).rejects.toThrow();
+    ).rejects.toThrow(HttpException);
   });
 
   /* ================= REGISTER ================= */
 
-  it('should register user with provided nom and role', async () => {
-    mockUsersService.createUser.mockResolvedValue({
-      email: 'test@test.com',
-      email_verification_token: 'token',
-    });
+  it('should register user', async () => {
+    mockNatsClient.send.mockReturnValue(
+      of({ message: 'User created' }),
+    );
 
-    const result = await controller.register({
+    const body = {
       email: 'test@test.com',
       password: 'Password123!',
       nom: 'Test',
       role: 'admin',
-    });
+    };
 
-    expect(mockUsersService.createUser).toHaveBeenCalledWith(
-      'Test',
-      'test@test.com',
-      'Password123!',
-      'admin',
+    const result = await controller.register(body);
+
+    expect(mockNatsClient.send).toHaveBeenCalledWith(
+      'auth.register',
+      body,
     );
 
-    expect(result.status).toBe(HttpStatus.CREATED);
+    expect(result).toEqual({ message: 'User created' });
   });
 
-  it('should use email prefix as nom when nom is undefined', async () => {
-    mockUsersService.createUser.mockResolvedValue({
-      email: 'john@test.com',
-      email_verification_token: 'token',
-    });
-
-    await controller.register({
-      email: 'john@test.com',
-      password: 'Password123!',
-      role: 'user',
-    } as any);
-
-    expect(mockUsersService.createUser).toHaveBeenCalledWith(
-      'john',
-      'john@test.com',
-      'Password123!',
-      'user',
+  it('should propagate register error', async () => {
+    mockNatsClient.send.mockReturnValue(
+      throwError(() => ({
+        message: 'Erreur inscription',
+        statusCode: 400,
+      })),
     );
-  });
-
-  it('should throw if user creation fails', async () => {
-    mockUsersService.createUser.mockRejectedValue(new Error('DB error'));
 
     await expect(
       controller.register({
         email: 'fail@test.com',
         password: 'Password123!',
-        nom: 'Fail',
-        role: 'user',
       }),
-    ).rejects.toThrow();
+    ).rejects.toThrow(HttpException);
   });
-
-
-
 
   /* ================= CONFIRM EMAIL ================= */
 
   it('should return 400 when email confirmation fails', async () => {
-    mockUsersService.confirmEmail.mockResolvedValue(false);
+    mockNatsClient.send.mockReturnValue(
+      of({ success: false }),
+    );
 
     const res = {
       status: jest.fn().mockReturnThis(),
@@ -156,12 +132,19 @@ describe('AuthController', () => {
 
     await controller.confirmEmail('bad-token', res as any);
 
+    expect(mockNatsClient.send).toHaveBeenCalledWith(
+      'auth.confirm-email',
+      { token: 'bad-token' },
+    );
+
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.send).toHaveBeenCalledWith('Lien invalide ou expiré');
   });
 
   it('should redirect when email confirmation succeeds', async () => {
-    mockUsersService.confirmEmail.mockResolvedValue(true);
+    mockNatsClient.send.mockReturnValue(
+      of({ success: true }),
+    );
 
     const res = {
       status: jest.fn().mockReturnThis(),
@@ -171,72 +154,97 @@ describe('AuthController', () => {
 
     await controller.confirmEmail('good-token', res as any);
 
-    expect(res.redirect).toHaveBeenCalled();
+    expect(mockNatsClient.send).toHaveBeenCalledWith(
+      'auth.confirm-email',
+      { token: 'good-token' },
+    );
+
+    expect(res.redirect).toHaveBeenCalledWith(
+      'http://localhost:3000/?redirect=http%3A%2F%2Flocalhost%3A3001%2Fauth%2Fcallback',
+    );
+  });
+
+  it('should return 400 if confirmEmail throws', async () => {
+    mockNatsClient.send.mockReturnValue(
+      throwError(() => new Error()),
+    );
+
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      send: jest.fn(),
+      redirect: jest.fn(),
+    };
+
+    await controller.confirmEmail('error-token', res as any);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith('Lien invalide ou expiré');
   });
 
   /* ================= FORGOT PASSWORD ================= */
 
-  it('should send reset email if token is generated', async () => {
-    mockUsersService.issuePasswordResetToken.mockResolvedValue('TOKEN123');
-
-    const res = await controller.forgotPassword('mehdi@gmail.com');
-
-    expect(mockUsersService.issuePasswordResetToken).toHaveBeenCalledWith(
-      'mehdi@gmail.com',
-      30,
-    );
-
-    expect(mockNatsClient.emit).toHaveBeenCalledWith(
-      'notif.reset-password',
-      expect.objectContaining({
-        email: 'mehdi@gmail.com',
-        resetUrl: expect.stringContaining('TOKEN123'),
-        expiresInMinutes: 30,
+  it('should call forgot-password with correct payload', async () => {
+    mockNatsClient.send.mockReturnValue(
+      of({
+        message:
+          'Si un compte existe avec cette adresse mail, un email a été envoyé',
       }),
     );
 
-    expect(res).toEqual({
+    const result = await controller.forgotPassword('mehdi@gmail.com');
+
+    expect(mockNatsClient.send).toHaveBeenCalledWith(
+      'auth.forgot-password',
+      {
+        email: 'mehdi@gmail.com',
+        expiresInMinutes: 30,
+      },
+    );
+
+    expect(result).toEqual({
       message:
         'Si un compte existe avec cette adresse mail, un email a été envoyé',
     });
   });
 
-  it("should NOT send reset email if no token returned", async () => {
-    mockUsersService.issuePasswordResetToken.mockResolvedValue(null);
-
-    await controller.forgotPassword('unknown@gmail.com');
-
-    expect(mockNatsClient.emit).not.toHaveBeenCalled();
-  });
-
   /* ================= RESET PASSWORD ================= */
 
-  it('should return success if resetPasswordWithToken returns true', async () => {
-    mockUsersService.resetPasswordWithToken.mockResolvedValue(true);
+  it('should reset password successfully', async () => {
+    mockNatsClient.send.mockReturnValue(
+      of({ message: 'Mot de passe réinitialisé avec succès' }),
+    );
 
-    const res = await controller.resetPassword({
+    const result = await controller.resetPassword({
       token: 'valid',
       newPassword: 'NewPass123!',
     });
 
-    expect(mockUsersService.resetPasswordWithToken).toHaveBeenCalledWith(
-      'valid',
-      'NewPass123!',
+    expect(mockNatsClient.send).toHaveBeenCalledWith(
+      'auth.reset-password',
+      {
+        token: 'valid',
+        newPassword: 'NewPass123!',
+      },
     );
 
-    expect(res).toEqual({
+    expect(result).toEqual({
       message: 'Mot de passe réinitialisé avec succès',
     });
   });
 
-  it('should throw BadRequestException if resetPasswordWithToken returns false', async () => {
-    mockUsersService.resetPasswordWithToken.mockResolvedValue(false);
+  it('should throw HttpException if reset fails', async () => {
+    mockNatsClient.send.mockReturnValue(
+      throwError(() => ({
+        message: 'Lien invalide ou expiré',
+        statusCode: HttpStatus.BAD_REQUEST,
+      })),
+    );
 
     await expect(
       controller.resetPassword({
         token: 'bad',
         newPassword: 'x',
       }),
-    ).rejects.toThrow(BadRequestException);
+    ).rejects.toThrow(HttpException);
   });
 });
