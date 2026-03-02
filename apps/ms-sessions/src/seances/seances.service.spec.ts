@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
 import { SeancesService } from './seances.service';
 import { Seance, SeanceStatut } from 'schemas/seance.entity';
 import { Participant } from 'schemas/participant.entity';
@@ -130,7 +130,7 @@ describe('SeancesService', () => {
 
       await expect(
         service.create(mockCreateDto, mockProprietaireId),
-      ).rejects.toThrow(ConflictException);
+      ).rejects.toThrow(RpcException);
     });
   });
 
@@ -173,7 +173,7 @@ describe('SeancesService', () => {
       mockSeanceRepository.findOneBy.mockResolvedValue(null);
 
       await expect(service.join('INVALID', mockUtilisateurId)).rejects.toThrow(
-        NotFoundException,
+        RpcException,
       );
     });
 
@@ -185,7 +185,7 @@ describe('SeancesService', () => {
       );
 
       await expect(service.join(mockCode, mockUtilisateurId)).rejects.toThrow(
-        ConflictException,
+        RpcException,
       );
     });
 
@@ -194,7 +194,7 @@ describe('SeancesService', () => {
       mockSeanceRepository.findOneBy.mockResolvedValue(seanceEnCours as Seance);
 
       await expect(service.join(mockCode, mockUtilisateurId)).rejects.toThrow(
-        ConflictException,
+        RpcException,
       );
     });
   });
@@ -240,7 +240,7 @@ describe('SeancesService', () => {
       mockSeanceRepository.findOneBy.mockResolvedValue(null);
 
       await expect(service.findByCode('INVALID')).rejects.toThrow(
-        NotFoundException,
+        RpcException,
       );
     });
   });
@@ -248,8 +248,20 @@ describe('SeancesService', () => {
   describe('getParticipants', () => {
     it('doit retourner la liste des participants', async () => {
       const mockParticipants = [
-        { id: 'p1', seance_id: 'seance-id', utilisateur_id: 'user-1' },
-        { id: 'p2', seance_id: 'seance-id', utilisateur_id: 'user-2' },
+        {
+          id: 'p1',
+          seance_id: 'seance-id',
+          utilisateur_id: 'user-1',
+          a_rejoint_le: new Date(),
+          utilisateur: { id: 'user-1', nom: 'Alice', email: 'alice@test.com' },
+        },
+        {
+          id: 'p2',
+          seance_id: 'seance-id',
+          utilisateur_id: 'user-2',
+          a_rejoint_le: new Date(),
+          utilisateur: { id: 'user-2', nom: 'Bob', email: 'bob@test.com' },
+        },
       ];
       mockParticipantRepository.find.mockResolvedValue(
         mockParticipants as Participant[],
@@ -294,7 +306,7 @@ describe('SeancesService', () => {
 
       await expect(
         service.leave(mockSeanceId, mockUtilisateurId),
-      ).rejects.toThrow(NotFoundException);
+      ).rejects.toThrow(RpcException);
     });
   });
 
@@ -332,7 +344,7 @@ describe('SeancesService', () => {
           mockProprietaireId,
           SeanceStatut.EN_COURS,
         ),
-      ).rejects.toThrow(NotFoundException);
+      ).rejects.toThrow(RpcException);
     });
   });
 });

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   Controller,
   Get,
@@ -8,6 +10,7 @@ import {
   Param,
   UseGuards,
   Request,
+  Inject,
   HttpCode,
   HttpStatus,
   BadRequestException,
@@ -21,8 +24,9 @@ import {
   ApiBearerAuth,
   ApiParam,
 } from '@nestjs/swagger';
+import { ClientProxy } from '@nestjs/microservices';
+import { firstValueFrom } from 'rxjs';
 import { AuthGuard } from '../auth/auth.guard';
-import { ListsService } from './lists.service';
 import { CreateListDto } from './dto/create-list.dto';
 import { AddFilmDto } from './dto/add-film.dto';
 import {
@@ -37,7 +41,7 @@ import {
 @Controller('lists')
 @UseGuards(AuthGuard)
 export class ListsController {
-  constructor(private readonly listsService: ListsService) {}
+  constructor(@Inject('NATS_SERVICE') private readonly nats: ClientProxy) {}
 
   @Get()
   @ApiOperation({ summary: "Récupérer toutes les listes de l'utilisateur" })
@@ -49,7 +53,7 @@ export class ListsController {
   @ApiResponse({ status: 401, description: 'Non authentifié' })
   async findAll(@Request() req: { user: { sub: string } }) {
     const userId = req.user.sub;
-    return this.listsService.findAllByUser(userId);
+    return firstValueFrom(this.nats.send('list.findAllByUser', { userId }));
   }
 
   @Get('with-films')
@@ -62,7 +66,9 @@ export class ListsController {
   @ApiResponse({ status: 401, description: 'Non authentifié' })
   async findAllWithFilms(@Request() req: { user: { sub: string } }) {
     const userId = req.user.sub;
-    return this.listsService.findAllByUserWithFilms(userId);
+    return firstValueFrom(
+      this.nats.send('list.findAllByUserWithFilms', { userId }),
+    );
   }
 
   @Get(':id')
@@ -80,7 +86,9 @@ export class ListsController {
     @Request() req: { user: { sub: string } },
   ) {
     const userId = req.user.sub;
-    const liste = await this.listsService.findOne(id, userId);
+    const liste = await firstValueFrom(
+      this.nats.send('list.findOne', { listeId: id, userId }),
+    );
     if (!liste) {
       throw new NotFoundException('Liste non trouvée');
     }
@@ -102,11 +110,15 @@ export class ListsController {
     @Request() req: { user: { sub: string } },
   ) {
     const userId = req.user.sub;
-    const liste = await this.listsService.findOne(id, userId);
+    const liste = await firstValueFrom(
+      this.nats.send('list.findOne', { listeId: id, userId }),
+    );
     if (!liste) {
       throw new NotFoundException('Liste non trouvée');
     }
-    const films = await this.listsService.getFilmsInList(id, userId);
+    const films = await firstValueFrom(
+      this.nats.send('list.getFilmsInList', { listeId: id, userId }),
+    );
     return { listeId: id, films };
   }
 
@@ -129,10 +141,12 @@ export class ListsController {
       throw new BadRequestException('Le nom de la liste est requis');
     }
 
-    return this.listsService.create(
-      userId,
-      createListDto.nom.trim(),
-      createListDto.description?.trim(),
+    return firstValueFrom(
+      this.nats.send('list.create', {
+        userId,
+        nom: createListDto.nom.trim(),
+        description: createListDto.description?.trim(),
+      }),
     );
   }
 
@@ -158,10 +172,12 @@ export class ListsController {
       throw new BadRequestException('tmdbId est requis');
     }
 
-    const result = await this.listsService.addFilmToList(
-      id,
-      addFilmDto.tmdbId,
-      userId,
+    const result = await firstValueFrom(
+      this.nats.send('list.addFilmToList', {
+        listeId: id,
+        tmdbId: addFilmDto.tmdbId,
+        userId,
+      }),
     );
 
     if (!result) {
@@ -193,11 +209,13 @@ export class ListsController {
       throw new BadRequestException('Le nom de la liste est requis');
     }
 
-    const updated = await this.listsService.update(
-      id,
-      userId,
-      updateListDto.nom.trim(),
-      updateListDto.description?.trim(),
+    const updated = await firstValueFrom(
+      this.nats.send('list.update', {
+        listeId: id,
+        userId,
+        nom: updateListDto.nom.trim(),
+        description: updateListDto.description?.trim(),
+      }),
     );
 
     if (!updated) {
@@ -219,7 +237,9 @@ export class ListsController {
     @Request() req: { user: { sub: string } },
   ) {
     const userId = req.user.sub;
-    const deleted = await this.listsService.delete(id, userId);
+    const deleted = await firstValueFrom(
+      this.nats.send('list.delete', { listeId: id, userId }),
+    );
     if (!deleted) {
       throw new NotFoundException('Liste non trouvée');
     }
@@ -239,10 +259,12 @@ export class ListsController {
     @Request() req: { user: { sub: string } },
   ) {
     const userId = req.user.sub;
-    const removed = await this.listsService.removeFilmFromList(
-      id,
-      Number.parseInt(tmdbId, 10),
-      userId,
+    const removed = await firstValueFrom(
+      this.nats.send('list.removeFilmFromList', {
+        listeId: id,
+        tmdbId: Number.parseInt(tmdbId, 10),
+        userId,
+      }),
     );
     if (!removed) {
       throw new NotFoundException('Film ou liste non trouvé');

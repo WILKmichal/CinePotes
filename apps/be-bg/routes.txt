@@ -14,7 +14,6 @@ POST /auth/register
 GET /auth/confirm-email
 POST /auth/forgot-password
 POST /auth/reset-password
-GET /auth/profile
 POST /seances
 POST /seances/join
 GET /seances/{id}/participants
