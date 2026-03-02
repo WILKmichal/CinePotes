@@ -14,18 +14,12 @@ export class UsersService {
     private readonly usersRepository: Repository<User>,
   ) {}
 
-  /**
-   * Trouver un utilisateur par email OU nom
-   */
   async findOne(usernameOrEmail: string): Promise<User | null> {
     return this.usersRepository.findOne({
       where: [{ email: usernameOrEmail }, { nom: usernameOrEmail }],
     });
   }
 
-  /**
-   * Création d’un utilisateur (email non vérifié)
-   */
   async createUser(
     nom: string,
     email: string,
@@ -49,68 +43,43 @@ export class UsersService {
     }
 
     const user = this.usersRepository.create(newUser);
-
     return this.usersRepository.save(user);
   }
 
-  /**
-   * Confirmation d’email
-   */
   async confirmEmail(token: string): Promise<boolean> {
     const user = await this.usersRepository.findOne({
       where: { email_verification_token: token },
     });
-
-    if (!user) {
-      return false;
-    }
-
+    if (!user) return false;
     user.email_verifie = true;
     user.email_verification_token = null;
-
     await this.usersRepository.save(user);
     return true;
   }
-  async issuePasswordResetToken(
-    email: string,
-    expiresInMinutes = 30,
-  ): Promise<string | null> {
-    const user = await this.usersRepository.findOne({ where: { email } });
 
+  async issuePasswordResetToken(email: string, expiresInMinutes = 30): Promise<string | null> {
+    const user = await this.usersRepository.findOne({ where: { email } });
     if (!user) return null;
 
     const token = randomBytes(32).toString('hex');
     const tokenHash = createHash('sha256').update(token).digest('hex');
 
     user.rinitialiser_mdp_token_hash = tokenHash;
-    user.reinitialiser_mdp_expires_at = new Date(
-      Date.now() + expiresInMinutes * 60 * 1000,
-    );
+    user.reinitialiser_mdp_expires_at = new Date(Date.now() + expiresInMinutes * 60 * 1000);
 
     await this.usersRepository.save(user);
     return token;
   }
-  async resetPasswordWithToken(
-    token: string,
-    newPassword: string,
-  ): Promise<boolean> {
-    const tokenHash = createHash('sha256').update(token).digest('hex');
 
-    const user = await this.usersRepository.findOne({
-      where: { rinitialiser_mdp_token_hash: tokenHash },
-    });
+  async resetPasswordWithToken(token: string, newPassword: string): Promise<boolean> {
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+    const user = await this.usersRepository.findOne({ where: { rinitialiser_mdp_token_hash: tokenHash } });
 
     if (!user) return false;
-
     if (!user.reinitialiser_mdp_expires_at) return false;
-
-    if (user.reinitialiser_mdp_expires_at.getTime() < Date.now()) {
-      return false;
-    }
+    if (user.reinitialiser_mdp_expires_at.getTime() < Date.now()) return false;
 
     user.mot_de_passe_hash = await bcrypt.hash(newPassword, 10);
-
-    // one-time token (sécurité)
     user.rinitialiser_mdp_token_hash = null;
     user.reinitialiser_mdp_expires_at = null;
 
