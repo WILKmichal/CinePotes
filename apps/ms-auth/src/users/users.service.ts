@@ -100,5 +100,11 @@ export class UsersService {
       },
     });
   }
-
+  async updateProfileNom(id: string, nom: string) {
+    const user = await this.usersRepository.findOne({ where: { id } });
+    if (!user) return null;
+    user.nom = nom;
+    await this.usersRepository.save(user);
+    return this.findProfileById(id);
+  }
 }

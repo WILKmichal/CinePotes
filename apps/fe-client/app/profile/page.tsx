@@ -17,38 +17,99 @@ type Profile = {
 
 export default function ProfilePage() {
   const router = useRouter();
+
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [newName, setNewName] = useState("");
+  const [isEditingName, setIsEditingName] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadProfile = async () => {
     const token = localStorage.getItem("access_token");
     if (!token) {
       router.replace("/");
       return;
     }
 
-    const loadProfile = async () => {
-      try {
-        const res = await fetch(`${API_URL}/auth/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+    try {
+      setError(null);
 
-        if (!res.ok) {
-            const txt = await res.text();
-            throw new Error(`HTTP ${res.status} - ${txt}`);
-        }
-        const data: Profile = await res.json();
-        setProfile(data);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Erreur");
-      } finally {
-        setLoading(false);
+      const res = await fetch(`${API_URL}/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.status === 401) {
+        localStorage.removeItem("access_token");
+        router.replace("/");
+        return;
       }
-    };
 
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(`HTTP ${res.status} - ${txt}`);
+      }
+
+      const data: Profile = await res.json();
+      setProfile(data);
+      setNewName(data.nom ?? "");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erreur");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     void loadProfile();
-  }, [router]);
+  }, []);
+
+  const handleSaveName = async () => {
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+      router.replace("/");
+      return;
+    }
+
+    if (!newName.trim()) {
+      setError("Le nom est requis");
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      setError(null);
+
+      const res = await fetch(`${API_URL}/auth/me`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ nom: newName.trim() }),
+      });
+
+      if (res.status === 401) {
+        localStorage.removeItem("access_token");
+        router.replace("/");
+        return;
+      }
+
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(`HTTP ${res.status} - ${txt}`);
+      }
+
+      const updated: Profile = await res.json();
+      setProfile(updated);
+      setNewName(updated.nom ?? "");
+      setIsEditingName(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erreur");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
@@ -59,19 +120,76 @@ export default function ProfilePage() {
             <h1 className="text-3xl font-bold mb-6 text-center">Mon Profil</h1>
 
             {loading && <p className="text-center text-gray-500">Chargement...</p>}
-            {error && <p className="text-center text-red-600">{error}</p>}
+            {error && <p className="text-center text-red-600 mb-4">{error}</p>}
 
             {!loading && !error && profile && (
-              <div className="space-y-3 text-center">
-                <img
-                  src="https://img.icons8.com/fluent/48/000000/user-male-circle.png"
-                  alt="Profile"
-                  className="h-24 w-24 rounded-full object-cover border border-gray-300 mx-auto"
-                />
-                <p><strong>Nom:</strong> {profile.nom}</p>
-                <p><strong>Email:</strong> {profile.email}</p>
-                <p><strong>Rôle:</strong> {profile.role}</p>
+              <div className="space-y-5">
+                <div className="text-center space-y-2">
+                  <img
+                    src="https://img.icons8.com/fluent/48/000000/user-male-circle.png"
+                    alt="Profile"
+                    className="h-24 w-24 rounded-full object-cover border border-gray-300 mx-auto"
+                  />
+                  <p>
+                    <strong>Email:</strong> {profile.email}
+                  </p>
+                  <p>
+                    <strong>Rôle:</strong> {profile.role}
+                  </p>
+                </div>
+
+                <div className="max-w-md mx-auto space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">Nom</label>
+
+                  {!isEditingName ? (
+                    <div className="flex items-center gap-2">
+                      <p className="border rounded px-3 py-2 w-full bg-gray-50">
+                        {profile.nom}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingName(true)}
+                        className="px-4 py-2 rounded bg-gray-900 text-white"
+                      >
+                        Modifier
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <input
+                        value={newName}
+                        onChange={(e) => setNewName(e.target.value)}
+                        className="border rounded px-3 py-2 w-full"
+                        placeholder="Votre nom"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={handleSaveName}
+                          disabled={isSaving}
+                          className="px-4 py-2 rounded bg-blue-600 text-white disabled:opacity-50"
+                        >
+                          {isSaving ? "Enregistrement..." : "Enregistrer"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setNewName(profile.nom);
+                            setIsEditingName(false);
+                          }}
+                          className="px-4 py-2 rounded bg-gray-200 text-gray-800"
+                        >
+                          Annuler
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
+            )}
+
+            {!loading && !error && !profile && (
+              <p className="text-center text-gray-500">Aucune donnée profil.</p>
             )}
           </section>
         </div>

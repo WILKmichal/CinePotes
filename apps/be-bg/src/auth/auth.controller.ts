@@ -11,7 +11,7 @@ import {
   HttpException,
   UseGuards, 
   Req, 
-  UnauthorizedException
+  Patch
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { ClientProxy } from '@nestjs/microservices';
@@ -177,5 +177,24 @@ export class AuthController {
       this.natsClient.send('auth.me', { userId: req.user.sub }),
     );
   }
+
+ @Patch('me')
+  @UseGuards(AuthGuard)
+  async updateMe(
+    @Req() req: { user: { sub: string } },
+    @Body() body: { nom: string },
+  ) {
+    if (!body?.nom?.trim()) {
+      throw new HttpException('Le nom est requis', HttpStatus.BAD_REQUEST);
+    }
+
+    return await firstValueFrom(
+      this.natsClient.send('auth.update-name', {
+        userId: req.user.sub,
+        nom: body.nom.trim(),
+      }),
+    );
+  }
+
 
 }

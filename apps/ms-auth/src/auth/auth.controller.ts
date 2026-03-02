@@ -126,5 +126,18 @@ export class AuthController {
     return user;
   }
 
+  @MessagePattern('auth.update-name')
+  async updateName(@Payload() data: { userId: string; nom: string }) {
+    const nom = data.nom?.trim();
+    if (!nom) throw new BadRequestException('Le nom est requis');
+
+    const user = await this.usersService.updateProfileNom(data.userId, nom);
+    if (!user) throw new UnauthorizedException('Utilisateur introuvable');
+
+    return user;
+  }
+
+
+
 
 }
