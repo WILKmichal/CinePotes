@@ -23,7 +23,9 @@ async function bootstrap() {
   console.log('ms-list connecte a NATS et en ecoute');
 }
 
-bootstrap().catch((err) => {
+try {
+  await bootstrap();
+} catch (err: unknown) {
   console.error(err);
   process.exit(1);
-});
+}

@@ -4,7 +4,7 @@ export function validateEnvironmentVariables(): void {
     DB_HOST: 'Host PostgreSQL (e.g., localhost)',
     DB_PORT: 'Port PostgreSQL (e.g., 5432)',
     DB_USER: 'Utilisateur PostgreSQL',
-    DB_PASSWORD: 'Mot de passe PostgreSQL',
+    DB_PASSWORD: 'Credential PostgreSQL',
     DB_NAME: 'Nom de la base de donnees',
   };
 
