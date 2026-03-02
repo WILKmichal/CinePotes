@@ -12,6 +12,7 @@ export class ListsService {
     @InjectRepository(ListeFilm)
     private readonly listeFilmsRepository: Repository<ListeFilm>,
   ) {}
+
   findAll(): Promise<Liste[]> {
     return this.listesRepository.find();
   }
@@ -20,9 +21,6 @@ export class ListsService {
     return this.listesRepository.findOneBy({ id });
   }
 
-  async remove(id: number): Promise<void> {
-    await this.listesRepository.delete(id);
-  }
   async findAllByUser(userId: string): Promise<Liste[]> {
     return this.listesRepository.find({
       where: { utilisateur_id: userId },
@@ -30,7 +28,7 @@ export class ListsService {
     });
   }
 
-  //Récupère une liste par ID
+  // Recupere une liste par ID
   findOne(listeId: string, userId: string): Promise<Liste | null> {
     return this.listesRepository.findOne({
       where: {
@@ -39,7 +37,8 @@ export class ListsService {
       },
     });
   }
-  // Créer une nouvelle liste
+
+  // Creer une nouvelle liste
   async create(
     userId: string,
     nom: string,
@@ -80,7 +79,7 @@ export class ListsService {
     return (res.affected ?? 0) > 0;
   }
 
-  //Ajouter un film à une liste
+  // Ajouter un film a une liste
   async addFilmToList(
     listeId: string,
     tmdbId: number,
@@ -118,7 +117,7 @@ export class ListsService {
     return (res.affected ?? 0) > 0;
   }
 
-  //Récupérer les films d'une liste
+  // Recuperer les films d'une liste
   async getFilmsInList(listeId: string, userId: string): Promise<number[]> {
     const liste = await this.findOne(listeId, userId);
     if (!liste) return [];

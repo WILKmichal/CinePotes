@@ -46,7 +46,10 @@ export class LibraryService {
         throw new HttpException('Film introuvable', HttpStatus.NOT_FOUND);
       }
       if (status === 401) {
-        throw new HttpException('Clé library invalide', HttpStatus.UNAUTHORIZED);
+        throw new HttpException(
+          'Clé library invalide',
+          HttpStatus.UNAUTHORIZED,
+        );
       }
       if (status === 429) {
         throw new HttpException(

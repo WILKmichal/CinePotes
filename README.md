@@ -86,6 +86,17 @@ REDIS_HOST=localhost
 REDIS_PORT=6379
 ```
 
+### Microservice List (`apps/ms-list/.env`)
+
+```env
+NATS_URL=nats://localhost:4222
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=
+DB_NAME=mydatabase
+```
+
 ### Worker Gmail (`apps/worker-gmail/.env`)
 
 ```env
@@ -129,6 +140,7 @@ pnpm run dev
 | Backend (API)        | http://localhost:3002          |
 | Swagger              | http://localhost:3002/api-docs |
 | ms-library (NATS)    | Microservice (pas de HTTP)     |
+| ms-list (NATS)       | Microservice (pas de HTTP)     |
 | ms-notif (NATS)      | Microservice (pas de HTTP)     |
 | worker-gmail (Redis) | Worker (pas de HTTP)           |
 | Adminer (BDD)        | http://localhost:8080          |

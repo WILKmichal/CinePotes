@@ -107,7 +107,9 @@ describe('LibraryNatsController', () => {
 
       const result = await controller.obtenirPopulaires();
 
-      expect(libraryServiceMock.obtenirFilmsPopulaires).toHaveBeenCalledTimes(1);
+      expect(libraryServiceMock.obtenirFilmsPopulaires).toHaveBeenCalledTimes(
+        1,
+      );
       expect(libraryServiceMock.obtenirFilmsPopulaires).toHaveBeenCalledWith();
       expect(result).toEqual(films);
     });
@@ -136,7 +138,9 @@ describe('LibraryNatsController', () => {
 
       const result = await controller.rechercherAvancee(payload);
 
-      expect(libraryServiceMock.rechercherFilmsAvancee).toHaveBeenCalledTimes(1);
+      expect(libraryServiceMock.rechercherFilmsAvancee).toHaveBeenCalledTimes(
+        1,
+      );
       expect(libraryServiceMock.rechercherFilmsAvancee).toHaveBeenCalledWith(
         payload,
       );
@@ -162,7 +166,9 @@ describe('LibraryNatsController', () => {
       const result = await controller.obtenirPlusieurs({ ids: [3] });
 
       expect(libraryServiceMock.obtenirPlusieursFilms).toHaveBeenCalledTimes(1);
-      expect(libraryServiceMock.obtenirPlusieursFilms).toHaveBeenCalledWith([3]);
+      expect(libraryServiceMock.obtenirPlusieursFilms).toHaveBeenCalledWith([
+        3,
+      ]);
       expect(result).toEqual(films);
     });
   });

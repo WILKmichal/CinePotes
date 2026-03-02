@@ -1,17 +1,20 @@
 import { Controller } from '@nestjs/common';
 import { SeancesService } from './seances/seances.service';
 import { SeanceStatut } from 'schemas/seance.entity';
-import {
-  MessagePattern,
-  Payload,
-} from '@nestjs/microservices';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 
 @Controller()
 export class AppController {
   constructor(private readonly seancesService: SeancesService) {}
 
   @MessagePattern('seances.create')
-  create(@Payload() data: { dto: { nom: string; date: Date; max_films: number }; userId: string }) {
+  create(
+    @Payload()
+    data: {
+      dto: { nom: string; date: Date; max_films: number };
+      userId: string;
+    },
+  ) {
     return this.seancesService.create(data.dto, data.userId);
   }
 
@@ -26,8 +29,14 @@ export class AppController {
   }
 
   @MessagePattern('seances.updateStatut')
-  updateStatut(@Payload() data: { seanceId: string; userId: string; statut: SeanceStatut }) {
-    return this.seancesService.updateStatut(data.seanceId, data.userId, data.statut);
+  updateStatut(
+    @Payload() data: { seanceId: string; userId: string; statut: SeanceStatut },
+  ) {
+    return this.seancesService.updateStatut(
+      data.seanceId,
+      data.userId,
+      data.statut,
+    );
   }
 
   @MessagePattern('seances.self')
@@ -40,4 +49,3 @@ export class AppController {
     return this.seancesService.leave(data.seanceId, data.userId);
   }
 }
-
