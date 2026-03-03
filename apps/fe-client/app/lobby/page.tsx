@@ -285,6 +285,13 @@ export default function LobbyPage() {
     const token = getToken();
     if (!token) { router.push("/"); return; }
 
+    // Si on a un résultat de classement actif, y retourner
+    const classementSeanceId = sessionStorage.getItem("classement_seance_id");
+    if (classementSeanceId) {
+      router.push(`/classement?seanceId=${classementSeanceId}`);
+      return;
+    }
+
     if (showLoader) setLoading(true);
     try {
       const res = await fetch(`${API_URL}/seances/self`, {

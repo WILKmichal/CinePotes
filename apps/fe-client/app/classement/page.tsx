@@ -65,27 +65,74 @@ function ClassementContent() {
   const [waitingOthers, setWaitingOthers] = useState(false);
   const [resultat, setResultat] = useState<FilmClasse[] | null>(null);
 
-  // Charger tous les films proposés dans la séance
+  // Charger les films ET vérifier si le résultat final est déjà disponible
   useEffect(() => {
     if (!seanceId) return;
     const token = getToken();
 
-    fetch(`${API_URL}/seances/${seanceId}/propositions`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((r) => r.json())
-      .then(async (propositions: Proposition[]) => {
+    const load = async () => {
+      try {
+        // 1. Vérifier si tous ont déjà voté → afficher directement le résultat
+        const statusRes = await fetch(
+          `${API_URL}/seances/${seanceId}/classement/status`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (statusRes.ok) {
+          const allDone: boolean = await statusRes.json();
+          if (allDone) {
+            const resultatRes = await fetch(
+              `${API_URL}/seances/${seanceId}/classement/resultat`,
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            if (resultatRes.ok) {
+              const scores: { tmdb_id: number; rang_moyen: number }[] = await resultatRes.json();
+              // Récupérer les infos films
+              const ids = scores.map((s) => s.tmdb_id);
+              const filmsRes = await fetch(
+                `${API_URL}/library/movies?ids=${ids.join(",")}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+              );
+              if (filmsRes.ok) {
+                const filmData: Film[] = await filmsRes.json();
+                const filmMap = new Map(filmData.map((f) => [f.id, f]));
+                const final = scores
+                  .map((s) => {
+                    const film = filmMap.get(s.tmdb_id);
+                    if (!film) return null;
+                    return { ...film, rang_moyen: s.rang_moyen };
+                  })
+                  .filter((f): f is FilmClasse => f !== null);
+                setResultat(final);
+                sessionStorage.setItem("classement_seance_id", seanceId);
+                setLoading(false);
+                return;
+              }
+            }
+          }
+        }
+
+        // 2. Sinon charger les films pour le drag & drop
+        const propositionsRes = await fetch(
+          `${API_URL}/seances/${seanceId}/propositions`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (!propositionsRes.ok) { setLoading(false); return; }
+        const propositions: Proposition[] = await propositionsRes.json();
         const uniqueIds = [...new Set(propositions.map((p) => p.tmdb_id))];
         if (uniqueIds.length === 0) { setLoading(false); return; }
 
-        const res = await fetch(
+        const filmsRes = await fetch(
           `${API_URL}/library/movies?ids=${uniqueIds.join(",")}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        if (res.ok) setFilms(await res.json());
+        if (filmsRes.ok) setFilms(await filmsRes.json());
         setLoading(false);
-      })
-      .catch(() => setLoading(false));
+      } catch {
+        setLoading(false);
+      }
+    };
+
+    load();
   }, [seanceId]);
 
   const onDragEnd = (result: DropResult) => {
@@ -143,6 +190,8 @@ function ClassementContent() {
 
       setResultat(final);
       setWaitingOthers(false);
+      // Mémoriser qu'on a un résultat actif → pour que /lobby redirige ici
+      sessionStorage.setItem("classement_seance_id", seanceId);
     }, 3000);
   };
 
@@ -168,6 +217,7 @@ function ClassementContent() {
       });
     }
     localStorage.removeItem("joined_seance");
+    sessionStorage.removeItem("classement_seance_id");
     router.push("/lobby");
   };
 
