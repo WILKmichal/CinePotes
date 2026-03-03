@@ -269,12 +269,13 @@ export class AuthController {
 
   @Delete('me')
   @UseGuards(AuthGuard)
-  async deleteMe(@Req() req: { user: { sub: string } }): Promise<{ message: string }> {
+  async deleteMe(
+    @Req() req: { user: { sub: string } },
+  ): Promise<{ message: string }> {
     return await firstValueFrom(
       this.natsClient.send<{ message: string }>('auth.delete-me', {
         userId: req.user.sub,
       }),
     );
   }
-
 }
