@@ -1,22 +1,22 @@
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { ClientsModule, Transport } from '@nestjs/microservices';
-import { AuthModule } from './auth/auth.module';
-import { UsersModule } from './users/users.module';
+import { Module } from "@nestjs/common";
+import { TypeOrmModule } from "@nestjs/typeorm";
+import { ClientsModule, Transport } from "@nestjs/microservices";
+import { AuthModule } from "./auth/auth.module";
+import { UsersModule } from "./users/users.module";
 
 // TypeORM a besoin de TOUTES les entités liées par des relations,
 // même si ms-auth n'écrit que dans User.
 // (Même pattern que ms-sessions dans ce projet)
-import { User } from 'schemas/user.entity';
-import { Seance } from 'schemas/seance.entity';
-import { Participant } from 'schemas/participant.entity';
-import { Liste } from 'schemas/liste.entity';
-import { ListeFilm } from 'schemas/liste-film.entity';
+import { User } from "schemas/user.entity";
+import { Seance } from "schemas/seance.entity";
+import { Participant } from "schemas/participant.entity";
+import { Liste } from "schemas/liste.entity";
+import { ListeFilm } from "schemas/liste-film.entity";
 
 @Module({
   imports: [
     TypeOrmModule.forRoot({
-      type: 'postgres',
+      type: "postgres",
       host: process.env.DB_HOST,
       port: Number.parseInt(process.env.DB_PORT!, 10),
       username: process.env.DB_USER,
@@ -27,10 +27,10 @@ import { ListeFilm } from 'schemas/liste-film.entity';
     }),
     ClientsModule.register([
       {
-        name: 'NATS_SERVICE',
+        name: "NATS_SERVICE",
         transport: Transport.NATS,
         options: {
-          servers: [process.env.NATS_URL ?? 'nats://localhost:4222'],
+          servers: [process.env.NATS_URL ?? "nats://localhost:4222"],
         },
       },
     ]),

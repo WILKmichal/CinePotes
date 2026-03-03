@@ -1,7 +1,7 @@
-import { NestFactory } from '@nestjs/core';
-import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
+import { NestFactory } from "@nestjs/core";
+import { MicroserviceOptions, Transport } from "@nestjs/microservices";
+import { AppModule } from "./app.module";
+import { ValidationPipe } from "@nestjs/common";
 
 async function bootstrap() {
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(
@@ -9,7 +9,7 @@ async function bootstrap() {
     {
       transport: Transport.NATS,
       options: {
-        servers: [process.env.NATS_URL ?? 'nats://localhost:4222'],
+        servers: [process.env.NATS_URL ?? "nats://localhost:4222"],
       },
     },
   );
@@ -23,7 +23,7 @@ async function bootstrap() {
   );
 
   await app.listen();
-  console.log('🔐 ms-auth connecté à NATS et en écoute');
+  console.log("🔐 ms-auth connecté à NATS et en écoute");
 }
 
 bootstrap().catch((err) => {
