@@ -72,7 +72,7 @@ describe('AuthController', () => {
     expect(result).toEqual({ success: true });
   });
 
-  /* FORGOT PASSWORD */
+  /* FORGOT PASSWORD  */
   it('should send reset email if token is generated', async () => {
     mockUsersService.issuePasswordResetToken.mockResolvedValue('TOKEN123');
     const res = await controller.forgotPassword({ email: 'mehdi@gmail.com', expiresInMinutes: 30 });
