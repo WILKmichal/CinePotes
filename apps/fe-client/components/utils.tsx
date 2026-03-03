@@ -5,6 +5,10 @@ import Link from "next/link";
 const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL ?? "http://localhost:3000";
 const CALLBACK_URL = "http://localhost:3001/auth/callback";
 
+const signInUrl = `${ADMIN_URL}/login-client?redirect=${encodeURIComponent(CALLBACK_URL)}&mode=login`;
+const signUpUrl = `${ADMIN_URL}/login-client?redirect=${encodeURIComponent(CALLBACK_URL)}&mode=register`;
+
+
 export interface DetailsFilm {
   id: number;
   titre: string;
@@ -109,9 +113,13 @@ export default function Header() {
           <div className="flex items-center justify-end gap-3">
             {displayName ? (
               <>
-                <span className="text-sm font-semibold text-gray-900">
-                  {displayName}
-                </span>
+                <Link href="/profile">
+                  <img
+                    src="https://img.icons8.com/fluent/48/000000/user-male-circle.png"
+                    alt="Profile"
+                    className="h-9 w-9 rounded-full object-cover cursor-pointer border border-gray-300 hover:scale-105 transition"
+                  />
+                </Link>
 
                 <button
                   onClick={handleLogout}
@@ -124,14 +132,14 @@ export default function Header() {
               <>
                 <Link
                   className="rounded-xl bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow ring-1 ring-gray-300 hover:bg-gray-50"
-                  href={`${ADMIN_URL}?redirect=${encodeURIComponent(CALLBACK_URL)}`}
+                  href={signInUrl}
                 >
                   Sign in
                 </Link>
 
                 <Link
                   className="rounded-xl bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-500"
-                  href={`${ADMIN_URL}?redirect=${encodeURIComponent(CALLBACK_URL)}`}
+                  href={signUpUrl}
                 >
                   Sign up
                 </Link>
