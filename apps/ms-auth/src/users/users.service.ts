@@ -1,9 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import * as bcrypt from 'bcryptjs';
-import { createHash, randomBytes, randomUUID } from 'node:crypto';
-import { User, UserRole } from '../../../../packages/schemas/user.entity';
+import { Injectable, Logger } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import * as bcrypt from "bcryptjs";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { User, UserRole } from "../../../../packages/schemas/user.entity";
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
@@ -36,7 +36,7 @@ export class UsersService {
       email_verification_token: randomUUID(),
     };
 
-    if (process.env.VERIFICATION_MAIL === 'FALSE') {
+    if (process.env.VERIFICATION_MAIL === "FALSE") {
       newUser.email_verification_token = null;
       newUser.email_verifie = true;
     }
@@ -56,23 +56,33 @@ export class UsersService {
     return true;
   }
 
-  async issuePasswordResetToken(email: string, expiresInMinutes = 30): Promise<string | null> {
+  async issuePasswordResetToken(
+    email: string,
+    expiresInMinutes = 30,
+  ): Promise<string | null> {
     const user = await this.usersRepository.findOne({ where: { email } });
     if (!user) return null;
 
-    const token = randomBytes(32).toString('hex');
-    const tokenHash = createHash('sha256').update(token).digest('hex');
+    const token = randomBytes(32).toString("hex");
+    const tokenHash = createHash("sha256").update(token).digest("hex");
 
     user.rinitialiser_mdp_token_hash = tokenHash;
-    user.reinitialiser_mdp_expires_at = new Date(Date.now() + expiresInMinutes * 60 * 1000);
+    user.reinitialiser_mdp_expires_at = new Date(
+      Date.now() + expiresInMinutes * 60 * 1000,
+    );
 
     await this.usersRepository.save(user);
     return token;
   }
 
-  async resetPasswordWithToken(token: string, newPassword: string): Promise<boolean> {
-    const tokenHash = createHash('sha256').update(token).digest('hex');
-    const user = await this.usersRepository.findOne({ where: { rinitialiser_mdp_token_hash: tokenHash } });
+  async resetPasswordWithToken(
+    token: string,
+    newPassword: string,
+  ): Promise<boolean> {
+    const tokenHash = createHash("sha256").update(token).digest("hex");
+    const user = await this.usersRepository.findOne({
+      where: { rinitialiser_mdp_token_hash: tokenHash },
+    });
 
     if (!user) return false;
     if (!user.reinitialiser_mdp_expires_at) return false;

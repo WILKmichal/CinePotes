@@ -1,7 +1,7 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { UsersService } from '../users/users.service';
-import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcryptjs';
+import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { UsersService } from "../users/users.service";
+import { JwtService } from "@nestjs/jwt";
+import * as bcrypt from "bcryptjs";
 
 @Injectable()
 export class AuthService {
@@ -14,19 +14,19 @@ export class AuthService {
     const user = await this.usersService.findOne(username);
 
     if (!user) {
-      throw new UnauthorizedException('Utilisateur introuvable');
+      throw new UnauthorizedException("Utilisateur introuvable");
     }
 
     if (!user.email_verifie) {
       throw new UnauthorizedException(
-        'Merci de confirmer votre email avant de vous connecter',
+        "Merci de confirmer votre email avant de vous connecter",
       );
     }
 
     const passwordMatches = await bcrypt.compare(pass, user.mot_de_passe_hash);
 
     if (!passwordMatches) {
-      throw new UnauthorizedException('Mot de passe invalide');
+      throw new UnauthorizedException("Mot de passe invalide");
     }
 
     const payload = {
