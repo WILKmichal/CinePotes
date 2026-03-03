@@ -146,17 +146,16 @@ export class AuthController {
     return user;
   }
 
-  @MessagePattern('auth.delete-me')
+  @MessagePattern("auth.delete-me")
   async deleteMe(@Payload() data: { userId: string }) {
     const deleted = await this.usersService.deleteAccount(data.userId);
     if (!deleted) {
-      throw new UnauthorizedException('Utilisateur introuvable');
+      throw new UnauthorizedException("Utilisateur introuvable");
     }
 
     // Optionnel: événements de nettoyage vers les autres MS
-    this.natsClient.emit('user.deleted', { userId: data.userId });
+    this.natsClient.emit("user.deleted", { userId: data.userId });
 
-    return { message: 'Compte supprimé avec succès' };
+    return { message: "Compte supprimé avec succès" };
   }
-
 }

@@ -184,6 +184,105 @@ describe('SeancesController', () => {
     });
   });
 
+  describe('supprimer une séance', () => {
+    it("devrait envoyer 'seances.delete' via NATS", async () => {
+      const seanceId = '1';
+      const result = { message: 'Séance supprimée' };
+      mockNatsClient.send.mockReturnValue(of(result));
+
+      const response = await controller.deleteSeance(seanceId, { user: { sub: mockUserId } });
+
+      expect(response).toEqual(result);
+      expect(mockNatsClient.send).toHaveBeenCalledWith('seances.delete', { seanceId, userId: mockUserId });
+    });
+  });
+
+  describe('soumettre des propositions', () => {
+    it("devrait envoyer 'seances.propositions.submit' via NATS", async () => {
+      const seanceId = '1';
+      const body = { tmdbIds: [101, 202] };
+      const result = { message: 'Propositions enregistrées' };
+      mockNatsClient.send.mockReturnValue(of(result));
+
+      const response = await controller.submitPropositions(seanceId, body, { user: { sub: mockUserId } });
+
+      expect(response).toEqual(result);
+      expect(mockNatsClient.send).toHaveBeenCalledWith('seances.propositions.submit', {
+        seanceId,
+        userId: mockUserId,
+        tmdbIds: body.tmdbIds,
+      });
+    });
+  });
+
+  describe('récupérer les propositions', () => {
+    it("devrait envoyer 'seances.propositions.get' via NATS", async () => {
+      const seanceId = '1';
+      const result = [{ tmdb_id: 101 }, { tmdb_id: 202 }];
+      mockNatsClient.send.mockReturnValue(of(result));
+
+      const response = await controller.getPropositions(seanceId);
+
+      expect(response).toEqual(result);
+      expect(mockNatsClient.send).toHaveBeenCalledWith('seances.propositions.get', { seanceId });
+    });
+  });
+
+  describe('statut des propositions', () => {
+    it("devrait envoyer 'seances.propositions.allSubmitted' via NATS", async () => {
+      const seanceId = '1';
+      mockNatsClient.send.mockReturnValue(of(true));
+
+      const response = await controller.allSubmitted(seanceId);
+
+      expect(response).toBe(true);
+      expect(mockNatsClient.send).toHaveBeenCalledWith('seances.propositions.allSubmitted', { seanceId });
+    });
+  });
+
+  describe('soumettre un classement', () => {
+    it("devrait envoyer 'seances.classement.submit' via NATS", async () => {
+      const seanceId = '1';
+      const body = { classement: [{ tmdb_id: 101, rang: 1 }, { tmdb_id: 202, rang: 2 }] };
+      const result = { message: 'Classement enregistré' };
+      mockNatsClient.send.mockReturnValue(of(result));
+
+      const response = await controller.submitClassement(seanceId, body, { user: { sub: mockUserId } });
+
+      expect(response).toEqual(result);
+      expect(mockNatsClient.send).toHaveBeenCalledWith('seances.classement.submit', {
+        seanceId,
+        userId: mockUserId,
+        classement: body.classement,
+      });
+    });
+  });
+
+  describe('statut des classements', () => {
+    it("devrait envoyer 'seances.classement.allSubmitted' via NATS", async () => {
+      const seanceId = '1';
+      mockNatsClient.send.mockReturnValue(of(false));
+
+      const response = await controller.allClassementsSubmitted(seanceId);
+
+      expect(response).toBe(false);
+      expect(mockNatsClient.send).toHaveBeenCalledWith('seances.classement.allSubmitted', { seanceId });
+    });
+  });
+
+  describe('résultat final', () => {
+    it("devrait envoyer 'seances.classement.resultat' via NATS", async () => {
+      const seanceId = '1';
+      const result = [{ tmdb_id: 101, rang_moyen: 1.5 }];
+      mockNatsClient.send.mockReturnValue(of(result));
+
+      const response = await controller.getResultatFinal(seanceId);
+
+      expect(response).toEqual(result);
+      expect(mockNatsClient.send).toHaveBeenCalledWith('seances.classement.resultat', { seanceId });
+    });
+  });
+
   describe('gestion des erreurs RPC', () => {
     const rpcError = { message: 'Erreur test', statusCode: 409 };
 
@@ -233,6 +332,54 @@ describe('SeancesController', () => {
       await expect(
         controller.leave('1', { user: { sub: mockUserId } }),
       ).rejects.toThrow(HttpException);
+    });
+
+    it('deleteSeance devrait convertir une RpcException en HttpException', async () => {
+      mockNatsClient.send.mockReturnValue(throwError(() => rpcError));
+
+      await expect(
+        controller.deleteSeance('1', { user: { sub: mockUserId } }),
+      ).rejects.toThrow(HttpException);
+    });
+
+    it('submitPropositions devrait convertir une RpcException en HttpException', async () => {
+      mockNatsClient.send.mockReturnValue(throwError(() => rpcError));
+
+      await expect(
+        controller.submitPropositions('1', { tmdbIds: [101] }, { user: { sub: mockUserId } }),
+      ).rejects.toThrow(HttpException);
+    });
+
+    it('getPropositions devrait convertir une RpcException en HttpException', async () => {
+      mockNatsClient.send.mockReturnValue(throwError(() => rpcError));
+
+      await expect(controller.getPropositions('1')).rejects.toThrow(HttpException);
+    });
+
+    it('allSubmitted devrait convertir une RpcException en HttpException', async () => {
+      mockNatsClient.send.mockReturnValue(throwError(() => rpcError));
+
+      await expect(controller.allSubmitted('1')).rejects.toThrow(HttpException);
+    });
+
+    it('submitClassement devrait convertir une RpcException en HttpException', async () => {
+      mockNatsClient.send.mockReturnValue(throwError(() => rpcError));
+
+      await expect(
+        controller.submitClassement('1', { classement: [] }, { user: { sub: mockUserId } }),
+      ).rejects.toThrow(HttpException);
+    });
+
+    it('allClassementsSubmitted devrait convertir une RpcException en HttpException', async () => {
+      mockNatsClient.send.mockReturnValue(throwError(() => rpcError));
+
+      await expect(controller.allClassementsSubmitted('1')).rejects.toThrow(HttpException);
+    });
+
+    it('getResultatFinal devrait convertir une RpcException en HttpException', async () => {
+      mockNatsClient.send.mockReturnValue(throwError(() => rpcError));
+
+      await expect(controller.getResultatFinal('1')).rejects.toThrow(HttpException);
     });
   });
 

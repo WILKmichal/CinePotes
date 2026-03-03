@@ -121,5 +121,4 @@ export class UsersService {
     const res = await this.usersRepository.delete({ id });
     return (res.affected ?? 0) > 0;
   }
-
 }

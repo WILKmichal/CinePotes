@@ -246,7 +246,7 @@ function NoSessionPage({ onEntered }: Readonly<{ onEntered: () => void }>) {
               onClick={() => router.push("/")}
               className="w-full text-sm text-gray-400 hover:text-gray-600 transition-colors"
             >
-              ← Retour à l'accueil
+              ← Retour à l&apos;accueil
             </button>
           </div>
         </div>
@@ -575,7 +575,7 @@ export default function LobbyPage() {
                 </button>
               ) : (
                 <div className="flex-1 flex items-center justify-center bg-gray-100 text-gray-400 py-3 rounded-xl text-sm">
-                  En attente que l'hôte lance la session...
+                  En attente que l&apos;hôte lance la session...
                 </div>
               )}
             </div>

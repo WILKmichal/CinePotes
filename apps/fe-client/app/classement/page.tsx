@@ -155,7 +155,7 @@ function ClassementContent() {
     };
 
     load();
-  }, [seanceId]);
+  }, [seanceId, router]);
 
   const onDragEnd = (result: DropResult) => {
     if (!result.destination) return;

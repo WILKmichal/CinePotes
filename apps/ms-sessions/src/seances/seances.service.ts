@@ -128,7 +128,9 @@ export class SeancesService {
   }
 
   // Récupère la séance active de l'utilisateur (proprio ou participant)
-  async findActiveSeanceForUser(utilisateur_id: string): Promise<Seance | null> {
+  async findActiveSeanceForUser(
+    utilisateur_id: string,
+  ): Promise<Seance | null> {
     // Vérifie d'abord si l'utilisateur est propriétaire d'une séance en cours
     const ownedSeance = await this.findByProprietaire(utilisateur_id);
     if (ownedSeance) return ownedSeance;
@@ -171,7 +173,10 @@ export class SeancesService {
   async getParticipants(seance_id: string): Promise<any[]> {
     const seance = await this.seancesRepository.findOneBy({ id: seance_id });
     if (!seance) {
-      throw new RpcException({ statusCode: 404, message: 'Séance introuvable' });
+      throw new RpcException({
+        statusCode: 404,
+        message: 'Séance introuvable',
+      });
     }
 
     const participants = await this.participantsRepository.find({
@@ -275,7 +280,11 @@ export class SeancesService {
     await this.propositionsRepository.delete({ seance_id, utilisateur_id });
 
     const propositions = tmdb_ids.map((tmdb_id) =>
-      this.propositionsRepository.create({ seance_id, utilisateur_id, tmdb_id }),
+      this.propositionsRepository.create({
+        seance_id,
+        utilisateur_id,
+        tmdb_id,
+      }),
     );
     await this.propositionsRepository.save(propositions);
     return { message: 'Propositions enregistrées' };

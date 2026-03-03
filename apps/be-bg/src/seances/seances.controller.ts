@@ -128,7 +128,7 @@ export class SeancesController {
     });
   }
 
-  @ApiOperation({ summary: "Supprimer une séance (hôte uniquement)" })
+  @ApiOperation({ summary: 'Supprimer une séance (hôte uniquement)' })
   @ApiParam({ name: 'id', description: 'ID de la séance (UUID)' })
   @Delete(':id')
   deleteSeance(@Param('id') id: string, @Req() request: AuthenticatedRequest) {

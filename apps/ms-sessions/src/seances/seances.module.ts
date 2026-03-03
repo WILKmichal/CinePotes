@@ -7,7 +7,14 @@ import { PropositionFilm } from 'schemas/proposition-film.entity';
 import { VoteClassement } from 'schemas/vote-classement.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Seance, Participant, PropositionFilm, VoteClassement])],
+  imports: [
+    TypeOrmModule.forFeature([
+      Seance,
+      Participant,
+      PropositionFilm,
+      VoteClassement,
+    ]),
+  ],
   providers: [SeancesService],
   exports: [SeancesService],
 })
