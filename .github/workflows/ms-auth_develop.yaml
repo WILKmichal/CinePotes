@@ -39,13 +39,11 @@ jobs:
       - name: Install pnpm
         run: npm install -g pnpm
 
-      - name: Install dependencies
-        run: pnpm install
-        working-directory: ./apps/ms-auth
+      - name: Install dependencies (root)
+        run: pnpm install --frozen-lockfile
 
-      - name: Lint
-        run: pnpm run lint
-        working-directory: ./apps/ms-auth
+      - name: Lint ms-auth
+        run: pnpm --filter ms-auth lint
 
   ms_auth-build-test:
     runs-on: ubuntu-latest
@@ -60,20 +58,15 @@ jobs:
       - name: Install pnpm
         run: npm install -g pnpm
 
-      - name: Install dependencies
+      - name: Install dependencies (root)
         run: pnpm install --frozen-lockfile
-        working-directory: ./apps/ms-auth
 
-      - name: Build
-        run: pnpm run build
-        working-directory: ./apps/ms-auth
+      - name: Build ms-auth
+        run: pnpm --filter ms-auth build
 
   ms_auth-jest-test:
     runs-on: ubuntu-latest
     needs: commit-lint
-    defaults:
-      run:
-        working-directory: ./apps/ms-auth
 
     steps:
       - uses: actions/checkout@v4
@@ -84,18 +77,15 @@ jobs:
       - name: Install pnpm
         run: npm install -g pnpm
 
-      - name: Install dependencies
+      - name: Install dependencies (root)
         run: pnpm install --frozen-lockfile
 
-      - name: Run unit tests
-        run: pnpm test
+      - name: Run tests
+        run: pnpm --filter ms-auth test
 
   ms_auth-jest-cov-test:
     runs-on: ubuntu-latest
     needs: commit-lint
-    defaults:
-      run:
-        working-directory: ./apps/ms-auth
 
     steps:
       - uses: actions/checkout@v4
@@ -106,8 +96,8 @@ jobs:
       - name: Install pnpm
         run: npm install -g pnpm
 
-      - name: Install dependencies
+      - name: Install dependencies (root)
         run: pnpm install --frozen-lockfile
 
       - name: Run coverage
-        run: pnpm test:cov
+        run: pnpm --filter ms-auth test:cov
