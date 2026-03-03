@@ -315,4 +315,21 @@ describe('AuthController', () => {
     });
   });
 
+  it('Doit supprimer utilisateur courant avec deleteMe()', async () => {
+    mockNatsClient.send.mockReturnValue(
+      of({ message: 'Compte supprimé avec succès' }),
+    );
+
+    const req = { user: { sub: 'u1' } };
+
+    const result = await controller.deleteMe(req);
+
+    expect(mockNatsClient.send).toHaveBeenCalledWith('auth.delete-me', {
+      userId: 'u1',
+    });
+
+    expect(result).toEqual({ message: 'Compte supprimé avec succès' });
+  });
+
+
 });

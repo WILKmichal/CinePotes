@@ -41,27 +41,13 @@ JWT_EXPIRES_IN=3600s
 
 ```env
 # Serveur
-PORT=3002
 APP_PORT=3002
 
-# Base de donnees
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=postgres
-DB_PASSWORD=
 DB_NAME=mydatabase
-
-# APIs externes
-TMDB_API_KEY=
-TMDB_MS_URL=http://localhost:3333
-REDIS_URL=redis://localhost:6379
-
-# Mail
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=
-SMTP_PASSWORD=
-USE_ETHEREAL=false
+JWT_SECRET=une_clef_complexe_a_changer
+JWT_EXPIRES_IN=3600s
+APP_PORT=3002
+VERIFICATION_MAIL=TRUE
 ```
 
 ### Microservice Library (`apps/ms-library/.env`)
@@ -111,9 +97,46 @@ SMTP_PASSWORD=
 ### Frontend client (`apps/fe-client/.env`)
 
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:3333
-NEXT_PUBLIC_API_BG_URL=http://localhost:3002
+NEXT_PUBLIC_API_URL=http://localhost:3002
 NEXT_PUBLIC_ADMIN_URL=http://localhost:3000
+```
+
+---
+
+### Ms-Library (`apps/ms-library/.env`)
+
+```env
+PORT=3333
+TMDB_API_KEY=
+REDIS_URL=redis://localhost:6379
+REDIS_HOST=localhost
+REDIS_PORT=6379
+TMDB_MS_URL=http://localhost:3333
+NATS_URL=nats://localhost:4222
+```
+### Ms-Auth(`apps/ms-auth/.env`)
+```env
+APP_PORT=3002
+NATS_URL=nats://localhost:4222
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=
+DB_NAME=mydatabase
+JWT_SECRET=
+RESET_PASSWORD_EXPIRES_MINUTES=30
+FRONT_RESET_PASSWORD_URL=http://localhost:3000/reset-password
+VERIFICATION_MAIL=TRUE
+```
+
+### Ms-session(`apps/ms-session/.env`)
+```env
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=
+DB_NAME=mydatabase
+NATS_URL=nats://localhost:4222
 ```
 
 ---

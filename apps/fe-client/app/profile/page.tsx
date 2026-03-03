@@ -25,6 +25,9 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const loadProfile = async () => {
     const token = localStorage.getItem("access_token");
     if (!token) {
@@ -111,6 +114,43 @@ export default function ProfilePage() {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+      router.replace("/");
+      return;
+    }
+
+    try {
+      setIsDeleting(true);
+      setError(null);
+
+      const res = await fetch(`${API_URL}/auth/me`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.status === 401) {
+        localStorage.removeItem("access_token");
+        router.replace("/");
+        return;
+      }
+
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(`HTTP ${res.status} - ${txt}`);
+      }
+
+      localStorage.removeItem("access_token");
+      router.replace("/");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erreur");
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
       <Header />
@@ -143,9 +183,7 @@ export default function ProfilePage() {
 
                   {!isEditingName ? (
                     <div className="flex items-center gap-2">
-                      <p className="border rounded px-3 py-2 w-full bg-gray-50">
-                        {profile.nom}
-                      </p>
+                      <p className="border rounded px-3 py-2 w-full bg-gray-50">{profile.nom}</p>
                       <button
                         type="button"
                         onClick={() => setIsEditingName(true)}
@@ -185,6 +223,16 @@ export default function ProfilePage() {
                     </div>
                   )}
                 </div>
+
+                <div className="max-w-md mx-auto pt-6 border-t">
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
+                  >
+                    Supprimer mon compte
+                  </button>
+                </div>
               </div>
             )}
 
@@ -195,6 +243,35 @@ export default function ProfilePage() {
         </div>
       </main>
       <Footer />
+
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
+            <h2 className="text-lg font-semibold mb-2">Confirmation</h2>
+            <p className="text-gray-700 mb-4">
+              Êtes-vous sûr de vouloir supprimer votre compte ?
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-4 py-2 rounded bg-gray-200 text-gray-800"
+                disabled={isDeleting}
+              >
+                Non
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteAccount}
+                className="px-4 py-2 rounded bg-red-600 text-white disabled:opacity-50"
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Suppression..." : "Oui"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -116,4 +116,10 @@ export class UsersService {
     await this.usersRepository.save(user);
     return this.findProfileById(id);
   }
+
+  async deleteAccount(id: string): Promise<boolean> {
+    const res = await this.usersRepository.delete({ id });
+    return (res.affected ?? 0) > 0;
+  }
+
 }
