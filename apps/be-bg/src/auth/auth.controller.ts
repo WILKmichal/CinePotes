@@ -9,9 +9,9 @@ import {
   Res,
   HttpCode,
   HttpException,
-  UseGuards, 
-  Req, 
-  Patch
+  UseGuards,
+  Req,
+  Patch,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { ClientProxy } from '@nestjs/microservices';
@@ -19,7 +19,6 @@ import { firstValueFrom } from 'rxjs';
 import { ConfigService } from '@nestjs/config';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from './auth.guard';
-
 
 interface MicroserviceError {
   message?: string;
@@ -44,10 +43,7 @@ export class AuthController {
   ): Promise<{ access_token: string }> {
     try {
       return await firstValueFrom(
-        this.natsClient.send<{ access_token: string }>(
-          'auth.login',
-          body,
-        ),
+        this.natsClient.send<{ access_token: string }>('auth.login', body),
       );
     } catch (error: unknown) {
       throw this.handleError(
@@ -66,10 +62,7 @@ export class AuthController {
   ): Promise<{ message: string }> {
     try {
       return await firstValueFrom(
-        this.natsClient.send<{ message: string }>(
-          'auth.register',
-          body,
-        ),
+        this.natsClient.send<{ message: string }>('auth.register', body),
       );
     } catch (error: unknown) {
       throw this.handleError(
@@ -112,16 +105,15 @@ export class AuthController {
     @Body('email') email: string,
   ): Promise<{ message: string }> {
     const expiresInMinutes = Number.parseInt(
-      this.configService.get<string>('RESET_PASSWORD_EXPIRES_MINUTES') ??
-        '30',
+      this.configService.get<string>('RESET_PASSWORD_EXPIRES_MINUTES') ?? '30',
       10,
     );
 
     return await firstValueFrom(
-      this.natsClient.send<{ message: string }>(
-        'auth.forgot-password',
-        { email, expiresInMinutes },
-      ),
+      this.natsClient.send<{ message: string }>('auth.forgot-password', {
+        email,
+        expiresInMinutes,
+      }),
     );
   }
 
@@ -133,10 +125,7 @@ export class AuthController {
   ): Promise<{ message: string }> {
     try {
       return await firstValueFrom(
-        this.natsClient.send<{ message: string }>(
-          'auth.reset-password',
-          body,
-        ),
+        this.natsClient.send<{ message: string }>('auth.reset-password', body),
       );
     } catch (error: unknown) {
       throw this.handleError(
@@ -154,11 +143,7 @@ export class AuthController {
     fallbackMessage: string,
     fallbackStatus: number,
   ): HttpException {
-    if (
-      typeof error === 'object' &&
-      error !== null &&
-      'message' in error
-    ) {
+    if (typeof error === 'object' && error !== null && 'message' in error) {
       const err = error as MicroserviceError;
 
       return new HttpException(
@@ -172,29 +157,37 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(AuthGuard)
-  async me(@Req() req: { user: { sub: string } }) {
+  async me(
+    @Req() req: { user: { sub: string } },
+  ): Promise<{ id: string; username: string; email: string; nom?: string }> {
     return await firstValueFrom(
-      this.natsClient.send('auth.me', { userId: req.user.sub }),
+      this.natsClient.send<{
+        id: string;
+        username: string;
+        email: string;
+        nom?: string;
+      }>('auth.me', { userId: req.user.sub }),
     );
   }
 
- @Patch('me')
+  @Patch('me')
   @UseGuards(AuthGuard)
   async updateMe(
     @Req() req: { user: { sub: string } },
     @Body() body: { nom: string },
-  ) {
+  ): Promise<{ message: string; nom: string }> {
     if (!body?.nom?.trim()) {
       throw new HttpException('Le nom est requis', HttpStatus.BAD_REQUEST);
     }
 
     return await firstValueFrom(
-      this.natsClient.send('auth.update-name', {
-        userId: req.user.sub,
-        nom: body.nom.trim(),
-      }),
+      this.natsClient.send<{ message: string; nom: string }>(
+        'auth.update-name',
+        {
+          userId: req.user.sub,
+          nom: body.nom.trim(),
+        },
+      ),
     );
   }
-
-
 }
