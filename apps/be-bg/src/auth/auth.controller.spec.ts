@@ -3,6 +3,7 @@ import { AuthController } from './auth.controller';
 import { ConfigService } from '@nestjs/config';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { of, throwError } from 'rxjs';
+import { AuthGuard } from './auth.guard';
 
 const mockNatsClient = {
   send: jest.fn(),
@@ -10,6 +11,9 @@ const mockNatsClient = {
 
 const mockConfigService = {
   get: jest.fn(),
+};
+const mockAuthGuard = {
+  canActivate: jest.fn(() => true),
 };
 
 describe('AuthController', () => {
@@ -28,7 +32,9 @@ describe('AuthController', () => {
         { provide: 'NATS_SERVICE', useValue: mockNatsClient },
         { provide: ConfigService, useValue: mockConfigService },
       ],
-    }).compile();
+    }).overrideGuard(AuthGuard)
+      .useValue(mockAuthGuard)
+      .compile();
 
     controller = module.get<AuthController>(AuthController);
   });
