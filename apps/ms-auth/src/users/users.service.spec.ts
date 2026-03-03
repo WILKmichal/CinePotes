@@ -29,7 +29,8 @@ describe('UsersService', () => {
         UsersService,
         {
           provide: getRepositoryToken(User),
-          useValue: { findOne: jest.fn(), save: jest.fn(), create: jest.fn() },
+          useValue: { findOne: jest.fn(), save: jest.fn(), create: jest.fn(), delete: jest.fn() },
+
         },
       ],
     }).compile();
@@ -269,61 +270,77 @@ describe('UsersService', () => {
     });
   });
 
-describe('resetPasswordWithToken', () => {
-  it('doit retourner false si token non trouve', async () => {
-    usersRepository.findOne.mockResolvedValue(null);
+  describe('resetPasswordWithToken', () => {
+    it('doit retourner false si token non trouve', async () => {
+      usersRepository.findOne.mockResolvedValue(null);
 
-    const result = await service.resetPasswordWithToken('bad', 'NewPass123!');
+      const result = await service.resetPasswordWithToken('bad', 'NewPass123!');
 
-    expect(result).toBe(false);
+      expect(result).toBe(false);
+    });
+
+    it('doit retourner false si expiration manquante', async () => {
+      const mockUser = { rinitialiser_mdp_token_hash: 'h', reinitialiser_mdp_expires_at: null } as User;
+      usersRepository.findOne.mockResolvedValue(mockUser);
+
+      const result = await service.resetPasswordWithToken('token', 'NewPass123!');
+
+      expect(result).toBe(false);
+    });
+
+    it('doit retourner false si token est expire', async () => {
+      const mockUser = {
+        rinitialiser_mdp_token_hash: 'h',
+        reinitialiser_mdp_expires_at: new Date(Date.now() - 60_000),
+      } as User;
+      usersRepository.findOne.mockResolvedValue(mockUser);
+
+      const result = await service.resetPasswordWithToken('token', 'NewPass123!');
+
+      expect(result).toBe(false);
+    });
+
+    it('doit reset le mot de passe et effacer les champs de token de reinitialisation quand le token est valide', async () => {
+      const mockUser = {
+        mot_de_passe_hash: 'old-hash',
+        rinitialiser_mdp_token_hash: 'hashed-token',
+        reinitialiser_mdp_expires_at: new Date(Date.now() + 60_000),
+      } as User;
+
+      usersRepository.findOne.mockResolvedValue(mockUser);
+      usersRepository.save.mockResolvedValue(mockUser);
+
+      const update = jest.fn().mockReturnThis();
+      const digest = jest.fn().mockReturnValue('hashed-token');
+      (createHash as jest.Mock).mockReturnValue({ update, digest });
+      (bcrypt.hash as jest.Mock).mockResolvedValue('new-hash');
+
+      const result = await service.resetPasswordWithToken('raw-token', 'NewPass123!');
+
+      expect(result).toBe(true);
+      expect(mockUser.mot_de_passe_hash).toBe('new-hash');
+      expect(mockUser.rinitialiser_mdp_token_hash).toBeNull();
+      expect(mockUser.reinitialiser_mdp_expires_at).toBeNull();
+      expect(usersRepository.save).toHaveBeenCalledWith(mockUser);
+    });
   });
+  describe('deleteAccount', () => {
+    it('should return true when a user is deleted', async () => {
+      usersRepository.delete.mockResolvedValue({ affected: 1 } as any);
 
-  it('doit retourner false si expiration manquante', async () => {
-    const mockUser = { rinitialiser_mdp_token_hash: 'h', reinitialiser_mdp_expires_at: null } as User;
-    usersRepository.findOne.mockResolvedValue(mockUser);
+      const result = await service.deleteAccount('u1');
 
-    const result = await service.resetPasswordWithToken('token', 'NewPass123!');
+      expect(usersRepository.delete).toHaveBeenCalledWith({ id: 'u1' });
+      expect(result).toBe(true);
+    });
 
-    expect(result).toBe(false);
+    it('should return false when no user is deleted', async () => {
+      usersRepository.delete.mockResolvedValue({ affected: 0 } as any);
+
+      const result = await service.deleteAccount('unknown');
+
+      expect(usersRepository.delete).toHaveBeenCalledWith({ id: 'unknown' });
+      expect(result).toBe(false);
+    });
   });
-
-  it('doit retourner false si token est expire', async () => {
-    const mockUser = {
-      rinitialiser_mdp_token_hash: 'h',
-      reinitialiser_mdp_expires_at: new Date(Date.now() - 60_000),
-    } as User;
-    usersRepository.findOne.mockResolvedValue(mockUser);
-
-    const result = await service.resetPasswordWithToken('token', 'NewPass123!');
-
-    expect(result).toBe(false);
-  });
-
-  it('doit reset le mot de passe et effacer les champs de token de reinitialisation quand le token est valide', async () => {
-    const mockUser = {
-      mot_de_passe_hash: 'old-hash',
-      rinitialiser_mdp_token_hash: 'hashed-token',
-      reinitialiser_mdp_expires_at: new Date(Date.now() + 60_000),
-    } as User;
-
-    usersRepository.findOne.mockResolvedValue(mockUser);
-    usersRepository.save.mockResolvedValue(mockUser);
-
-    const update = jest.fn().mockReturnThis();
-    const digest = jest.fn().mockReturnValue('hashed-token');
-    (createHash as jest.Mock).mockReturnValue({ update, digest });
-    (bcrypt.hash as jest.Mock).mockResolvedValue('new-hash');
-
-    const result = await service.resetPasswordWithToken('raw-token', 'NewPass123!');
-
-    expect(result).toBe(true);
-    expect(mockUser.mot_de_passe_hash).toBe('new-hash');
-    expect(mockUser.rinitialiser_mdp_token_hash).toBeNull();
-    expect(mockUser.reinitialiser_mdp_expires_at).toBeNull();
-    expect(usersRepository.save).toHaveBeenCalledWith(mockUser);
-  });
-});
-
-  
-
 });
