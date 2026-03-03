@@ -2,8 +2,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
-import { HttpStatus, BadRequestException } from '@nestjs/common';
+import { HttpStatus, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { AuthGuard } from '../../../be-bg/src/auth/auth.guard';
+
 
 const mockAuthService = { signIn: jest.fn() };
 const mockUsersService = {
@@ -13,6 +14,7 @@ const mockUsersService = {
   resetPasswordWithToken: jest.fn(),
   findProfileById: jest.fn(),
   updateProfileNom: jest.fn(),
+  deleteAccount: jest.fn(),
 };
 
 const mockNatsClient = { emit: jest.fn() };
@@ -143,4 +145,25 @@ describe('AuthController', () => {
     expect(mockUsersService.updateProfileNom).toHaveBeenCalledWith('u1', 'NouveauNom');
     expect(result).toEqual(updatedUser);
   });
+
+  it('should delete account on deleteMe', async () => {
+    mockUsersService.deleteAccount.mockResolvedValue(true);
+
+    const result = await controller.deleteMe({ userId: 'u1' });
+
+    expect(mockUsersService.deleteAccount).toHaveBeenCalledWith('u1');
+    expect(mockNatsClient.emit).toHaveBeenCalledWith('user.deleted', { userId: 'u1' });
+    expect(result).toEqual({ message: 'Compte supprimé avec succès' });
+  });
+
+it('should throw UnauthorizedException when deleting unknown user on deleteMe', async () => {
+    mockUsersService.deleteAccount.mockResolvedValue(false);
+
+    await expect(controller.deleteMe({ userId: 'unknown' })).rejects.toThrow(
+      UnauthorizedException,
+    );
+
+    expect(mockNatsClient.emit).not.toHaveBeenCalled();
+  });
+
 });
