@@ -14,7 +14,16 @@ import type { Response } from 'express';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { ConfigService } from '@nestjs/config';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiBody,
+  ApiQuery,
+  ApiResponse,
+} from '@nestjs/swagger';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
 
 interface MicroserviceError {
   message?: string;
@@ -34,50 +43,48 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(200)
+  @ApiOperation({ summary: 'Connexion utilisateur' })
+  @ApiBody({ type: LoginDto })
+  @ApiResponse({ status: 200, description: 'Retourne un access_token JWT', schema: { example: { access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' } } })
+  @ApiResponse({ status: 401, description: 'Identifiants invalides ou email non confirmé' })
   async login(
-    @Body() body: { username: string; password: string },
+    @Body() body: LoginDto,
   ): Promise<{ access_token: string }> {
     try {
       return await firstValueFrom(
-        this.natsClient.send<{ access_token: string }>(
-          'auth.login',
-          body,
-        ),
+        this.natsClient.send<{ access_token: string }>('auth.login', body),
       );
     } catch (error: unknown) {
-      throw this.handleError(
-        error,
-        'Erreur connexion',
-        HttpStatus.UNAUTHORIZED,
-      );
+      throw this.handleError(error, 'Erreur connexion', HttpStatus.UNAUTHORIZED);
     }
   }
 
   /* ================= REGISTER ================= */
 
   @Post('register')
+  @ApiOperation({ summary: 'Inscription utilisateur' })
+  @ApiBody({ type: RegisterDto })
+  @ApiResponse({ status: 201, description: 'Email de confirmation envoyé', schema: { example: { status: 201, message: 'Email de confirmation envoyé' } } })
+  @ApiResponse({ status: 400, description: 'Données invalides ou email déjà utilisé' })
   async register(
-    @Body() body: Record<string, unknown>,
+    @Body() body: RegisterDto,
   ): Promise<{ message: string }> {
     try {
       return await firstValueFrom(
-        this.natsClient.send<{ message: string }>(
-          'auth.register',
-          body,
-        ),
+        this.natsClient.send<{ message: string }>('auth.register', body),
       );
     } catch (error: unknown) {
-      throw this.handleError(
-        error,
-        'Erreur inscription',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw this.handleError(error, 'Erreur inscription', HttpStatus.BAD_REQUEST);
     }
   }
 
   /* ================= CONFIRM EMAIL ================= */
 
   @Get('confirm-email')
+  @ApiOperation({ summary: 'Confirmation email via token' })
+  @ApiQuery({ name: 'token', required: true, description: 'Token de confirmation reçu par email', example: 'uuid-token-ici' })
+  @ApiResponse({ status: 302, description: 'Redirige vers le frontend après confirmation' })
+  @ApiResponse({ status: 400, description: 'Lien invalide ou expiré' })
   async confirmEmail(
     @Query('token') token: string,
     @Res() res: Response,
@@ -103,42 +110,41 @@ export class AuthController {
   /* ================= FORGOT PASSWORD ================= */
 
   @Post('forgot-password')
+  @ApiOperation({ summary: 'Demande de réinitialisation de mot de passe' })
+  @ApiBody({ schema: { properties: { email: { type: 'string', example: 'user@email.com' } }, required: ['email'] } })
+  @ApiResponse({ status: 201, description: 'Email envoyé si le compte existe', schema: { example: { message: 'Si un compte existe avec cette adresse mail, un email a été envoyé' } } })
   async forgotPassword(
     @Body('email') email: string,
   ): Promise<{ message: string }> {
     const expiresInMinutes = Number.parseInt(
-      this.configService.get<string>('RESET_PASSWORD_EXPIRES_MINUTES') ??
-        '30',
+      this.configService.get<string>('RESET_PASSWORD_EXPIRES_MINUTES') ?? '30',
       10,
     );
 
     return await firstValueFrom(
-      this.natsClient.send<{ message: string }>(
-        'auth.forgot-password',
-        { email, expiresInMinutes },
-      ),
+      this.natsClient.send<{ message: string }>('auth.forgot-password', {
+        email,
+        expiresInMinutes,
+      }),
     );
   }
 
   /* ================= RESET PASSWORD ================= */
 
   @Post('reset-password')
+  @ApiOperation({ summary: 'Réinitialisation du mot de passe' })
+  @ApiBody({ schema: { properties: { token: { type: 'string', example: 'reset-token-reçu-par-email' }, newPassword: { type: 'string', example: 'nouveauMotDePasse123' } }, required: ['token', 'newPassword'] } })
+  @ApiResponse({ status: 201, description: 'Mot de passe réinitialisé avec succès', schema: { example: { message: 'Mot de passe réinitialisé avec succès' } } })
+  @ApiResponse({ status: 400, description: 'Lien invalide ou expiré' })
   async resetPassword(
     @Body() body: { token: string; newPassword: string },
   ): Promise<{ message: string }> {
     try {
       return await firstValueFrom(
-        this.natsClient.send<{ message: string }>(
-          'auth.reset-password',
-          body,
-        ),
+        this.natsClient.send<{ message: string }>('auth.reset-password', body),
       );
     } catch (error: unknown) {
-      throw this.handleError(
-        error,
-        'Lien invalide ou expiré',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw this.handleError(error, 'Lien invalide ou expiré', HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -149,13 +155,8 @@ export class AuthController {
     fallbackMessage: string,
     fallbackStatus: number,
   ): HttpException {
-    if (
-      typeof error === 'object' &&
-      error !== null &&
-      'message' in error
-    ) {
+    if (typeof error === 'object' && error !== null && 'message' in error) {
       const err = error as MicroserviceError;
-
       return new HttpException(
         err.message ?? fallbackMessage,
         err.statusCode ?? fallbackStatus,
