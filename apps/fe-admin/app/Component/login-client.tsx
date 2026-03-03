@@ -1,13 +1,13 @@
 "use client";
-import React, { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import React, { useEffect, useState } from "react";
+
 
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect");
 
-  const [mode, setMode] = useState<"login" | "register">("login");
   const [username, setUsername] = useState("");
   const [nom, setNom] = useState("");
   const [password, setPassword] = useState("");
@@ -16,6 +16,13 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002";
+  const requestedMode = searchParams.get("mode") === "register" ? "register" : "login";
+  const [mode, setMode] = useState<"login" | "register">(requestedMode);
+
+useEffect(() => {
+  setMode(requestedMode);
+}, [requestedMode]);
+
 
   const onLoginSuccess = (token: string) => {
     localStorage.setItem("access_token", token);

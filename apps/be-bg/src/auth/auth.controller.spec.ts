@@ -3,6 +3,7 @@ import { AuthController } from './auth.controller';
 import { ConfigService } from '@nestjs/config';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { of, throwError } from 'rxjs';
+import { AuthGuard } from './auth.guard';
 
 const mockNatsClient = {
   send: jest.fn(),
@@ -10,6 +11,9 @@ const mockNatsClient = {
 
 const mockConfigService = {
   get: jest.fn(),
+};
+const mockAuthGuard = {
+  canActivate: jest.fn(() => true),
 };
 
 describe('AuthController', () => {
@@ -22,14 +26,15 @@ describe('AuthController', () => {
       if (key === 'RESET_PASSWORD_EXPIRES_MINUTES') return '30';
       return undefined;
     });
-
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
       providers: [
         { provide: 'NATS_SERVICE', useValue: mockNatsClient },
         { provide: ConfigService, useValue: mockConfigService },
       ],
-    }).compile();
+    }).overrideGuard(AuthGuard)
+      .useValue(mockAuthGuard)
+      .compile();
 
     controller = module.get<AuthController>(AuthController);
   });
@@ -247,4 +252,67 @@ describe('AuthController', () => {
       }),
     ).rejects.toThrow(HttpException);
   });
+
+    it('should return current user profile on me()', async () => {
+      mockNatsClient.send.mockReturnValue(
+        of({
+          id: 'u1',
+          nom: 'Mehdi',
+          email: 'mehdi@test.com',
+          role: 'user',
+          email_verifie: true,
+          cree_le: '2026-03-02T00:00:00.000Z',
+        }),
+      );
+
+      const req = { user: { sub: 'u1' } };
+
+      const result = await controller.me(req);
+
+      expect(mockNatsClient.send).toHaveBeenCalledWith('auth.me', {
+        userId: 'u1',
+      });
+
+      expect(result).toEqual({
+        id: 'u1',
+        nom: 'Mehdi',
+        email: 'mehdi@test.com',
+        role: 'user',
+        email_verifie: true,
+        cree_le: '2026-03-02T00:00:00.000Z',
+      });
+    });
+
+  it('should update user name on updateMe()', async () => {
+    mockNatsClient.send.mockReturnValue(
+      of({
+        id: 'u1',
+        nom: 'NouveauNom',
+        email: 'mehdi@test.com',
+        role: 'user',
+        email_verifie: true,
+        cree_le: '2026-03-02T00:00:00.000Z',
+      }),
+    );
+
+    const req = { user: { sub: 'u1' } };
+    const body = { nom: '   NouveauNom   ' };
+
+    const result = await controller.updateMe(req, body);
+
+    expect(mockNatsClient.send).toHaveBeenCalledWith('auth.update-name', {
+      userId: 'u1',
+      nom: 'NouveauNom',
+    });
+
+    expect(result).toEqual({
+      id: 'u1',
+      nom: 'NouveauNom',
+      email: 'mehdi@test.com',
+      role: 'user',
+      email_verifie: true,
+      cree_le: '2026-03-02T00:00:00.000Z',
+    });
+  });
+
 });
