@@ -22,7 +22,6 @@ describe('AuthController', () => {
       if (key === 'RESET_PASSWORD_EXPIRES_MINUTES') return '30';
       return undefined;
     });
-
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
       providers: [
