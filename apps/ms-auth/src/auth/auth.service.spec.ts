@@ -5,24 +5,13 @@ import { UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcryptjs';
 
-/**
- * ✅ MOCK GLOBAL DE BCRYPT
- * → évite "Cannot redefine property"
- */
-jest.mock('bcryptjs', () => ({
-  compare: jest.fn(),
-}));
+jest.mock('bcryptjs', () => ({ compare: jest.fn() }));
 
 describe('AuthService', () => {
   let service: AuthService;
 
-  const mockUsersService = {
-    findOne: jest.fn(),
-  };
-
-  const mockJwtService = {
-    signAsync: jest.fn(),
-  };
+  const mockUsersService = { findOne: jest.fn() };
+  const mockJwtService = { signAsync: jest.fn() };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -32,62 +21,32 @@ describe('AuthService', () => {
         { provide: JwtService, useValue: mockJwtService },
       ],
     }).compile();
-
     service = module.get<AuthService>(AuthService);
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
+  afterEach(() => jest.clearAllMocks());
 
   it('should throw if user not found', async () => {
     mockUsersService.findOne.mockResolvedValue(null);
-
-    await expect(
-      service.signIn('test@mail.com', 'password'),
-    ).rejects.toThrow(UnauthorizedException);
+    await expect(service.signIn('test@mail.com', 'password')).rejects.toThrow(UnauthorizedException);
   });
 
   it('should throw if email not verified', async () => {
-    mockUsersService.findOne.mockResolvedValue({
-      email_verifie: false,
-    });
-
-    await expect(
-      service.signIn('test@mail.com', 'password'),
-    ).rejects.toThrow('Merci de confirmer votre email');
+    mockUsersService.findOne.mockResolvedValue({ email_verifie: false });
+    await expect(service.signIn('test@mail.com', 'password')).rejects.toThrow('Merci de confirmer votre email');
   });
 
   it('should throw if password is invalid', async () => {
-    mockUsersService.findOne.mockResolvedValue({
-      id: 1,
-      email: 'test@mail.com',
-      email_verifie: true,
-      mot_de_passe_hash: 'hashed',
-      role: 'user',
-    });
-
+    mockUsersService.findOne.mockResolvedValue({ id: 1, email: 'test@mail.com', email_verifie: true, mot_de_passe_hash: 'hashed', role: 'user' });
     (bcrypt.compare as jest.Mock).mockResolvedValue(false);
-
-    await expect(
-      service.signIn('test@mail.com', 'wrong'),
-    ).rejects.toThrow('Mot de passe invalide');
+    await expect(service.signIn('test@mail.com', 'wrong')).rejects.toThrow('Mot de passe invalide');
   });
 
   it('should return access_token on success', async () => {
-    mockUsersService.findOne.mockResolvedValue({
-      id: 1,
-      email: 'test@mail.com',
-      email_verifie: true,
-      mot_de_passe_hash: 'hashed',
-      role: 'user',
-    });
-
+    mockUsersService.findOne.mockResolvedValue({ id: 1, email: 'test@mail.com', email_verifie: true, mot_de_passe_hash: 'hashed', role: 'user' });
     (bcrypt.compare as jest.Mock).mockResolvedValue(true);
     mockJwtService.signAsync.mockResolvedValue('jwt-token');
-
     const result = await service.signIn('test@mail.com', 'password');
-
     expect(result).toEqual({ access_token: 'jwt-token' });
   });
 });

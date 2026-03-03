@@ -3,7 +3,6 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TestController } from './test.controller';
 import { AuthModule } from './auth/auth.module';
-import { UsersModule } from './users/users.module';
 import { SeancesModule } from './seances/seances.module';
 import { ListsModule } from './lists/lists.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -32,7 +31,6 @@ import { LibraryModule } from './services/library/library.module';
     }),
     LibraryModule,
     AuthModule,
-    UsersModule,
     SeancesModule,
     ListsModule,
     NatsModule,
