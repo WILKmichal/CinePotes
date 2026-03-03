@@ -43,10 +43,18 @@ export class SeancesService {
   ): Promise<Seance> {
     const existingSeance = await this.findByProprietaire(proprietaire_id);
     if (existingSeance) {
-      throw new RpcException({
-        statusCode: 409,
-        message: 'Vous avez déjà une séance active...',
-      });
+      // Si la séance existante est terminée ou annulée, on la nettoie silencieusement
+      if (
+        existingSeance.statut === SeanceStatut.TERMINEE ||
+        existingSeance.statut === SeanceStatut.ANNULEE
+      ) {
+        await this.seancesRepository.delete({ id: existingSeance.id });
+      } else {
+        throw new RpcException({
+          statusCode: 409,
+          message: 'Vous avez déjà une séance active...',
+        });
+      }
     }
     const seance = this.seancesRepository.create({
       nom: createSeanceDto.nom,
@@ -108,41 +116,51 @@ export class SeancesService {
 
     return { participant: savedParticipant, seance };
   }
-  // Récupère la séance active créée par l'utilisateur
+  // Récupère la séance active créée par l'utilisateur (exclut terminées et annulées)
   async findByProprietaire(proprietaire_id: string): Promise<Seance | null> {
     return this.seancesRepository.findOne({
-      where: { proprietaire_id, est_actif: true },
+      where: [
+        { proprietaire_id, statut: SeanceStatut.EN_ATTENTE },
+        { proprietaire_id, statut: SeanceStatut.EN_COURS },
+      ],
       order: { date: 'DESC' },
     });
   }
 
   // Récupère la séance active de l'utilisateur (proprio ou participant)
   async findActiveSeanceForUser(utilisateur_id: string): Promise<Seance | null> {
-    // Vérifie d'abord si l'utilisateur est propriétaire
+    // Vérifie d'abord si l'utilisateur est propriétaire d'une séance en cours
     const ownedSeance = await this.findByProprietaire(utilisateur_id);
     if (ownedSeance) return ownedSeance;
 
-    // Sinon, cherche parmi les participations actives
+    // Sinon, cherche parmi les participations dont la séance est encore active
     const participant = await this.participantsRepository.findOne({
       where: { utilisateur_id },
       relations: ['seance'],
       order: { a_rejoint_le: 'DESC' },
     });
 
-    if (participant?.seance?.est_actif) return participant.seance;
+    const seance = participant?.seance;
+    if (
+      seance &&
+      seance.statut !== SeanceStatut.TERMINEE &&
+      seance.statut !== SeanceStatut.ANNULEE
+    ) {
+      return seance;
+    }
     return null;
   }
-  // Trouve une séance par son code
+  // Trouve une séance par son code (uniquement si en attente)
   async findByCode(code: string): Promise<Seance> {
     const seance = await this.seancesRepository.findOneBy({
       code,
-      est_actif: true,
+      statut: SeanceStatut.EN_ATTENTE,
     });
 
     if (!seance) {
       throw new RpcException({
         statusCode: 404,
-        message: 'Séance introuvable',
+        message: 'Séance introuvable ou déjà commencée',
       });
     }
 
@@ -151,6 +169,11 @@ export class SeancesService {
 
   // Récupère les participants d'une séance avec les infos utilisateur
   async getParticipants(seance_id: string): Promise<any[]> {
+    const seance = await this.seancesRepository.findOneBy({ id: seance_id });
+    if (!seance) {
+      throw new RpcException({ statusCode: 404, message: 'Séance introuvable' });
+    }
+
     const participants = await this.participantsRepository.find({
       where: { seance_id },
       relations: ['utilisateur'],
@@ -188,8 +211,23 @@ export class SeancesService {
     return { message: 'Séance supprimée' };
   }
 
-  // Quitter une séance (suppression d'un participant)
+  // Quitter une séance : si proprio → supprime la séance, sinon → quitte comme participant
   async leave(seance_id: string, utilisateur_id: string) {
+    const seance = await this.seancesRepository.findOneBy({ id: seance_id });
+
+    if (!seance) {
+      // Séance déjà supprimée, nettoyer quand même la participation si elle existe
+      await this.participantsRepository.delete({ seance_id, utilisateur_id });
+      return { message: 'Séance déjà supprimée' };
+    }
+
+    if (seance.proprietaire_id === utilisateur_id) {
+      // L'hôte quitte → supprimer toute la séance (participants en cascade)
+      await this.seancesRepository.delete({ id: seance_id });
+      return { message: 'Séance supprimée' };
+    }
+
+    // Participant normal → retirer uniquement sa participation
     const result = await this.participantsRepository.delete({
       seance_id,
       utilisateur_id,

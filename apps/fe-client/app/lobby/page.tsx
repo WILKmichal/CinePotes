@@ -264,7 +264,6 @@ export default function LobbyPage() {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasNoSession, setHasNoSession] = useState(false);
-  const [email, setEmail] = useState("");
   const [copied, setCopied] = useState(false);
   const [launching, setLaunching] = useState(false);
 
@@ -285,11 +284,20 @@ export default function LobbyPage() {
     const token = getToken();
     if (!token) { router.push("/"); return; }
 
-    // Si on a un résultat de classement actif, y retourner
+    // Si on a un résultat de classement actif, vérifier que la séance existe encore avant de rediriger
     const classementSeanceId = sessionStorage.getItem("classement_seance_id");
     if (classementSeanceId) {
-      router.push(`/classement?seanceId=${classementSeanceId}`);
-      return;
+      const checkRes = await fetch(`${API_URL}/seances/${classementSeanceId}/participants`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (checkRes.ok) {
+        router.push(`/classement?seanceId=${classementSeanceId}`);
+        return;
+      }
+      // Séance supprimée → nettoyer et continuer normalement
+      sessionStorage.removeItem("classement_seance_id");
+      sessionStorage.removeItem("seance_proprietaire_id");
+      localStorage.removeItem("joined_seance");
     }
 
     if (showLoader) setLoading(true);
@@ -373,11 +381,6 @@ export default function LobbyPage() {
     await navigator.clipboard.writeText(seance.code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleInviteByEmail = (e: React.FormEvent) => {
-    e.preventDefault();
-    setEmail("");
   };
 
   const handleLaunch = async () => {
@@ -487,47 +490,26 @@ export default function LobbyPage() {
               </div>
             </div>
 
-            {/* Code + email */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
-                <div className="flex items-center justify-between text-xs font-semibold text-gray-500 uppercase tracking-widest">
-                  <div className="flex items-center gap-1.5">
-                    <span>📋</span>
-                    <span>Code salle</span>
-                  </div>
-                  <span className="text-green-500 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full text-xs">
-                    OUVERT
-                  </span>
+            {/* Code salle */}
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
+              <div className="flex items-center justify-between text-xs font-semibold text-gray-500 uppercase tracking-widest">
+                <div className="flex items-center gap-1.5">
+                  <span>📋</span>
+                  <span>Code salle</span>
                 </div>
-                <p className="text-3xl font-black text-center tracking-[0.3em] text-[#1B3A5C] font-mono">
-                  {seance.code}
-                </p>
-                <button
-                  onClick={handleCopyCode}
-                  className="w-full bg-[#1B3A5C] text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-[#14305a] transition-colors"
-                >
-                  📋 {copied ? "Copié !" : "Copier le code"}
-                </button>
+                <span className="text-green-500 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full text-xs">
+                  OUVERT
+                </span>
               </div>
-
-              <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 uppercase tracking-widest">
-                  <span>✉️</span>
-                  <span>Inviter par email</span>
-                </div>
-                <form onSubmit={handleInviteByEmail} className="flex gap-2">
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="adresse@mail.com"
-                    className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]/20"
-                  />
-                  <button type="submit" className="bg-[#1B3A5C] text-white px-4 py-2.5 rounded-xl hover:bg-[#14305a] transition-colors">
-                    ➤
-                  </button>
-                </form>
-              </div>
+              <p className="text-3xl font-black text-center tracking-[0.3em] text-[#1B3A5C] font-mono">
+                {seance.code}
+              </p>
+              <button
+                onClick={handleCopyCode}
+                className="w-full bg-[#1B3A5C] text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-[#14305a] transition-colors"
+              >
+                📋 {copied ? "Copié !" : "Copier le code"}
+              </button>
             </div>
 
             {/* Participants */}

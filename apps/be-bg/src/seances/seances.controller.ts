@@ -11,7 +11,7 @@ import {
   HttpException,
   Inject,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { AuthGuard } from '../auth/auth.guard';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import {
@@ -36,7 +36,7 @@ interface RpcError {
 @ApiTags('Seances')
 @ApiBearerAuth()
 @Controller('seances')
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard)
 export class SeancesController {
   constructor(
     @Inject('NATS_SERVICE') private readonly natsClient: ClientProxy,

@@ -1,15 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { RpcException } from '@nestjs/microservices';
 import { SeancesService } from './seances.service';
 import { Seance, SeanceStatut } from 'schemas/seance.entity';
 import { Participant } from 'schemas/participant.entity';
+import { PropositionFilm } from 'schemas/proposition-film.entity';
+import { VoteClassement } from 'schemas/vote-classement.entity';
 
 describe('SeancesService', () => {
   let service: SeancesService;
-  let seanceRepository: jest.Mocked<Repository<Seance>>;
-  let participantRepository: jest.Mocked<Repository<Participant>>;
   const mockSeanceRepository = {
     create: jest.fn(),
     save: jest.fn(),
@@ -23,8 +22,26 @@ describe('SeancesService', () => {
     create: jest.fn(),
     save: jest.fn(),
     find: jest.fn(),
+    findOne: jest.fn(),
     findOneBy: jest.fn(),
     delete: jest.fn(),
+    count: jest.fn(),
+  };
+
+  const mockPropositionRepository = {
+    create: jest.fn(),
+    save: jest.fn(),
+    find: jest.fn(),
+    delete: jest.fn(),
+    count: jest.fn(),
+  };
+
+  const mockVoteRepository = {
+    create: jest.fn(),
+    save: jest.fn(),
+    find: jest.fn(),
+    delete: jest.fn(),
+    count: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -39,11 +56,18 @@ describe('SeancesService', () => {
           provide: getRepositoryToken(Participant),
           useValue: mockParticipantRepository,
         },
+        {
+          provide: getRepositoryToken(PropositionFilm),
+          useValue: mockPropositionRepository,
+        },
+        {
+          provide: getRepositoryToken(VoteClassement),
+          useValue: mockVoteRepository,
+        },
       ],
     }).compile();
 
     service = module.get<SeancesService>(SeancesService);
-
     // Reset mocks avant chaque test
     jest.clearAllMocks();
   });
@@ -125,7 +149,7 @@ describe('SeancesService', () => {
     });
 
     it('doit rejeter si le propriétaire a déjà une séance active', async () => {
-      const existingSeance = { id: 'existing-id', est_actif: true };
+      const existingSeance = { id: 'existing-id', statut: SeanceStatut.EN_ATTENTE };
       mockSeanceRepository.findOne.mockResolvedValue(existingSeance as Seance);
 
       await expect(
@@ -227,7 +251,7 @@ describe('SeancesService', () => {
 
   describe('findByCode', () => {
     it('doit retourner la séance correspondant au code', async () => {
-      const mockSeance = { id: 'seance-id', code: 'ABC123', est_actif: true };
+      const mockSeance = { id: 'seance-id', code: 'ABC123', statut: SeanceStatut.EN_ATTENTE };
       mockSeanceRepository.findOneBy.mockResolvedValue(mockSeance as Seance);
 
       const result = await service.findByCode('ABC123');
@@ -263,6 +287,7 @@ describe('SeancesService', () => {
           utilisateur: { id: 'user-2', nom: 'Bob', email: 'bob@test.com' },
         },
       ];
+      mockSeanceRepository.findOneBy.mockResolvedValue({ id: 'seance-id' } as Seance);
       mockParticipantRepository.find.mockResolvedValue(
         mockParticipants as Participant[],
       );
@@ -275,19 +300,29 @@ describe('SeancesService', () => {
     });
 
     it('doit retourner un tableau vide si pas de participants', async () => {
+      mockSeanceRepository.findOneBy.mockResolvedValue({ id: 'seance-id' } as Seance);
       mockParticipantRepository.find.mockResolvedValue([]);
 
       const result = await service.getParticipants('seance-id');
 
       expect(result).toEqual([]);
     });
+
+    it('doit rejeter si la séance est introuvable', async () => {
+      mockSeanceRepository.findOneBy.mockResolvedValue(null);
+
+      await expect(service.getParticipants('seance-inconnue')).rejects.toThrow(RpcException);
+    });
   });
 
   describe('leave', () => {
     const mockSeanceId = 'seance-id-123';
     const mockUtilisateurId = 'user-id-123';
+    const mockProprietaireId = 'owner-id-456';
 
     it('doit permettre à un participant de quitter', async () => {
+      const mockSeance = { id: mockSeanceId, proprietaire_id: mockProprietaireId };
+      mockSeanceRepository.findOneBy.mockResolvedValue(mockSeance as Seance);
       mockParticipantRepository.delete.mockResolvedValue({
         affected: 1,
         raw: {},
@@ -299,6 +334,8 @@ describe('SeancesService', () => {
     });
 
     it("doit rejeter si l'utilisateur n'est pas participant", async () => {
+      const mockSeance = { id: mockSeanceId, proprietaire_id: mockProprietaireId };
+      mockSeanceRepository.findOneBy.mockResolvedValue(mockSeance as Seance);
       mockParticipantRepository.delete.mockResolvedValue({
         affected: 0,
         raw: {},
@@ -307,6 +344,26 @@ describe('SeancesService', () => {
       await expect(
         service.leave(mockSeanceId, mockUtilisateurId),
       ).rejects.toThrow(RpcException);
+    });
+
+    it("doit supprimer la séance si c'est le propriétaire qui quitte", async () => {
+      const mockSeance = { id: mockSeanceId, proprietaire_id: mockUtilisateurId };
+      mockSeanceRepository.findOneBy.mockResolvedValue(mockSeance as Seance);
+      mockSeanceRepository.delete.mockResolvedValue({ affected: 1, raw: {} });
+
+      const result = await service.leave(mockSeanceId, mockUtilisateurId);
+
+      expect(result.message).toBe('Séance supprimée');
+      expect(mockSeanceRepository.delete).toHaveBeenCalledWith({ id: mockSeanceId });
+    });
+
+    it('doit gérer le cas où la séance a déjà été supprimée', async () => {
+      mockSeanceRepository.findOneBy.mockResolvedValue(null);
+      mockParticipantRepository.delete.mockResolvedValue({ affected: 0, raw: {} });
+
+      const result = await service.leave(mockSeanceId, mockUtilisateurId);
+
+      expect(result.message).toBe('Séance déjà supprimée');
     });
   });
 
@@ -345,6 +402,276 @@ describe('SeancesService', () => {
           SeanceStatut.EN_COURS,
         ),
       ).rejects.toThrow(RpcException);
+    });
+  });
+
+  // ---- findActiveSeanceForUser ----
+
+  describe('findActiveSeanceForUser', () => {
+    const mockUserId = 'user-id-123';
+
+    it('doit retourner la séance si utilisateur est propriétaire', async () => {
+      const mockSeance = {
+        id: 'seance-id',
+        proprietaire_id: mockUserId,
+        statut: SeanceStatut.EN_ATTENTE,
+      };
+      mockSeanceRepository.findOne.mockResolvedValue(mockSeance as Seance);
+
+      const result = await service.findActiveSeanceForUser(mockUserId);
+
+      expect(result).toEqual(mockSeance);
+    });
+
+    it('doit retourner la séance si utilisateur est participant actif', async () => {
+      const mockSeance = { id: 'seance-id', statut: SeanceStatut.EN_ATTENTE } as Seance;
+      mockSeanceRepository.findOne.mockResolvedValue(null); // pas propriétaire
+      mockParticipantRepository.findOne.mockResolvedValue({
+        utilisateur_id: mockUserId,
+        seance: mockSeance,
+      } as Participant);
+
+      const result = await service.findActiveSeanceForUser(mockUserId);
+
+      expect(result).toEqual(mockSeance);
+    });
+
+    it('doit retourner null si pas de séance active en tant que participant', async () => {
+      mockSeanceRepository.findOne.mockResolvedValue(null);
+      mockParticipantRepository.findOne.mockResolvedValue(null);
+
+      const result = await service.findActiveSeanceForUser(mockUserId);
+
+      expect(result).toBeNull();
+    });
+
+    it('doit retourner null si la séance du participant est terminée', async () => {
+      mockSeanceRepository.findOne.mockResolvedValue(null);
+      mockParticipantRepository.findOne.mockResolvedValue({
+        utilisateur_id: mockUserId,
+        seance: { id: 'seance-id', statut: SeanceStatut.TERMINEE },
+      } as Participant);
+
+      const result = await service.findActiveSeanceForUser(mockUserId);
+
+      expect(result).toBeNull();
+    });
+  });
+
+  // ---- deleteSeance ----
+
+  describe('deleteSeance', () => {
+    const mockSeanceId = 'seance-id-123';
+    const mockProprietaireId = 'owner-id-123';
+
+    it('doit supprimer la séance si le propriétaire est correct', async () => {
+      const mockSeance = { id: mockSeanceId, proprietaire_id: mockProprietaireId };
+      mockSeanceRepository.findOneBy.mockResolvedValue(mockSeance as Seance);
+      mockSeanceRepository.delete.mockResolvedValue({ affected: 1, raw: {} });
+
+      const result = await service.deleteSeance(mockSeanceId, mockProprietaireId);
+
+      expect(result.message).toBe('Séance supprimée');
+      expect(mockSeanceRepository.delete).toHaveBeenCalledWith({ id: mockSeanceId });
+    });
+
+    it("doit rejeter si la séance n'existe pas ou n'appartient pas au propriétaire", async () => {
+      mockSeanceRepository.findOneBy.mockResolvedValue(null);
+
+      await expect(
+        service.deleteSeance(mockSeanceId, mockProprietaireId),
+      ).rejects.toThrow(RpcException);
+    });
+  });
+
+  // ---- submitPropositions ----
+
+  describe('submitPropositions', () => {
+    const mockSeanceId = 'seance-id-123';
+    const mockUserId = 'user-id-123';
+
+    it('doit enregistrer les propositions de films', async () => {
+      const tmdbIds = [101, 202, 303];
+      mockPropositionRepository.delete.mockResolvedValue({ affected: 0, raw: {} });
+      mockPropositionRepository.create.mockImplementation((data) => data);
+      mockPropositionRepository.save.mockResolvedValue([]);
+
+      const result = await service.submitPropositions(mockSeanceId, mockUserId, tmdbIds);
+
+      expect(result.message).toBe('Propositions enregistrées');
+      expect(mockPropositionRepository.delete).toHaveBeenCalledWith({
+        seance_id: mockSeanceId,
+        utilisateur_id: mockUserId,
+      });
+      expect(mockPropositionRepository.create).toHaveBeenCalledTimes(3);
+    });
+  });
+
+  // ---- getPropositions ----
+
+  describe('getPropositions', () => {
+    it('doit retourner toutes les propositions de la séance', async () => {
+      const mockProps = [
+        { seance_id: 'seance-id', tmdb_id: 101 },
+        { seance_id: 'seance-id', tmdb_id: 202 },
+      ];
+      mockPropositionRepository.find.mockResolvedValue(mockProps);
+
+      const result = await service.getPropositions('seance-id');
+
+      expect(result).toEqual(mockProps);
+      expect(mockPropositionRepository.find).toHaveBeenCalledWith({
+        where: { seance_id: 'seance-id' },
+        order: { propose_le: 'ASC' },
+      });
+    });
+  });
+
+  // ---- allParticipantsSubmitted ----
+
+  describe('allParticipantsSubmitted', () => {
+    it('doit retourner false si pas de participants', async () => {
+      mockParticipantRepository.find.mockResolvedValue([]);
+
+      const result = await service.allParticipantsSubmitted('seance-id');
+
+      expect(result).toBe(false);
+    });
+
+    it('doit retourner false si un participant n\'a pas soumis', async () => {
+      mockParticipantRepository.find.mockResolvedValue([
+        { utilisateur_id: 'user-1' },
+        { utilisateur_id: 'user-2' },
+      ] as Participant[]);
+      mockPropositionRepository.count
+        .mockResolvedValueOnce(2)
+        .mockResolvedValueOnce(0);
+
+      const result = await service.allParticipantsSubmitted('seance-id');
+
+      expect(result).toBe(false);
+    });
+
+    it('doit retourner true si tous ont soumis', async () => {
+      mockParticipantRepository.find.mockResolvedValue([
+        { utilisateur_id: 'user-1' },
+        { utilisateur_id: 'user-2' },
+      ] as Participant[]);
+      mockPropositionRepository.count
+        .mockResolvedValueOnce(2)
+        .mockResolvedValueOnce(3);
+
+      const result = await service.allParticipantsSubmitted('seance-id');
+
+      expect(result).toBe(true);
+    });
+  });
+
+  // ---- submitClassement ----
+
+  describe('submitClassement', () => {
+    const mockSeanceId = 'seance-id-123';
+    const mockUserId = 'user-id-123';
+
+    it('doit enregistrer le classement', async () => {
+      const classement = [
+        { tmdb_id: 101, rang: 1 },
+        { tmdb_id: 202, rang: 2 },
+      ];
+      mockVoteRepository.delete.mockResolvedValue({ affected: 0, raw: {} });
+      mockVoteRepository.create.mockImplementation((data) => data);
+      mockVoteRepository.save.mockResolvedValue([]);
+
+      const result = await service.submitClassement(mockSeanceId, mockUserId, classement);
+
+      expect(result.message).toBe('Classement enregistré');
+      expect(mockVoteRepository.delete).toHaveBeenCalledWith({
+        seance_id: mockSeanceId,
+        utilisateur_id: mockUserId,
+      });
+      expect(mockVoteRepository.create).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  // ---- allClassementsSubmitted ----
+
+  describe('allClassementsSubmitted', () => {
+    it('doit retourner false si pas de participants', async () => {
+      mockParticipantRepository.find.mockResolvedValue([]);
+
+      const result = await service.allClassementsSubmitted('seance-id');
+
+      expect(result).toBe(false);
+    });
+
+    it('doit retourner false si un participant n\'a pas voté', async () => {
+      mockParticipantRepository.find.mockResolvedValue([
+        { utilisateur_id: 'user-1' },
+        { utilisateur_id: 'user-2' },
+      ] as Participant[]);
+      mockVoteRepository.count
+        .mockResolvedValueOnce(2)
+        .mockResolvedValueOnce(0);
+
+      const result = await service.allClassementsSubmitted('seance-id');
+
+      expect(result).toBe(false);
+    });
+
+    it('doit retourner true si tous ont voté', async () => {
+      mockParticipantRepository.find.mockResolvedValue([
+        { utilisateur_id: 'user-1' },
+        { utilisateur_id: 'user-2' },
+      ] as Participant[]);
+      mockVoteRepository.count
+        .mockResolvedValueOnce(3)
+        .mockResolvedValueOnce(3);
+
+      const result = await service.allClassementsSubmitted('seance-id');
+
+      expect(result).toBe(true);
+    });
+  });
+
+  // ---- getResultatFinal ----
+
+  describe('getResultatFinal', () => {
+    it('doit calculer la moyenne des rangs et trier par rang moyen croissant', async () => {
+      mockVoteRepository.find.mockResolvedValue([
+        { tmdb_id: 101, rang: 1 },
+        { tmdb_id: 202, rang: 2 },
+        { tmdb_id: 101, rang: 3 },
+        { tmdb_id: 202, rang: 1 },
+      ]);
+
+      const result = await service.getResultatFinal('seance-id');
+
+      // tmdb_id 101 → rang moyen (1+3)/2 = 2
+      // tmdb_id 202 → rang moyen (2+1)/2 = 1.5 → meilleur
+      expect(result[0].tmdb_id).toBe(202);
+      expect(result[0].rang_moyen).toBe(1.5);
+      expect(result[1].tmdb_id).toBe(101);
+      expect(result[1].rang_moyen).toBe(2);
+    });
+
+    it('doit retourner un tableau vide si pas de votes', async () => {
+      mockVoteRepository.find.mockResolvedValue([]);
+
+      const result = await service.getResultatFinal('seance-id');
+
+      expect(result).toEqual([]);
+    });
+
+    it('doit gérer un seul film avec un seul vote', async () => {
+      mockVoteRepository.find.mockResolvedValue([
+        { tmdb_id: 999, rang: 1 },
+      ]);
+
+      const result = await service.getResultatFinal('seance-id');
+
+      expect(result).toHaveLength(1);
+      expect(result[0].tmdb_id).toBe(999);
+      expect(result[0].rang_moyen).toBe(1);
     });
   });
 });

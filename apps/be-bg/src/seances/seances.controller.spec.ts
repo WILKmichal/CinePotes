@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { SeancesController } from './seances.controller';
 import { HttpException } from '@nestjs/common';
 import { of, throwError } from 'rxjs';
+import { AuthGuard } from '../auth/auth.guard';
 
 // On crée un faux ClientProxy NATS pour les tests
 // Au lieu de vraiment envoyer des messages à NATS, on simule les réponses
@@ -24,7 +25,10 @@ describe('SeancesController', () => {
           useValue: mockNatsClient,
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(AuthGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<SeancesController>(SeancesController);
     // On reset les mocks avant chaque test pour repartir de zéro

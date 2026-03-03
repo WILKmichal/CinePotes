@@ -29,16 +29,6 @@ const getToken = () => {
   return localStorage.getItem("access_token");
 };
 
-const getUserId = () => {
-  const token = getToken();
-  if (!token) return null;
-  try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    return payload.sub as string;
-  } catch {
-    return null;
-  }
-};
 
 function rankIcon(i: number): string {
   if (i === 0) return "🥇";
@@ -65,6 +55,25 @@ function ClassementContent() {
   const [waitingOthers, setWaitingOthers] = useState(false);
   const [resultat, setResultat] = useState<FilmClasse[] | null>(null);
 
+  // Polling : si la séance disparaît (hôte l'a supprimée), rediriger vers /lobby
+  useEffect(() => {
+    if (!seanceId || resultat) return;
+    const token = getToken();
+    const interval = setInterval(async () => {
+      const res = await fetch(`${API_URL}/seances/${seanceId}/participants`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        clearInterval(interval);
+        sessionStorage.removeItem("classement_seance_id");
+        sessionStorage.removeItem("seance_proprietaire_id");
+        localStorage.removeItem("joined_seance");
+        router.push("/lobby");
+      }
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [seanceId, resultat, router]);
+
   // Charger les films ET vérifier si le résultat final est déjà disponible
   useEffect(() => {
     if (!seanceId) return;
@@ -72,6 +81,19 @@ function ClassementContent() {
 
     const load = async () => {
       try {
+        // 0. Vérifier que la séance existe encore ET déterminer si on est l'hôte
+        const participantsRes = await fetch(
+          `${API_URL}/seances/${seanceId}/participants`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (!participantsRes.ok) {
+          // Séance introuvable → nettoyer et retourner au lobby
+          sessionStorage.removeItem("classement_seance_id");
+          localStorage.removeItem("joined_seance");
+          router.push("/lobby");
+          return;
+        }
+
         // 1. Vérifier si tous ont déjà voté → afficher directement le résultat
         const statusRes = await fetch(
           `${API_URL}/seances/${seanceId}/classement/status`,
@@ -197,27 +219,14 @@ function ClassementContent() {
 
   const handleQuit = async () => {
     const token = getToken();
-    const userId = getUserId();
-    // Vérifier si on est proprio
-    const selfRes = await fetch(`${API_URL}/seances/self`, {
+    // Le backend détecte automatiquement : hôte → supprime la séance, participant → quitte
+    await fetch(`${API_URL}/seances/${seanceId}/leave`, {
+      method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
-    const seance = selfRes.ok ? await selfRes.json() : null;
-    const isOwner = seance?.proprietaire_id === userId;
-
-    if (isOwner) {
-      await fetch(`${API_URL}/seances/${seanceId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-    } else {
-      await fetch(`${API_URL}/seances/${seanceId}/leave`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-    }
     localStorage.removeItem("joined_seance");
     sessionStorage.removeItem("classement_seance_id");
+    sessionStorage.removeItem("seance_proprietaire_id");
     router.push("/lobby");
   };
 

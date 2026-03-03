@@ -43,10 +43,14 @@ function SelectionContent() {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => r.json())
-      .then((data: { max_films?: number } | null) => {
+      .then((data: { max_films?: number; proprietaire_id?: string } | null) => {
         if (data?.max_films) {
           setMaxFilms(data.max_films);
           setSelected(new Array(data.max_films).fill(null));
+        }
+        // Stocker pour que /classement sache si on est l'hôte
+        if (data?.proprietaire_id) {
+          sessionStorage.setItem("seance_proprietaire_id", data.proprietaire_id);
         }
       })
       .catch(() => {
@@ -102,6 +106,24 @@ function SelectionContent() {
   const filledCount = selected.filter(Boolean).length;
   const allFilled = filledCount === maxFilms;
 
+  // Polling : détecter si la séance a disparu (hôte parti) → retourner au lobby
+  useEffect(() => {
+    if (!seanceId) return;
+    const interval = setInterval(async () => {
+      const res = await fetch(`${API_URL}/seances/${seanceId}/participants`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      if (!res.ok) {
+        clearInterval(interval);
+        localStorage.removeItem("joined_seance");
+        sessionStorage.removeItem("classement_seance_id");
+        sessionStorage.removeItem("seance_proprietaire_id");
+        router.push("/lobby");
+      }
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [seanceId, router]);
+
   const handleValidate = async () => {
     const token = getToken();
     const tmdbIds = (selected.filter(Boolean) as Film[]).map((f) => f.id);
@@ -122,12 +144,19 @@ function SelectionContent() {
           `${API_URL}/seances/${seanceId}/propositions/status`,
           { headers: { Authorization: `Bearer ${getToken()}` } }
         );
-        if (statusRes.ok) {
-          const allDone: boolean = await statusRes.json();
-          if (allDone) {
-            clearInterval(pollInterval);
-            router.push(`/classement?seanceId=${seanceId}`);
-          }
+        if (!statusRes.ok) {
+          // Séance supprimée → retourner au lobby
+          clearInterval(pollInterval);
+          localStorage.removeItem("joined_seance");
+          sessionStorage.removeItem("classement_seance_id");
+          sessionStorage.removeItem("seance_proprietaire_id");
+          router.push("/lobby");
+          return;
+        }
+        const allDone: boolean = await statusRes.json();
+        if (allDone) {
+          clearInterval(pollInterval);
+          router.push(`/classement?seanceId=${seanceId}`);
         }
       }, 3000);
     } catch {
