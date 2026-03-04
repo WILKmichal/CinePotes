@@ -1,5 +1,5 @@
 # ---------------------
-#   PRUNE — extract ms-auth, be-bg and their workspace deps
+#   PRUNE — extract ms-sessions and its workspace deps
 # ---------------------
 FROM node:20-alpine AS pruner
 WORKDIR /app
@@ -9,8 +9,8 @@ RUN npm install -g turbo
 # Copy the entire monorepo
 COPY . .
 
-# Prune to only ms-auth, be-bg and their dependencies (e.g. schemas)
-RUN turbo prune ms-auth be-bg --docker
+# Prune to only ms-sessions and its dependencies (e.g. schemas)
+RUN turbo prune ms-sessions --docker
 
 
 # ---------------------
@@ -42,8 +42,8 @@ COPY --from=installer /app/ .
 # Copy full source code from pruned workspace
 COPY --from=pruner /app/out/full/ .
 
-# Build ms-auth (and any workspace deps it needs)
-RUN pnpm turbo run build --filter=ms-auth
+# Build ms-sessions (and any workspace deps it needs)
+RUN pnpm turbo run build --filter=ms-sessions
 
 
 # ---------------------
@@ -70,4 +70,4 @@ USER nodejs
 
 # Expose et start
 EXPOSE 3000
-CMD ["node", "apps/ms-auth/dist/main.js"]
+CMD ["node", "apps/ms-sessions/dist/main.js"]

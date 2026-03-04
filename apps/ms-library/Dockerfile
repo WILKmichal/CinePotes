@@ -1,5 +1,5 @@
 # ---------------------
-#   PRUNE — extract ms-library and its workspace deps
+#   PRUNE — extract ms-tmdb and its workspace deps
 # ---------------------
 FROM node:20-alpine AS pruner
 WORKDIR /app
@@ -9,8 +9,8 @@ RUN npm install -g turbo
 # Copy the entire monorepo
 COPY . .
 
-# Prune to only ms-library and its dependencies (e.g. schemas)
-RUN turbo prune ms-library --docker
+# Prune to only ms-tmdb, types and their dependencies (e.g. schemas)
+RUN turbo prune ms-tmdb @repo/types --docker
 
 
 # ---------------------
@@ -42,8 +42,8 @@ COPY --from=installer /app/ .
 # Copy full source code from pruned workspace
 COPY --from=pruner /app/out/full/ .
 
-# Build ms-library (and any workspace deps it needs)
-RUN pnpm turbo run build --filter=ms-library
+# Build ms-tmdb (and any workspace deps it needs)
+RUN pnpm turbo run build --filter=ms-tmdb
 
 
 # ---------------------
@@ -70,4 +70,4 @@ USER nodejs
 
 # Expose et start
 EXPOSE 3000
-CMD ["node", "apps/ms-library/dist/main.js"]
+CMD ["node", "apps/ms-tmdb/dist/main.js"]
