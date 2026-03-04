@@ -11,7 +11,6 @@ export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [nom, setNom] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("user");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -25,7 +24,7 @@ useEffect(() => {
 
 
   const onLoginSuccess = (token: string) => {
-    localStorage.setItem("access_token", token);
+    sessionStorage.setItem("access_token", token);
 
     if (redirect) {
       location.href = `${redirect}?token=${encodeURIComponent(token)}`;
@@ -70,7 +69,7 @@ useEffect(() => {
     const res = await fetch(`${API_BASE}/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nom, email: username, password, role }),
+      body: JSON.stringify({ nom, email: username, password }),
     });
 
     const data = await res.json().catch(() => ({}));
@@ -222,27 +221,6 @@ useEffect(() => {
               >
                 Mot de passe oublié ?
               </button>
-            </div>
-          )}
-
-          {mode === "register" && (
-            <div>
-              <label
-                htmlFor="role"
-                className="block mb-1 font-medium text-gray-700"
-              >
-                Rôle
-              </label>
-              <select
-                id="role"
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                className="w-full px-4 py-2 border rounded-lg text-gray-900 bg-white"
-              >
-                <option value="user">user</option>
-                <option value="chef">chef</option>
-                <option value="admin">admin</option>
-              </select>
             </div>
           )}
 

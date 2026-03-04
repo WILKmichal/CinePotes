@@ -1,35 +1,64 @@
 # ---------------------
-#   BUILD
+#   PRUNE — extract be-bg and its workspace deps
+# ---------------------
+FROM node:20-alpine AS pruner
+WORKDIR /app
+
+RUN npm install -g turbo
+
+# Copy the entire monorepo
+COPY . .
+
+# Prune to only be-bg and its dependencies (e.g. schemas)
+RUN turbo prune be-bg --docker
+
+
+# ---------------------
+#   INSTALL — install dependencies from pruned lockfile
+# ---------------------
+FROM node:20-alpine AS installer
+WORKDIR /app
+
+RUN npm install -g pnpm
+
+# Copy lockfile and package.json files from pruned workspace
+COPY --from=pruner /app/out/json/ .
+COPY --from=pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
+
+RUN pnpm install --frozen-lockfile
+
+
+# ---------------------
+#   BUILD — compile the application
 # ---------------------
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Installe pnpm
-RUN npm install -g pnpm
+RUN npm install -g pnpm turbo
 
-# Copie tous les fichiers
-COPY . .
+# Copy installed node_modules
+COPY --from=installer /app/ .
 
-# Installation (@nestjs/config est déjà dans package.json)
-RUN pnpm install --no-frozen-lockfile
+# Copy full source code from pruned workspace
+COPY --from=pruner /app/out/full/ .
 
-# Build
-RUN pnpm run build
+# Build be-bg (and any workspace deps it needs)
+RUN pnpm turbo run build --filter=be-bg
+
 
 # ---------------------
-#   RUN
+#   RUN — production image
 # ---------------------
-FROM node:20-alpine
+FROM node:20-alpine AS runner
 WORKDIR /app
 
 # Crée un utilisateur non-root
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
 
-# Copie les fichiers
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./package.json
+# Copy the full pruned workspace (node_modules, packages, dist)
+# This preserves pnpm's symlink structure so workspace deps (schemas) resolve correctly
+COPY --from=builder /app .
 
 # Change ownership et supprime toutes les permissions d'écriture
 RUN chown -R nodejs:nodejs /app && \
@@ -41,4 +70,4 @@ USER nodejs
 
 # Expose et start
 EXPOSE 3000
-CMD ["node", "dist/main.js"]
+CMD ["node", "apps/be-bg/dist/main.js"]

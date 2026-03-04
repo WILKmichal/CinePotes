@@ -5,7 +5,7 @@ import AddToListModal from "@/components/AddToListModal";
 
 const getIsLoggedIn = () => {
   if (globalThis.window !== undefined) {
-    return !!localStorage.getItem("access_token");
+    return !!sessionStorage.getItem("access_token");
   }
   return false;
 };
@@ -61,3 +61,4 @@ export default function DetailsFilms({ film }: Readonly<{ film: DetailsFilm }>) 
     </div>
   );
 }
+

@@ -16,9 +16,15 @@ import { NatsModule } from './nats/nats.module';
 import { NatsExempleController } from './nats/nats-exemple.controller';
 import { MailModule } from './mail/mail.module';
 import { LibraryModule } from './services/library/library.module';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
+      ThrottlerModule.forRoot([{
+        ttl: 60000,
+        limit: 20,
+      }]),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST,
@@ -37,7 +43,12 @@ import { LibraryModule } from './services/library/library.module';
     MailModule,
   ],
   controllers: [AppController, TestController, NatsExempleController],
-  providers: [AppService],
+  providers: [  AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule implements OnModuleInit {
   constructor(private readonly dataSource: DataSource) {}

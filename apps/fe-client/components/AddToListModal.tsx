@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_BG_URL ?? "http://localhost:3002";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 interface Liste {
   id: string;
@@ -32,7 +32,7 @@ export default function AddToListModal({
 
   const getToken = () => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("access_token");
+      return sessionStorage.getItem("access_token");
     }
     return null;
   };
@@ -268,3 +268,5 @@ export default function AddToListModal({
     </div>
   );
 }
+
+

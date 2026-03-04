@@ -4,8 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Header, Footer } from "@/components/utils";
 
-const API_URL = process.env.NEXT_PUBLIC_API_BG_URL ?? "http://localhost:3002";
-const API_TMDB = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3333";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 interface Liste {
   id: string;
@@ -36,7 +35,7 @@ export default function MesListesPage() {
 
   const getToken = () => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("access_token");
+      return sessionStorage.getItem("access_token");
     }
     return null;
   };
@@ -87,7 +86,7 @@ export default function MesListesPage() {
 
   const fetchFilmInfo = async (tmdbId: number) => {
     try {
-      const res = await fetch(`${API_TMDB}/library/${tmdbId}`);
+      const res = await fetch(`${API_URL}/library/${tmdbId}`);
       if (res.ok) {
         const data = await res.json();
         setFilmsCache((prev) => ({
@@ -499,3 +498,5 @@ export default function MesListesPage() {
     </div>
   );
 }
+
+

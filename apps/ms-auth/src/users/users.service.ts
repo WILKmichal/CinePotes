@@ -1,3 +1,4 @@
+import { RpcException } from "@nestjs/microservices";
 import { Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
@@ -42,7 +43,15 @@ export class UsersService {
     }
 
     const user = this.usersRepository.create(newUser);
-    return this.usersRepository.save(user);
+    try {
+      return await this.usersRepository.save(user);
+    } catch (err: unknown) {
+      const dbErr = err as { code?: string };
+      if (dbErr?.code === '23505') {
+        throw new RpcException({ message: 'Un compte existe déjà avec cet email.', statusCode: 409 });
+      }
+      throw new RpcException({ message: 'Erreur lors de la création du compte.', statusCode: 500 });
+    }
   }
 
   async confirmEmail(token: string): Promise<boolean> {
