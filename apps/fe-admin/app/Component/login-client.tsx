@@ -25,7 +25,7 @@ useEffect(() => {
 
 
   const onLoginSuccess = (token: string) => {
-    localStorage.setItem("access_token", token);
+    sessionStorage.setItem("access_token", token);
 
     if (redirect) {
       location.href = `${redirect}?token=${encodeURIComponent(token)}`;

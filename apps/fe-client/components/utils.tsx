@@ -2,7 +2,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL ?? "http://localhost:3000";
+const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL;
 const CALLBACK_URL = "http://localhost:3001/auth/callback";
 
 const signInUrl = `${ADMIN_URL}/login-client?redirect=${encodeURIComponent(CALLBACK_URL)}&mode=login`;
@@ -23,7 +23,7 @@ export interface FiltresRechercheFilms {
   genre: string;
   annee: string;
 }
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3333";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 function decodeJwt(token: string) {
   try {
     const payload = token.split(".")[1];
@@ -45,7 +45,7 @@ function decodeJwt(token: string) {
 
 function getDisplayName(): string | null {
   if (globalThis.window === undefined) return null;
-  const token = localStorage.getItem("access_token");
+  const token = sessionStorage.getItem("access_token");
   if (!token) return null;
   const payload = decodeJwt(token);
   return payload?.username ?? null;
@@ -62,7 +62,7 @@ export default function Header() {
   );
 
   const handleLogout = () => {
-    localStorage.removeItem("access_token");
+    sessionStorage.removeItem("access_token");
     router.replace("/");
   };
 
@@ -438,3 +438,4 @@ function CarteFilms({ id, titre, resume, date_sortie, affiche_url, note_moyenne 
 }
 
 export { Header, Footer, BarreRecherche, useRechercheFilms2 as RechercheFilms, CarteFilms };
+
