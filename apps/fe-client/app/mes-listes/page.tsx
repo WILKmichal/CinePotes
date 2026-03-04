@@ -239,8 +239,11 @@ export default function MesListesPage() {
           <div className="text-center bg-white p-8 rounded-2xl shadow-lg">
             <p className="text-red-500 mb-4 text-lg">{error}</p>
             <button
-              onClick={() => router.push("/login")}
-              className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium"
+              onClick={() => {
+                const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL ?? "http://localhost:3000";
+                const CALLBACK_URL = "http://localhost:3001/auth/callback";
+                window.location.href = `${ADMIN_URL}/login-client?redirect=${encodeURIComponent(CALLBACK_URL)}&mode=login`;
+              }}              className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium"
             >
               Se connecter
             </button>
