@@ -8,6 +8,7 @@ yarn-error.log*
 dist/
 .next/
 .vercel/
+**/routes.txt
 
 # Turborepo
 .turbo/
