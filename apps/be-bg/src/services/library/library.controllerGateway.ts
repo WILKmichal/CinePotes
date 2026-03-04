@@ -10,7 +10,7 @@ import {
   ApiOperation,
   ApiParam,
 } from '@nestjs/swagger';
-import { DetailsFilm, TMDB_PATTERNS } from '../../../../types/library.types';
+import { DetailsFilm, TMDB_PATTERNS } from '@repo/types/library';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { TmdbQueryDto } from './library-query.dto';
