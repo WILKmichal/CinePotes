@@ -11,7 +11,6 @@ on:
       - "apps/be-bg/**"
 
 jobs:
-
     be_bg-linter-test:
       runs-on: ubuntu-latest
       steps:
