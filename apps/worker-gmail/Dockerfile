@@ -1,5 +1,5 @@
 # ---------------------
-#   PRUNE — extract ms-library and its workspace deps
+#   PRUNE — extract worker-gmail and its workspace deps
 # ---------------------
 FROM node:20-alpine AS pruner
 WORKDIR /app
@@ -9,8 +9,8 @@ RUN npm install -g turbo
 # Copy the entire monorepo
 COPY . .
 
-# Prune to only ms-library and its dependencies (e.g. schemas)
-RUN turbo prune ms-library --docker
+# Prune to only worker-gmail and its dependencies (e.g. schemas)
+RUN turbo prune worker-gmail --docker
 
 
 # ---------------------
@@ -42,32 +42,23 @@ COPY --from=installer /app/ .
 # Copy full source code from pruned workspace
 COPY --from=pruner /app/out/full/ .
 
-# Build ms-library (and any workspace deps it needs)
-RUN pnpm turbo run build --filter=ms-library
+# Build worker-gmail (and any workspace deps it needs)
+RUN pnpm turbo run build --filter=worker-gmail
 
 
 # ---------------------
 #   RUN — production image
 # ---------------------
-FROM node:20-alpine AS runner
+FROM node:20-alpine
 WORKDIR /app
 
-# Crée un utilisateur non-root
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
+RUN npm install -g pnpm
 
-# Copy the full pruned workspace (node_modules, packages, dist)
-# This preserves pnpm's symlink structure so workspace deps (schemas) resolve correctly
-COPY --from=builder /app .
+# Copy built application from builder
+COPY --from=builder /app/apps/worker-gmail/dist ./dist
+COPY --from=builder /app/apps/worker-gmail/package.json ./package.json
+COPY --from=builder /app/apps/worker-gmail/node_modules ./node_modules
 
-# Change ownership et supprime toutes les permissions d'écriture
-RUN chown -R nodejs:nodejs /app && \
-    find /app -type d -exec chmod 0500 {} \; && \
-    find /app -type f -exec chmod 0400 {} \;
+EXPOSE 3001
 
-# Change vers l'utilisateur non-root
-USER nodejs
-
-# Expose et start
-EXPOSE 3000
-CMD ["node", "apps/ms-library/dist/main.js"]
+CMD ["node", "dist/main.js"]
