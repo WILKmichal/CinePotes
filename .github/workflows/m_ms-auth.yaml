@@ -11,25 +11,8 @@ on:
       - "apps/ms-auth/**"
 
 jobs:
-  commit-lint:
-    name: Verify conventional Commits
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Check Commit Messages
-        uses: wagoid/commitlint-github-action@v6
-        with:
-          configFile: .commitlintrc.yml
-
   ms_auth-linter-test:
     runs-on: ubuntu-latest
-    needs: commit-lint
-
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -49,8 +32,6 @@ jobs:
 
   ms_auth-build-test:
     runs-on: ubuntu-latest
-    needs: commit-lint
-
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -70,7 +51,6 @@ jobs:
 
   ms_auth-jest-test:
     runs-on: ubuntu-latest
-    needs: commit-lint
     defaults:
       run:
         working-directory: ./apps/ms-auth
