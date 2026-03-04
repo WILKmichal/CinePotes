@@ -60,49 +60,9 @@ jobs:
         - name: Run unit tests
           run: pnpm test
 
-    check_if_version_exists:
-      runs-on: ubuntu-latest
-      permissions:
-        contents: read
-        packages: write
-      steps:
-
-        - name: Checkout code
-          uses: actions/checkout@v4
-
-        - name: Read version from package.json
-          id: pkg
-          run: |
-            VERSION=$(jq -r '.version' ./apps/ms-library/package.json)
-            echo "VERSION=$VERSION" >> $GITHUB_ENV
-            echo "Image version: $VERSION"
-
-        - name: Check if Docker image version exists
-          id: check_version
-          run: |
-            IMAGE_NAME="ghcr.io/mehdilazaar/cinepotes/ms-library"
-            
-            echo "Checking for ${IMAGE_NAME}:${VERSION}..."
-            
-            if docker manifest inspect ${IMAGE_NAME}:${VERSION} > /dev/null 2>&1; then
-              echo "exists=true" >> $GITHUB_OUTPUT
-              echo "❌ Image ${IMAGE_NAME}:${VERSION} already exists"
-              echo "Cancelling workflow as this version is already published"
-              exit 1
-            else
-              echo "exists=false" >> $GITHUB_OUTPUT
-              echo "✅ Image ${IMAGE_NAME}:${VERSION} does not exist - new version!"
-            fi
-    
-        - name: Continue with new version
-          if: steps.check_version.outputs.exists == 'false'
-          run: |
-            echo "This is a new version, continuing workflow..."
-
-
     build-and-push:
       runs-on: ubuntu-latest
-      needs: [ms_library-build-test,ms_library-jest-test,ms_library-linter-test,check_if_version_exists]
+      needs: [ms_library-build-test,ms_library-jest-test,ms_library-linter-test]
       permissions:
         contents: read
         packages: write
