@@ -100,7 +100,7 @@ jobs:
   
           IMAGE_TAG="${REF_NAME}"
   
-          docker build ./apps/be-bg \
+          docker build . \
               --file ./apps/be-bg/Dockerfile \
               --tag ghcr.io/${REPO_OWNER}/${REPO_NAME}/be-bg:${VERSION}
   
