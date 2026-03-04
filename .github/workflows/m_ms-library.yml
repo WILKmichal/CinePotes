@@ -100,7 +100,7 @@ jobs:
   
           IMAGE_TAG="${REF_NAME}"
   
-          docker build ./apps/ms-library \
+          docker build . \
               --file ./apps/ms-library/Dockerfile \
               --tag ghcr.io/${REPO_OWNER}/${REPO_NAME}/ms-library:${VERSION}
   

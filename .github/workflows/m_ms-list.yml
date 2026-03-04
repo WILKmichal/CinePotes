@@ -93,7 +93,7 @@ jobs:
           REPO_OWNER=$(echo "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')
           REPO_NAME=$(echo "${GITHUB_REPOSITORY#*/}" | tr '[:upper:]' '[:lower:]')
 
-          docker build ./apps/ms-list \
+          docker build . \
               --file ./apps/ms-list/Dockerfile \
               --tag ghcr.io/${REPO_OWNER}/${REPO_NAME}/ms-list:${VERSION}
 
