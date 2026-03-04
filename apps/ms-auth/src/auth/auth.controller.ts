@@ -8,7 +8,6 @@ import {
 import { MessagePattern, Payload, ClientProxy } from "@nestjs/microservices";
 import { AuthService } from "./auth.service";
 import { UsersService } from "../users/users.service";
-import { UserRole } from "schemas/user.entity";
 import { LoginDto } from "../../../be-bg/src/auth/dto/login.dto";
 import { RegisterDto } from "../../../be-bg/src/auth/dto/register.dto";
 

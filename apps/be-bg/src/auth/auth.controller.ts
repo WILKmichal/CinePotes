@@ -67,10 +67,10 @@ export class AuthController {
         this.natsClient.send<{ access_token: string }>('auth.login', body),
       );
     } catch (error: unknown) {
-      throw this.handleError(
-        error,
-        'Erreur connexion',
-        HttpStatus.UNAUTHORIZED,
+      const err = error as { message?: string; statusCode?: number };
+      throw new HttpException(
+        err?.message ?? 'Identifiants incorrects.',
+        err?.statusCode ?? HttpStatus.UNAUTHORIZED,
       );
     }
   }
@@ -97,10 +97,10 @@ export class AuthController {
         this.natsClient.send<{ message: string }>('auth.register', body),
       );
     } catch (error: unknown) {
-      throw this.handleError(
-        error,
-        'Erreur inscription',
-        HttpStatus.BAD_REQUEST,
+      const err = error as { message?: string; statusCode?: number };
+      throw new HttpException(
+        err?.message ?? 'Erreur lors de la création du compte.',
+        err?.statusCode ?? HttpStatus.BAD_REQUEST,
       );
     }
   }
