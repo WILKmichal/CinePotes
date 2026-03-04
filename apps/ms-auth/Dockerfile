@@ -1,5 +1,5 @@
 # ---------------------
-#   PRUNE — extract ms-auth and its workspace deps
+#   PRUNE — extract ms-auth, be-bg and their workspace deps
 # ---------------------
 FROM node:20-alpine AS pruner
 WORKDIR /app
@@ -9,8 +9,8 @@ RUN npm install -g turbo
 # Copy the entire monorepo
 COPY . .
 
-# Prune to only ms-auth and its dependencies (e.g. schemas)
-RUN turbo prune ms-auth --docker
+# Prune to only ms-auth, be-bg and their dependencies (e.g. schemas)
+RUN turbo prune ms-auth be-bg --docker
 
 
 # ---------------------

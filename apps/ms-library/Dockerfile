@@ -9,8 +9,8 @@ RUN npm install -g turbo
 # Copy the entire monorepo
 COPY . .
 
-# Prune to only ms-tmdb and its dependencies (e.g. schemas)
-RUN turbo prune ms-tmdb --docker
+# Prune to only ms-tmdb, types and their dependencies (e.g. schemas)
+RUN turbo prune ms-tmdb @repo/types --docker
 
 
 # ---------------------
