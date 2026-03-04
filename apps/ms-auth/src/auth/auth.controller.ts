@@ -28,17 +28,15 @@ export class AuthController {
   }
 
   /* ================= REGISTER =================  */
-  // be-bg : natsClient.send('auth.register', { nom?, email, password, role? })
+  // be-bg : natsClient.send('auth.register', { nom?, email, password })
   @MessagePattern("auth.register")
   async register(@Payload() body: RegisterDto) {
     const nom = body.nom ?? body.email.split("@")[0];
-    const role = (body.role ?? "user") as UserRole;
 
     const user = await this.usersService.createUser(
       nom,
       body.email,
       body.password,
-      role,
     );
 
     if (process.env.VERIFICATION_MAIL !== "true") {

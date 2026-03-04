@@ -22,9 +22,4 @@ export class RegisterDto {
   @IsString()
   @MinLength(4)
   password: string;
-
-  @ApiProperty({ example: 'user', required: false })
-  @IsOptional()
-  @IsString()
-  role?: string;
 }
