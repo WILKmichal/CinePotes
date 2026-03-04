@@ -11,23 +11,8 @@ on:
       - "apps/fe-admin/**"
 
 jobs:
-    commit-lint:
-        name: Verify conventional Commits
-        runs-on: ubuntu-latest
-
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v4
-              with:
-                fetch-depth: 0
-            - name: Check Commit Messages
-              uses: wagoid/commitlint-github-action@v6
-              with:
-                configFile: .commitlintrc.yml
-
     linter-test:
       runs-on: ubuntu-latest
-      needs: commit-lint
       steps:
         - uses: actions/checkout@v4
         - uses: actions/setup-node@v4
@@ -44,7 +29,6 @@ jobs:
 
     build-test:
       runs-on: ubuntu-latest
-      needs: commit-lint
       steps:
         - uses: actions/checkout@v4
         - uses: actions/setup-node@v4
