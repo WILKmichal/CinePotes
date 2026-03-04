@@ -1,0 +1,8 @@
+node_modules
+**/node_modules
+**/dist
+**/.next
+**/coverage
+**/coverage-e2e
+.git
+*.log
