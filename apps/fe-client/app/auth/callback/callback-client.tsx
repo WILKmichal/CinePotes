@@ -10,7 +10,7 @@ export default function CallbackClient() {
     const token = params.get("token");
 
     if (token) {
-      localStorage.setItem("access_token", token);
+      sessionStorage.setItem("access_token", token);
     }
     globalThis.location.replace("/");
   }, [params]);
@@ -21,3 +21,4 @@ export default function CallbackClient() {
     </div>
   );
 }
+

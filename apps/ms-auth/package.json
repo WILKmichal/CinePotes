@@ -1,6 +1,6 @@
 {
   "name": "ms-auth",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Microservice d'authentification CinePotes",
   "author": "",
   "private": true,
