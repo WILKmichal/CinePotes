@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Header, Footer } from "@/components/utils";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3333";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 type Profile = {
   id: string;
@@ -29,7 +29,7 @@ export default function ProfilePage() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const loadProfile = async () => {
-    const token = localStorage.getItem("access_token");
+    const token = sessionStorage.getItem("access_token");
     if (!token) {
       router.replace("/");
       return;
@@ -43,7 +43,7 @@ export default function ProfilePage() {
       });
 
       if (res.status === 401) {
-        localStorage.removeItem("access_token");
+        sessionStorage.removeItem("access_token");
         router.replace("/");
         return;
       }
@@ -68,7 +68,7 @@ export default function ProfilePage() {
   }, []);
 
   const handleSaveName = async () => {
-    const token = localStorage.getItem("access_token");
+    const token = sessionStorage.getItem("access_token");
     if (!token) {
       router.replace("/");
       return;
@@ -93,7 +93,7 @@ export default function ProfilePage() {
       });
 
       if (res.status === 401) {
-        localStorage.removeItem("access_token");
+        sessionStorage.removeItem("access_token");
         router.replace("/");
         return;
       }
@@ -115,7 +115,7 @@ export default function ProfilePage() {
   };
 
   const handleDeleteAccount = async () => {
-    const token = localStorage.getItem("access_token");
+    const token = sessionStorage.getItem("access_token");
     if (!token) {
       router.replace("/");
       return;
@@ -131,7 +131,7 @@ export default function ProfilePage() {
       });
 
       if (res.status === 401) {
-        localStorage.removeItem("access_token");
+        sessionStorage.removeItem("access_token");
         router.replace("/");
         return;
       }
@@ -141,7 +141,7 @@ export default function ProfilePage() {
         throw new Error(`HTTP ${res.status} - ${txt}`);
       }
 
-      localStorage.removeItem("access_token");
+      sessionStorage.removeItem("access_token");
       router.replace("/");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erreur");
@@ -275,3 +275,4 @@ export default function ProfilePage() {
     </div>
   );
 }
+

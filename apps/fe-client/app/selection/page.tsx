@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Header, Footer } from "@/components/utils";
 
-const API_URL = process.env.NEXT_PUBLIC_API_BG_URL ?? "http://localhost:3002";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 const TMDB_IMG = "https://image.tmdb.org/t/p/w300";
 
 interface Film {
@@ -17,7 +17,7 @@ interface Film {
 }
 
 const getToken = () =>
-  globalThis.window !== undefined ? localStorage.getItem("access_token") : null;
+  globalThis.window !== undefined ? sessionStorage.getItem("access_token") : null;
 
 // ─── Composant principal (avec Suspense boundary pour useSearchParams) ─────────
 
@@ -385,3 +385,4 @@ export default function SelectionPage() {
     </Suspense>
   );
 }
+

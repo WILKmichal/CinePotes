@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Header, Footer } from "@/components/utils";
 
-const API_URL = process.env.NEXT_PUBLIC_API_BG_URL ?? "http://localhost:3002";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 interface Seance {
   id: string;
@@ -24,7 +24,7 @@ interface Participant {
 }
 
 const getToken = () =>
-  globalThis.window !== undefined ? localStorage.getItem("access_token") : null;
+  globalThis.window !== undefined ? sessionStorage.getItem("access_token") : null;
 
 const getUserId = () => {
   const token = getToken();
@@ -113,6 +113,9 @@ function NoSessionPage({ onEntered }: Readonly<{ onEntered: () => void }>) {
       if (res.ok) {
         // Le propriétaire peut retrouver sa séance via /seances/self, pas besoin de stocker
         localStorage.removeItem("joined_seance");
+        onEntered();
+      } else if (res.status === 409) {
+        // Une séance est déjà active pour cet utilisateur : recharger l'état courant
         onEntered();
       } else {
         const data = await res.json().catch(() => ({}));
@@ -309,19 +312,9 @@ export default function LobbyPage() {
       if (res.ok) {
         const data: Seance | null = await res.json();
         if (data) {
-          // Redirection auto vers /selection uniquement depuis le polling (pas navigation manuelle)
-          if (data.statut === "en_cours" && !showLoader) {
-            router.push(`/selection?seanceId=${data.id}`);
-            return;
-          }
-          // Si séance en cours et navigation manuelle : afficher le lobby normalement
-          if (data.statut !== "en_cours") {
-            setHasNoSession(false);
-            setSeance(data);
-            await fetchParticipants(data.id);
-          } else {
-            setHasNoSession(true);
-          }
+          setHasNoSession(false);
+          setSeance(data);
+          await fetchParticipants(data.id);
           return;
         }
       }
@@ -336,15 +329,6 @@ export default function LobbyPage() {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (res2.ok) {
-            if (joinedSeance.statut === "en_cours" && !showLoader) {
-              router.push(`/selection?seanceId=${joinedSeance.id}`);
-              return;
-            }
-            if (joinedSeance.statut === "en_cours") {
-              localStorage.removeItem("joined_seance");
-              setHasNoSession(true);
-              return;
-            }
             setHasNoSession(false);
             setSeance(joinedSeance);
             const parts = await res2.json();
@@ -397,6 +381,11 @@ export default function LobbyPage() {
     } finally {
       setLaunching(false);
     }
+  };
+
+  const handleGoToSelection = () => {
+    if (!seance) return;
+    router.push(`/selection?seanceId=${seance.id}`);
   };
 
   const handleLeave = async () => {
@@ -498,7 +487,7 @@ export default function LobbyPage() {
                   <span>Code salle</span>
                 </div>
                 <span className="text-green-500 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full text-xs">
-                  OUVERT
+                  {seance.statut === "en_cours" ? "EN COURS" : "OUVERTE"}
                 </span>
               </div>
               <p className="text-3xl font-black text-center tracking-[0.3em] text-[#1B3A5C] font-mono">
@@ -566,17 +555,35 @@ export default function LobbyPage() {
               </button>
 
               {isOwner ? (
-                <button
-                  onClick={handleLaunch}
-                  disabled={launching || participants.length < 1}
-                  className="flex-1 flex items-center justify-center gap-2 bg-[#1B3A5C] text-white py-3 rounded-xl font-semibold text-sm hover:bg-[#14305a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  👥 {launching ? "Lancement..." : "Lancer la session maintenant"} →
-                </button>
+                seance.statut === "en_cours" ? (
+                  <button
+                    onClick={handleGoToSelection}
+                    className="flex-1 flex items-center justify-center gap-2 bg-[#1B3A5C] text-white py-3 rounded-xl font-semibold text-sm hover:bg-[#14305a] transition-colors"
+                  >
+                    🎬 Aller à la sélection
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleLaunch}
+                    disabled={launching || participants.length < 1}
+                    className="flex-1 flex items-center justify-center gap-2 bg-[#1B3A5C] text-white py-3 rounded-xl font-semibold text-sm hover:bg-[#14305a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    👥 {launching ? "Lancement..." : "Lancer la session maintenant"} →
+                  </button>
+                )
               ) : (
-                <div className="flex-1 flex items-center justify-center bg-gray-100 text-gray-400 py-3 rounded-xl text-sm">
-                  En attente que l&apos;hôte lance la session...
-                </div>
+                seance.statut === "en_cours" ? (
+                  <button
+                    onClick={handleGoToSelection}
+                    className="flex-1 flex items-center justify-center gap-2 bg-[#1B3A5C] text-white py-3 rounded-xl font-semibold text-sm hover:bg-[#14305a] transition-colors"
+                  >
+                    🎬 Rejoindre la sélection
+                  </button>
+                ) : (
+                  <div className="flex-1 flex items-center justify-center bg-gray-100 text-gray-400 py-3 rounded-xl text-sm">
+                    En attente que l&apos;hôte lance la session...
+                  </div>
+                )
               )}
             </div>
           </div>
