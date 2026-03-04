@@ -82,6 +82,15 @@ describe('AuthController', () => {
     ).rejects.toThrow(HttpException);
   });
 
+  // ✅ AJOUT — couvre la branche fallback quand l'erreur n'a pas de message
+  it('should throw HttpException with fallback message when login error has no message', async () => {
+    mockNatsClient.send.mockReturnValue(throwError(() => ({})));
+
+    await expect(
+      controller.login({ username: 'test@example.com', password: 'bad' }),
+    ).rejects.toThrow(HttpException);
+  });
+
   /* ================= REGISTER ================= */
 
   it('should register user', async () => {
@@ -93,7 +102,6 @@ describe('AuthController', () => {
       email: 'test@test.com',
       password: 'Password123!',
       nom: 'Test',
-      role: 'admin',
     };
 
     const result = await controller.register(body);
@@ -119,6 +127,15 @@ describe('AuthController', () => {
         email: 'fail@test.com',
         password: 'Password123!',
       }),
+    ).rejects.toThrow(HttpException);
+  });
+
+  // ✅ AJOUT — couvre la branche fallback du catch register
+  it('should throw HttpException with fallback message when register error has no message', async () => {
+    mockNatsClient.send.mockReturnValue(throwError(() => ({})));
+
+    await expect(
+      controller.register({ email: 'fail@test.com', password: 'Password123!' }),
     ).rejects.toThrow(HttpException);
   });
 
@@ -253,35 +270,44 @@ describe('AuthController', () => {
     ).rejects.toThrow(HttpException);
   });
 
-    it('should return current user profile on me()', async () => {
-      mockNatsClient.send.mockReturnValue(
-        of({
-          id: 'u1',
-          nom: 'Mehdi',
-          email: 'mehdi@test.com',
-          role: 'user',
-          email_verifie: true,
-          cree_le: '2026-03-02T00:00:00.000Z',
-        }),
-      );
+  // ✅ AJOUT — couvre le fallback de handleError quand l'erreur n'a pas de message
+  it('should throw HttpException with fallback when reset error has no message', async () => {
+    mockNatsClient.send.mockReturnValue(throwError(() => ({})));
 
-      const req = { user: { sub: 'u1' } };
+    await expect(
+      controller.resetPassword({ token: 'bad', newPassword: 'x' }),
+    ).rejects.toThrow(HttpException);
+  });
 
-      const result = await controller.me(req);
+  /* ================= ME ================= */
 
-      expect(mockNatsClient.send).toHaveBeenCalledWith('auth.me', {
-        userId: 'u1',
-      });
-
-      expect(result).toEqual({
+  it('should return current user profile on me()', async () => {
+    mockNatsClient.send.mockReturnValue(
+      of({
         id: 'u1',
         nom: 'Mehdi',
         email: 'mehdi@test.com',
         role: 'user',
         email_verifie: true,
         cree_le: '2026-03-02T00:00:00.000Z',
-      });
+      }),
+    );
+
+    const req = { user: { sub: 'u1' } };
+    const result = await controller.me(req);
+
+    expect(mockNatsClient.send).toHaveBeenCalledWith('auth.me', { userId: 'u1' });
+    expect(result).toEqual({
+      id: 'u1',
+      nom: 'Mehdi',
+      email: 'mehdi@test.com',
+      role: 'user',
+      email_verifie: true,
+      cree_le: '2026-03-02T00:00:00.000Z',
     });
+  });
+
+  /* ================= UPDATE ME ================= */
 
   it('should update user name on updateMe()', async () => {
     mockNatsClient.send.mockReturnValue(
@@ -315,21 +341,32 @@ describe('AuthController', () => {
     });
   });
 
+  // ✅ AJOUT — couvre la branche throw quand nom est vide (ligne 235)
+  it('should throw HttpException when nom is empty on updateMe()', async () => {
+    await expect(
+      controller.updateMe({ user: { sub: 'u1' } }, { nom: '   ' }),
+    ).rejects.toThrow(HttpException);
+    expect(mockNatsClient.send).not.toHaveBeenCalled();
+  });
+
+  it('should throw HttpException when nom is null on updateMe()', async () => {
+    await expect(
+      controller.updateMe({ user: { sub: 'u1' } }, { nom: null as any }),
+    ).rejects.toThrow(HttpException);
+    expect(mockNatsClient.send).not.toHaveBeenCalled();
+  });
+
+  /* ================= DELETE ME ================= */
+
   it('Doit supprimer utilisateur courant avec deleteMe()', async () => {
     mockNatsClient.send.mockReturnValue(
       of({ message: 'Compte supprimé avec succès' }),
     );
 
     const req = { user: { sub: 'u1' } };
-
     const result = await controller.deleteMe(req);
 
-    expect(mockNatsClient.send).toHaveBeenCalledWith('auth.delete-me', {
-      userId: 'u1',
-    });
-
+    expect(mockNatsClient.send).toHaveBeenCalledWith('auth.delete-me', { userId: 'u1' });
     expect(result).toEqual({ message: 'Compte supprimé avec succès' });
   });
-
-
 });
