@@ -1,0 +1,21 @@
+meta {
+  name: GET /library/movies (error - no ids)
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{URL}}/library/movies
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status code is 400", function() {
+    expect(res.getStatus()).to.equal(400);
+  });
+  
+  test("Error message present", function() {
+    expect(res.body.message).to.include('ids est requis');
+  });
+}

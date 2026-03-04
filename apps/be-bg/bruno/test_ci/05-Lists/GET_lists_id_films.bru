@@ -1,0 +1,29 @@
+meta {
+  name: GET /lists/{id}/films
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{URL}}/lists/{{LIST_ID}}/films
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+script:pre-request {
+  await bru.runRequest("05-Lists/POST_lists");
+}
+
+tests {
+  test("Status code is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Response is an object", function() {
+    expect(res.body).to.be.an('object');
+  });
+}

@@ -1,0 +1,33 @@
+meta {
+  name: GET /lists/{id}
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{URL}}/lists/{{LIST_ID}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+script:pre-request {
+  await bru.runRequest("05-Lists/POST_lists");
+}
+
+tests {
+  test("Status code is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Response contains id", function() {
+    expect(res.body).to.have.property('id');
+  });
+
+  test("Response contains nom", function() {
+    expect(res.body).to.have.property('nom');
+  });
+}

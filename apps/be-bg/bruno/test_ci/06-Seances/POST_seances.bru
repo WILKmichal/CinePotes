@@ -1,0 +1,59 @@
+meta {
+  name: POST /seances
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{URL}}/seances
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+body:json {
+  {
+    "nom": "Soirée cinéma test",
+    "date": "2026-12-31T20:00:00.000Z",
+    "max_films": 5
+  }
+}
+
+script:pre-request {
+  await bru.runRequest("04-Auth/POST_auth_login");
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setEnvVar("SEANCE_ID", res.body.id);
+  }
+  if (res.body && res.body.code) {
+    bru.setEnvVar("SEANCE_CODE", res.body.code);
+  }
+}
+
+tests {
+  test("Status code is 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("Response contains id", function() {
+    expect(res.body).to.have.property('id');
+  });
+
+  test("Response contains code", function() {
+    expect(res.body).to.have.property('code');
+  });
+
+  test("Response contains nom", function() {
+    expect(res.body).to.have.property('nom');
+    expect(res.body.nom).to.equal('Soirée cinéma test');
+  });
+}

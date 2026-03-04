@@ -1,0 +1,13 @@
+meta {
+  name: Get Hello
+  type: http
+}
+
+get {
+  url: {{URL}}/
+}
+
+assert {
+  status: 200
+  body: isString
+}

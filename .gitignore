@@ -8,6 +8,7 @@ yarn-error.log*
 dist/
 .next/
 .vercel/
+**/routes.txt
 
 # Turborepo
 .turbo/
@@ -15,9 +16,15 @@ dist/
 # Environment variables
 .env
 .env.local
+.env.example
 .env.development.local
 .env.test.local
 .env.production.local
+.npmrc
+.jestStorage
+**/coverage/
+**/coverage-e2e/
+**/.claude/
 
 # IDE
 .vscode/

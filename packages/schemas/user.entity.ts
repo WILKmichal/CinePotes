@@ -1,0 +1,69 @@
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+} from 'typeorm';
+import { Seance } from './seance.entity';
+import { Participant } from './participant.entity';
+import { Liste } from './liste.entity';
+
+export const UserRole = {
+  ADMIN: 'admin',
+  USER: 'user',
+  CHEF: 'chef',
+} as const;
+export type UserRole = (typeof UserRole)[keyof typeof UserRole];
+
+@Entity('utilisateur')
+export class User {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column({ type: 'varchar', length: 100, nullable: false })
+  nom: string;
+
+  @Column({ type: 'varchar', length: 180, unique: true, nullable: false })
+  email: string;
+
+  @Column({ type: 'text', nullable: false })
+  mot_de_passe_hash: string;
+
+  @Column({
+    type: 'enum',
+    enum: Object.values(UserRole),
+    nullable: false,
+  })
+  role: UserRole;
+
+  //Email verification
+  @Column({ type: 'boolean', nullable: false, default: false })
+  email_verifie: boolean;
+
+  @Column({ type: 'uuid', nullable: true })
+  email_verification_token: string | null;
+
+  @CreateDateColumn({ type: 'timestamp', default: () => 'NOW()' })
+  cree_le: Date;
+
+  @UpdateDateColumn({ type: 'timestamp', default: () => 'NOW()' })
+  maj_le: Date;
+
+  // Relations
+  @OneToMany(() => Seance, (seance) => seance.proprietaire)
+  seances: Seance[];
+
+  @OneToMany(() => Participant, (participant) => participant.utilisateur)
+  participations: Participant[];
+
+  @OneToMany(() => Liste, (liste) => liste.utilisateur)
+  listes: Liste[];
+
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  rinitialiser_mdp_token_hash: string | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  reinitialiser_mdp_expires_at: Date | null;
+}

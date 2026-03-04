@@ -1,0 +1,27 @@
+meta {
+  name: GET /auth/profile
+  type: http
+  seq: 16
+}
+
+get {
+  url: {{URL}}/auth/profile
+  auth {
+    type: bearer
+    token: {{auth_token}}
+  }
+}
+
+tests {
+  test("Status code is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Response contains user data", function() {
+    expect(res.body).to.be.an('object');
+  });
+
+  test("User has username", function() {
+    expect(res.body).to.have.property('username');
+  });
+}
