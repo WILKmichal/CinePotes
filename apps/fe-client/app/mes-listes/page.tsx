@@ -163,23 +163,19 @@ export default function MesListesPage() {
     setEditingName(liste.nom);
   };
 
+  const [editError, setEditError] = useState<string | null>(null);
+
   const handleSaveEdit = async (listId: string, originalName: string) => {
     const token = getToken();
     if (!token) return;
     const newName = editingName.trim();
 
-    // Fermer l'édition tout de suite
-    setEditingListId(null);
-    setEditingName("");
-
-    if (!newName || newName === originalName) return;
-
-    // Mettre à jour le UI immédiatement (optimistic update)
-    setListes((prev) =>
-      prev.map((liste) =>
-        liste.id === listId ? { ...liste, nom: newName } : liste
-      )
-    );
+    if (!newName || newName === originalName) {
+      setEditingListId(null);
+      setEditingName("");
+      setEditError(null);
+      return;
+    }
 
     try {
       const res = await fetch(`${API_URL}/lists/${listId}`, {
@@ -191,21 +187,24 @@ export default function MesListesPage() {
         body: JSON.stringify({ nom: newName }),
       });
 
-      if (!res.ok) {
-        // Rollback si erreur
+      if (res.ok) {
         setListes((prev) =>
           prev.map((liste) =>
-            liste.id === listId ? { ...liste, nom: originalName } : liste
+            liste.id === listId ? { ...liste, nom: newName } : liste
           )
         );
+        setEditingListId(null);
+        setEditingName("");
+        setEditError(null);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        const msg = Array.isArray(data?.message)
+          ? data.message[0]
+          : (data?.message ?? "Nom invalide");
+        setEditError(msg);
       }
     } catch {
-      // Rollback si erreur
-      setListes((prev) =>
-        prev.map((liste) =>
-          liste.id === listId ? { ...liste, nom: originalName } : liste
-        )
-      );
+      setEditError("Impossible de mettre à jour la liste");
     }
   };
 
@@ -289,36 +288,45 @@ export default function MesListesPage() {
                   <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-2">
                       {editingListId === liste.id ? (
-                        <div className="flex items-center gap-2">
-                          <input
-                            ref={inputRef}
-                            type="text"
-                            value={editingName}
-                            onChange={(e) => setEditingName(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") handleSaveEdit(liste.id, liste.nom);
-                              if (e.key === "Escape") { setEditingListId(null); setEditingName(""); }
-                            }}
-                            className="text-2xl font-bold text-gray-900 bg-transparent border-b-2 border-blue-500 outline-none px-1 py-0"
-                          />
-                          <button
-                            onClick={() => handleSaveEdit(liste.id, liste.nom)}
-                            className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                            title="Valider"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => { setEditingListId(null); setEditingName(""); }}
-                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Annuler"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            <input
+                              ref={inputRef}
+                              type="text"
+                              value={editingName}
+                              onChange={(e) => { setEditingName(e.target.value.slice(0, 25)); setEditError(null); }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") handleSaveEdit(liste.id, liste.nom);
+                                if (e.key === "Escape") { setEditingListId(null); setEditingName(""); setEditError(null); }
+                              }}
+                              maxLength={25}
+                              className="text-2xl font-bold text-gray-900 bg-transparent border-b-2 border-blue-500 outline-none px-1 py-0"
+                            />
+                            <span className={`text-xs ${editingName.length >= 25 ? "text-red-500" : "text-gray-400"}`}>
+                              {editingName.length}/25
+                            </span>
+                            <button
+                              onClick={() => handleSaveEdit(liste.id, liste.nom)}
+                              className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                              title="Valider"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => { setEditingListId(null); setEditingName(""); setEditError(null); }}
+                              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Annuler"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                          {editError && (
+                            <p className="text-xs text-red-500 pl-1">{editError}</p>
+                          )}
                         </div>
                       ) : (
                         <>

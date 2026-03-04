@@ -71,6 +71,10 @@ export default function AddToListModal({
   // Créer une nouvelle liste
   const handleCreateList = async () => {
     if (!newListName.trim()) return;
+    if (newListName.trim().length > 25) {
+      setError("Le nom de la liste ne peut pas dépasser 25 caractères");
+      return;
+    }
 
     const token = getToken();
     if (!token) return;
@@ -191,14 +195,20 @@ export default function AddToListModal({
             Créer une nouvelle liste
           </label>
           <div className="flex gap-2">
-            <input
-              id="new-list-name"
-              type="text"
-              value={newListName}
-              onChange={(e) => setNewListName(e.target.value)}
-              placeholder="Nom de la liste"
-              className="flex-1 px-3 py-2 border rounded-lg text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none"
-            />
+            <div className="flex-1 relative">
+              <input
+                id="new-list-name"
+                type="text"
+                value={newListName}
+                onChange={(e) => setNewListName(e.target.value.slice(0, 25))}
+                placeholder="Nom de la liste"
+                maxLength={25}
+                className="w-full px-3 py-2 border rounded-lg text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+              />
+              <span className={`absolute right-2 bottom-2 text-xs ${newListName.length >= 25 ? "text-red-500" : "text-gray-400"}`}>
+                {newListName.length}/25
+              </span>
+            </div>
             <button
               onClick={handleCreateList}
               disabled={loading || !newListName.trim()}
