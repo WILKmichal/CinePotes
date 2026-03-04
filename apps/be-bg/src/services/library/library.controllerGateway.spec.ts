@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ClientProxy } from '@nestjs/microservices';
 import { of } from 'rxjs';
-import { TMDB_PATTERNS, DetailsFilm } from '../../../../types/library.types';
+import { TMDB_PATTERNS, DetailsFilm } from '@repo/types/library';
 import { LibraryController } from './library.controllerGateway';
 
 //On mock le ClientProxy (NATS) pour éviter tout vrai broker NATS

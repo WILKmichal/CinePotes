@@ -15,7 +15,9 @@
     "outDir": "./dist",
     "baseUrl": "./",
     "paths": {
-      "schemas/*": ["../../packages/schemas/*"]
+      "schemas/*": ["../../packages/schemas/*"],
+      "@repo/types": ["../../apps/types/index.ts"],
+      "@repo/types/*": ["../../apps/types/*.ts"]
     },
     "incremental": true,
     "skipLibCheck": true,

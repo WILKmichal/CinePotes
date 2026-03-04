@@ -1,0 +1,11 @@
+{
+  "name": "@repo/types",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "types": "index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./library": "./library.types.ts",
+    "./list": "./list.types.ts"
+  }
+}
