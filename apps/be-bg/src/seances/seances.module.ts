@@ -10,7 +10,7 @@ import { AuthGuard } from '../auth/auth.guard';
         name: 'NATS_SERVICE',
         transport: Transport.NATS,
         options: {
-          servers: [process.env.NATS_URL ?? 'nats://localhost:4222'],
+          servers: [process.env.NATS_URL!],
         },
       },
     ]),

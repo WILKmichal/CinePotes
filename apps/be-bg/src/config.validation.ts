@@ -1,12 +1,8 @@
 export function validateEnvironmentVariables(): void {
   const requiredVars = {
-    DB_HOST: 'postgres database host (e.g., localhost)',
-    DB_PORT: 'postgres database port (e.g., 5432)',
-    DB_USER: 'postgres database user (e.g., postgres)',
-    DB_PASSWORD: 'postgres database password (e.g., example)',
-    DB_NAME: 'postgres database name (e.g., mydatabase)',
     APP_PORT: 'Application port (e.g., 3002)',
-    VERIFICATION_MAIL: 'Enable verification mail (TRUE or FALSE)',
+    NATS_URL: '⚠️  REQUIRED - NATS server URL (e.g., nats://localhost:4222 or nats://nats:4222 in Docker)',
+    JWT_SECRET: '⚠️  REQUIRED - JWT secret for token verification (must match ms-auth)',
   };
 
   const missing = Object.entries(requiredVars)

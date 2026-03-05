@@ -169,15 +169,9 @@ export class AuthController {
   async forgotPassword(
     @Body('email') email: string,
   ): Promise<{ message: string }> {
-    const expiresInMinutes = Number.parseInt(
-      this.configService.get<string>('RESET_PASSWORD_EXPIRES_MINUTES') ?? '30',
-      10,
-    );
-
     return await firstValueFrom(
       this.natsClient.send<{ message: string }>('auth.forgot-password', {
         email,
-        expiresInMinutes,
       }),
     );
   }

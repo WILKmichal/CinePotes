@@ -22,10 +22,6 @@ describe('AuthController', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
 
-    mockConfigService.get.mockImplementation((key: string) => {
-      if (key === 'RESET_PASSWORD_EXPIRES_MINUTES') return '30';
-      return undefined;
-    });
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
       providers: [
@@ -219,7 +215,6 @@ describe('AuthController', () => {
       'auth.forgot-password',
       {
         email: 'mehdi@gmail.com',
-        expiresInMinutes: 30,
       },
     );
 

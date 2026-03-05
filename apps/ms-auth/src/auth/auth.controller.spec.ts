@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
+import { ConfigService } from '@nestjs/config';
 import { HttpStatus, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { AuthGuard } from '../../../be-bg/src/auth/auth.guard';
 
@@ -16,6 +17,14 @@ const mockUsersService = {
   deleteAccount: jest.fn(),
 };
 
+const mockConfigService = {
+  get: jest.fn((key: string) => {
+    if (key === 'RESET_PASSWORD_EXPIRES_MINUTES') return '30';
+    if (key === 'FRONT_RESET_PASSWORD_URL') return 'http://localhost:3000/reset-password';
+    return undefined;
+  }),
+};
+
 const mockNatsClient = { emit: jest.fn() };
 
 describe('AuthController', () => {
@@ -28,6 +37,7 @@ describe('AuthController', () => {
       providers: [
         { provide: AuthService, useValue: mockAuthService },
         { provide: UsersService, useValue: mockUsersService },
+        { provide: ConfigService, useValue: mockConfigService },
         { provide: 'NATS_SERVICE', useValue: mockNatsClient },
       ],
     })
@@ -83,7 +93,7 @@ describe('AuthController', () => {
   /* FORGOT PASSWORD */
   it('should send reset email if token is generated', async () => {
     mockUsersService.issuePasswordResetToken.mockResolvedValue('TOKEN123');
-    const res = await controller.forgotPassword({ email: 'mehdi@gmail.com', expiresInMinutes: 30 });
+    const res = await controller.forgotPassword({ email: 'mehdi@gmail.com' });
     expect(mockUsersService.issuePasswordResetToken).toHaveBeenCalledWith('mehdi@gmail.com', 30);
     expect(mockNatsClient.emit).toHaveBeenCalledWith('notif.reset-password', expect.objectContaining({ email: 'mehdi@gmail.com', resetUrl: expect.stringContaining('TOKEN123') }));
     expect(res.message).toBeDefined();

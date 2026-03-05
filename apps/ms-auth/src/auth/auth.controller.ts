@@ -6,6 +6,7 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { MessagePattern, Payload, ClientProxy } from "@nestjs/microservices";
+import { ConfigService } from "@nestjs/config";
 import { AuthService } from "./auth.service";
 import { UsersService } from "../users/users.service";
 import { LoginDto } from "../../../be-bg/src/auth/dto/login.dto";
@@ -16,6 +17,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly usersService: UsersService,
+    private readonly configService: ConfigService,
     @Inject("NATS_SERVICE") private readonly natsClient: ClientProxy,
   ) {}
 
@@ -68,12 +70,14 @@ export class AuthController {
   }
 
   /* ================= FORGOT PASSWORD ================= */
-  // be-bg : natsClient.send('auth.forgot-password', { email, expiresInMinutes })
   @MessagePattern("auth.forgot-password")
   async forgotPassword(
-    @Payload() data: { email: string; expiresInMinutes?: number },
+    @Payload() data: { email: string },
   ) {
-    const expiresInMinutes = data.expiresInMinutes ?? 30;
+    const expiresInMinutes = Number.parseInt(
+      this.configService.get<string>('RESET_PASSWORD_EXPIRES_MINUTES')!,
+      10,
+    );
 
     const token = await this.usersService.issuePasswordResetToken(
       data.email,
@@ -82,7 +86,7 @@ export class AuthController {
 
     if (token) {
       const frontUrl =
-        process.env.FRONT_RESET_PASSWORD_URL ??
+        this.configService.get<string>('FRONT_RESET_PASSWORD_URL') ??
         "http://localhost:3000/reset-password";
       const resetUrl = `${frontUrl}?token=${encodeURIComponent(token)}`;
 
