@@ -9,6 +9,8 @@ dist/
 .next/
 .vercel/
 **/routes.txt
+**/out/
+out/
 
 # Turborepo
 .turbo/
