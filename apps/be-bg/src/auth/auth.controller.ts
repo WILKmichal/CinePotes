@@ -19,7 +19,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { ConfigService } from '@nestjs/config';
 import { AuthGuard } from './auth.guard';
-import { Throttle } from '@nestjs/throttler';
+
 import {
   ApiTags,
   ApiBearerAuth,
@@ -48,7 +48,6 @@ export class AuthController {
   /* ================= LOGIN ================= */
 
   @Post('login')
-  @Throttle({ default: { ttl: 60000, limit: 5 } })  // 5 tentatives/minute
   @HttpCode(200)
   @ApiOperation({ summary: 'Connexion utilisateur' })
   @ApiBody({ type: LoginDto })
@@ -80,7 +79,6 @@ export class AuthController {
   /* ================= REGISTER ================= */
 
   @Post('register')
-  @Throttle({ default: { ttl: 60000, limit: 3 } })  // 3 inscriptions/minute
   @ApiOperation({ summary: 'Inscription utilisateur' })
   @ApiBody({ type: RegisterDto })
   @ApiResponse({
@@ -148,7 +146,6 @@ export class AuthController {
   /* ================= FORGOT PASSWORD ================= */
 
   @Post('forgot-password')
-  @Throttle({ default: { ttl: 60000, limit: 3 } })  // 3 demandes/minute
   @ApiOperation({ summary: 'Demande de réinitialisation de mot de passe' })
   @ApiBody({
     schema: {
