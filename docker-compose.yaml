@@ -1,0 +1,254 @@
+services:
+  # ==================== DATABASES ====================
+  postgres:
+    image: postgres:18
+    container_name: cinepote-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: mydatabase
+    ports:
+      - "5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cinepote-network
+
+  redis:
+    image: redis:7
+    container_name: cinepote-redis
+    ports:
+      - "6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cinepote-network
+
+  nats:
+    image: nats:2
+    container_name: cinepote-nats
+    ports:
+      - "4222"
+      - "8222"
+    networks:
+      - cinepote-network
+
+  # ==================== ADMIN TOOLS ====================
+  adminer:
+    image: adminer
+    container_name: cinepote-adminer
+    ports:
+      - "8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - cinepote-network
+
+  redis-commander:
+    image: rediscommander/redis-commander
+    container_name: cinepote-redis-commander
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    ports:
+      - "8081"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - cinepote-network
+
+  # ==================== MICROSERVICES ====================
+  be-bg:
+    image: ghcr.io/wilkmichal/cinepotes/be-bg:latest
+    container_name: cinepote-be-bg
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      APP_PORT: 3002
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: example
+      DB_NAME: mydatabase
+      TMDB_MS_URL: http://ms-library:3333/
+      NATS_URL: nats://nats:4222
+      SMTP_HOST: smtp.gmail.com
+      SMTP_PORT: 587
+      SMTP_USER: contact.cinepote@gmail.com
+      SMTP_PASSWORD: rxpl pmak hrwh gzmw
+      USE_ETHEREAL: "false"
+      VERIFICATION_MAIL: "false"
+    ports:
+      - "3002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    networks:
+      - cinepote-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ms-notif:
+    image: ghcr.io/wilkmichal/cinepotes/ms-notif:latest
+    container_name: cinepote-ms-notif
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NATS_URL: nats://nats:4222
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - "3000"
+    depends_on:
+      redis:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    networks:
+      - cinepote-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ms-library:
+    build:
+      context: .
+    image: ghcr.io/wilkmichal/cinepotes/ms-library:latest
+    environment:
+      NODE_ENV: production
+      PORT: 3333
+      TMDB_API_KEY: a92bcc609255f705450fa5885d59c430
+      REDIS_URL: redis://redis:6379
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      TMDB_MS_URL: http://ms-library:3333/
+      NATS_URL: nats://nats:4222
+    ports:
+      - "3333"
+    depends_on:
+      redis:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    networks:
+      - cinepote-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3333/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ms-list:
+    build:
+      context: .
+    image: ghcr.io/wilkmichal/cinepotes/ms-list:latest
+    environment:
+      NODE_ENV: production
+      NATS_URL: nats://nats:4222
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: example
+      DB_NAME: mydatabase
+    ports:
+      - "3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    networks:
+      - cinepote-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ms-auth:
+    build:
+      context: .
+    image: ghcr.io/wilkmichal/cinepotes/ms-auth:latest
+    environment:
+      NODE_ENV: production
+      APP_PORT: 3002
+      NATS_URL: nats://nats:4222
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: example
+      DB_NAME: mydatabase
+      JWT_SECRET: azertyuiopqsdfghjklmwxcvbn
+      RESET_PASSWORD_EXPIRES_MINUTES: "30"
+      FRONT_RESET_PASSWORD_URL: http://localhost:3000/reset-password
+      VERIFICATION_MAIL: "false"
+    ports:
+      - "3002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    networks:
+      - cinepote-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ms-sessions:
+    build:
+      context: .
+      dockerfile: ./apps/ms-sessions/Dockerfile
+    container_name: cinepote-ms-sessions
+    image: ghcr.io/wilkmichal/cinepotes/ms-sessions:latest
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: example
+      DB_NAME: mydatabase
+      NATS_URL: nats://nats:4222
+    ports:
+      - "3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    networks:
+      - cinepote-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  cinepote-network:
+    driver: bridge
