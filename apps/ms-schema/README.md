@@ -14,8 +14,10 @@ pnpm start:prod   # Run compiled application
 
 ## Environment Variables
 
-- `DB_HOST` - PostgreSQL host (default: localhost)
-- `DB_PORT` - PostgreSQL port (default: 5432)
-- `DB_USER` - Database user (default: postgres)
-- `DB_PASSWORD` - Database password (default: example)
-- `DB_NAME` - Database name (default: mydatabase)
+- `DB_HOST` - PostgreSQL host (required)
+- `DB_PORT` - PostgreSQL port (required, positive integer)
+- `DB_USER` - Database user (required)
+- `DB_PASSWORD` - Database password (required)
+- `DB_NAME` - Database name (required)
+
+At startup, `ms-schema` validates these variables and exits with an explicit error when one is missing or invalid. Any extra `DB_*` variable present in `.env` but not used by `ms-schema` is reported as not needed.
