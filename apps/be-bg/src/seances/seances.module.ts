@@ -5,13 +5,15 @@ import { AuthGuard } from '../auth/auth.guard';
 
 @Module({
   imports: [
-    ClientsModule.register([
+    ClientsModule.registerAsync([
       {
         name: 'NATS_SERVICE',
-        transport: Transport.NATS,
-        options: {
-          servers: [process.env.NATS_URL!],
-        },
+        useFactory: () => ({
+          transport: Transport.NATS,
+          options: {
+            servers: [process.env.NATS_URL!],
+          },
+        }),
       },
     ]),
   ],
