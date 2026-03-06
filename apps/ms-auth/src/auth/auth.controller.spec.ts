@@ -20,7 +20,7 @@ const mockUsersService = {
 const mockConfigService = {
   get: jest.fn((key: string) => {
     if (key === 'RESET_PASSWORD_EXPIRES_MINUTES') return '30';
-    if (key === 'FRONT_RESET_PASSWORD_URL') return 'http://localhost:3000/reset-password';
+    if (key === 'FRONT_RESET_PASSWORD_URL') return 'http://localhost:3001/reset-password';
     return undefined;
   }),
 };
@@ -46,8 +46,6 @@ describe('AuthController', () => {
     .compile();
     controller = module.get<AuthController>(AuthController);
   });
-
-  afterEach(() => { process.env.VERIFICATION_MAIL = 'false'; });
 
   it('should be defined', () => { expect(controller).toBeDefined(); });
 

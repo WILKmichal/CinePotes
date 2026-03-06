@@ -64,8 +64,16 @@ export default function ProfilePage() {
   };
 
   useEffect(() => {
+    const token = sessionStorage.getItem("access_token");
+    const isGuest = sessionStorage.getItem("is_guest") === "true";
+    
+    if (!token || isGuest) {
+      router.replace("/");
+      return;
+    }
+
     void loadProfile();
-  }, []);
+  }, [router]);
 
   const handleSaveName = async () => {
     const token = sessionStorage.getItem("access_token");

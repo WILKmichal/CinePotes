@@ -13,7 +13,14 @@ import {
 import { DetailsFilm, TMDB_PATTERNS } from '@repo/types/library';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { TmdbQueryDto } from './library-query.dto';
+import {
+  LibraryAdvancedSearchPayload,
+  LibraryDetailsPayload,
+  LibraryMoviesPayload,
+  LibrarySearchPayload,
+  TmdbQueryDto,
+} from '@workspace/dtos/library';
+import { NatsClientWrapper } from '../../nats/nats-client-wrapper.service';
 
 /* Gateway HTTP "library":
 * expose des routes REST, puis délègue le vrai traitement
@@ -22,7 +29,7 @@ import { TmdbQueryDto } from './library-query.dto';
 @Controller('library')
 export class LibraryController {
   // Client NATS injecté pour communiquer avec les microservices
-  constructor(@Inject('NATS_SERVICE') private readonly nats: ClientProxy) {}
+  constructor(private readonly nats: NatsClientWrapper) {}
 
   // GET /library/movies?ids=1,2,3
   // Convertit la liste d'IDs en tableau de nombres puis interroge le pattern MOVIES.
@@ -34,9 +41,10 @@ export class LibraryController {
       .ids!.split(',')
       .map((x) => Number.parseInt(x.trim(), 10));
 
+    const payload: LibraryMoviesPayload = { ids: filmIds };
     // Envoi RPC NATS vers le microservice library, puis conversion Observable -> Promise.
     return await firstValueFrom(
-      this.nats.send<DetailsFilm[]>(TMDB_PATTERNS.MOVIES, { ids: filmIds }),
+      this.nats.send<DetailsFilm[]>(TMDB_PATTERNS.MOVIES, payload),
     );
   }
 
@@ -56,11 +64,10 @@ export class LibraryController {
   @ApiOperation({ summary: 'Rechercher des films par texte' })
   @Get('recherche')
   async rechercherFilms(@Query() dto: TmdbQueryDto): Promise<DetailsFilm[]> {
+    const payload: LibrarySearchPayload = { query: dto.query ?? '' };
     // Forward direct de la query texte vers le pattern RECHERCHE.
     return await firstValueFrom(
-      this.nats.send<DetailsFilm[]>(TMDB_PATTERNS.RECHERCHE, {
-        query: dto.query,
-      }),
+      this.nats.send<DetailsFilm[]>(TMDB_PATTERNS.RECHERCHE, payload),
     );
   }
 
@@ -71,13 +78,14 @@ export class LibraryController {
   async rechercherFilmsAvancee(
     @Query() dto: TmdbQueryDto,
   ): Promise<DetailsFilm[]> {
+    const payload: LibraryAdvancedSearchPayload = {
+      titre: dto.titre,
+      annee: dto.annee,
+      genre: dto.genre,
+    };
     // Forward des filtres optionnels (titre/annee/genre) au microservice.
     return await firstValueFrom(
-      this.nats.send<DetailsFilm[]>(TMDB_PATTERNS.RECHERCHE_AVANCEE, {
-        titre: dto.titre,
-        annee: dto.annee,
-        genre: dto.genre,
-      }),
+      this.nats.send<DetailsFilm[]>(TMDB_PATTERNS.RECHERCHE_AVANCEE, payload),
     );
   }
 
@@ -91,9 +99,10 @@ export class LibraryController {
   })
   @Get(':id')
   async getMovie(@Param('id', ParseIntPipe) id: number): Promise<DetailsFilm> {
+    const payload: LibraryDetailsPayload = { id };
     // ParseIntPipe valide et convertit l'id de l'URL en number.
     return await firstValueFrom(
-      this.nats.send<DetailsFilm>(TMDB_PATTERNS.DETAILS, { id }),
+      this.nats.send<DetailsFilm>(TMDB_PATTERNS.DETAILS, payload),
     );
   }
 }

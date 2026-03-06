@@ -1,5 +1,7 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Redis } from 'ioredis';
+import { logSuccess, logError, logCustom, LOG_EMOJI } from '@workspace/logger';
 
 // Service Redis central:
 // initialise une connexion Redis au démarrage du module
@@ -10,6 +12,8 @@ export class RedisService implements OnModuleInit {
   // Indicateur de validité de connexion (utilisable pour debug/supervision)
   private valable = false;
 
+  constructor(private readonly configService: ConfigService) {}
+
   /* Hook NestJS appelé automatiquement après l'instanciation du provider.
    * Traitement:
    * crée le client Redis à partir des variables d'environnement
@@ -19,25 +23,25 @@ export class RedisService implements OnModuleInit {
   onModuleInit() {
     try {
       this.redisClient = new Redis({
-        host: process.env.REDIS_HOST ?? 'localhost',
-        port: Number(process.env.REDIS_PORT ?? 6379),
+        host: this.configService.getOrThrow<string>('REDIS_HOST'),
+        port: this.configService.getOrThrow<number>('REDIS_PORT'),
       });
 
       // Quand Redis est joignable, on marque le service comme valide.
       this.redisClient.on('connect', () => {
-        console.log('Redis connecté avec succès');
+        logCustom(LOG_EMOJI.REDIS, 'ms-library', 'Redis connected successfully');
         this.valable = true;
       });
 
       // En cas d'erreur réseau/protocole, on invalide le client pour éviter
       // les usages suivants tant qu'une nouvelle instance n'est pas créée.
       this.redisClient.on('error', (e) => {
-        console.error('Redis error:', e);
+        logError('ms-library', 'Redis connection error', undefined, e);
         this.valable = false;
         this.redisClient = null;
       });
     } catch (e) {
-      console.error('Erreur de connexion à Redis:', e);
+      logError('ms-library', 'Failed to connect to Redis', undefined, e);
       this.valable = false;
       this.redisClient = null;
     }

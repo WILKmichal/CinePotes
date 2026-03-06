@@ -27,7 +27,6 @@ describe('validateEnvironmentVariables', () => {
       ...process.env,
       APP_PORT: '3002',
       NATS_URL: 'nats://localhost:4222',
-      JWT_SECRET: 'test-secret',
     };
     expect(() => validateEnvironmentVariables()).not.toThrow();
     expect(process.exit).not.toHaveBeenCalled();

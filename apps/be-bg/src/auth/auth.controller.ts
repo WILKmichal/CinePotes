@@ -28,8 +28,20 @@ import {
   ApiQuery,
   ApiResponse,
 } from '@nestjs/swagger';
-import { LoginDto } from './dto/login.dto';
-import { RegisterDto } from './dto/register.dto';
+import {
+  ConfirmEmailDto,
+  DeleteMePayload,
+  ForgotPasswordDto,
+  GuestLoginDto,
+  GuestLoginResponseDto,
+  LoginDto,
+  MePayload,
+  RegisterDto,
+  ResetPasswordDto,
+  UpdateNameDto,
+  UpdateNamePayload,
+} from '@workspace/dtos/auth';
+import { NatsClientWrapper } from '../nats/nats-client-wrapper.service';
 
 interface MicroserviceError {
   message?: string;
@@ -42,7 +54,7 @@ interface MicroserviceError {
 export class AuthController {
   constructor(
     private readonly configService: ConfigService,
-    @Inject('NATS_SERVICE') private readonly natsClient: ClientProxy,
+    private readonly natsClient: NatsClientWrapper,
   ) {}
 
   /* ================= LOGIN ================= */
@@ -108,6 +120,33 @@ export class AuthController {
     }
   }
 
+  @Post('guest-login')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Connexion en tant que visiteur (sans compte)' })
+  @ApiBody({ type: GuestLoginDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Retourne un access_token JWT pour la session invité',
+    type: GuestLoginResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Nom d\'affichage invalide',
+  })
+  async guestLogin(@Body() body: GuestLoginDto): Promise<GuestLoginResponseDto> {
+    try {
+      return await firstValueFrom(
+        this.natsClient.send<GuestLoginResponseDto>('auth.guest-login', body),
+      );
+    } catch (error: unknown) {
+      const err = error as { message?: string; statusCode?: number };
+      throw new HttpException(
+        err?.message ?? 'Erreur lors de la connexion invité.',
+        err?.statusCode ?? HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
   /* ================= CONFIRM EMAIL ================= */
 
   @Get('confirm-email')
@@ -124,12 +163,12 @@ export class AuthController {
   })
   @ApiResponse({ status: 400, description: 'Lien invalide ou expiré' })
   async confirmEmail(
-    @Query('token') token: string,
+    @Query() query: ConfirmEmailDto,
     @Res() res: Response,
   ): Promise<void> {
     try {
       const result = await firstValueFrom<{ success: boolean }>(
-        this.natsClient.send('auth.confirm-email', { token }),
+        this.natsClient.send('auth.confirm-email', { token: query.token }),
       );
 
       if (!result?.success) {
@@ -138,7 +177,7 @@ export class AuthController {
       }
 
       res.redirect(
-        'http://localhost:3000/?redirect=http%3A%2F%2Flocalhost%3A3001%2Fauth%2Fcallback',
+        'http://localhost:3001/auth/callback',
       );
     } catch {
       res.status(400).send('Lien invalide ou expiré');
@@ -167,11 +206,11 @@ export class AuthController {
     },
   })
   async forgotPassword(
-    @Body('email') email: string,
+    @Body() body: ForgotPasswordDto,
   ): Promise<{ message: string }> {
     return await firstValueFrom(
       this.natsClient.send<{ message: string }>('auth.forgot-password', {
-        email,
+        email: body.email,
       }),
     );
   }
@@ -196,7 +235,7 @@ export class AuthController {
   })
   @ApiResponse({ status: 400, description: 'Lien invalide ou expiré' })
   async resetPassword(
-    @Body() body: { token: string; newPassword: string },
+    @Body() body: ResetPasswordDto,
   ): Promise<{ message: string }> {
     try {
       return await firstValueFrom(
@@ -234,13 +273,14 @@ export class AuthController {
   async me(
     @Req() req: { user: { sub: string } },
   ): Promise<{ id: string; username: string; email: string; nom?: string }> {
+    const payload: MePayload = { userId: req.user.sub };
     return await firstValueFrom(
       this.natsClient.send<{
         id: string;
         username: string;
         email: string;
         nom?: string;
-      }>('auth.me', { userId: req.user.sub }),
+      }>('auth.me', payload),
     );
   }
 
@@ -248,19 +288,21 @@ export class AuthController {
   @UseGuards(AuthGuard)
   async updateMe(
     @Req() req: { user: { sub: string } },
-    @Body() body: { nom: string },
+    @Body() body: UpdateNameDto,
   ): Promise<{ message: string; nom: string }> {
     if (!body?.nom?.trim()) {
       throw new HttpException('Le nom est requis', HttpStatus.BAD_REQUEST);
     }
 
+    const payload: UpdateNamePayload = {
+      userId: req.user.sub,
+      nom: body.nom.trim(),
+    };
+
     return await firstValueFrom(
       this.natsClient.send<{ message: string; nom: string }>(
         'auth.update-name',
-        {
-          userId: req.user.sub,
-          nom: body.nom.trim(),
-        },
+        payload,
       ),
     );
   }
@@ -270,10 +312,9 @@ export class AuthController {
   async deleteMe(
     @Req() req: { user: { sub: string } },
   ): Promise<{ message: string }> {
+    const payload: DeleteMePayload = { userId: req.user.sub };
     return await firstValueFrom(
-      this.natsClient.send<{ message: string }>('auth.delete-me', {
-        userId: req.user.sub,
-      }),
+      this.natsClient.send<{ message: string }>('auth.delete-me', payload),
     );
   }
 }

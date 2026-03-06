@@ -1,37 +1,33 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { TestController } from './test.controller';
 import { AuthModule } from './auth/auth.module';
 import { SeancesModule } from './seances/seances.module';
 import { ListsModule } from './lists/lists.module';
 import { NatsModule } from './nats/nats.module';
-import { NatsExempleController } from './nats/nats-exemple.controller';
 import { LibraryModule } from './services/library/library.module';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
-import { APP_GUARD } from '@nestjs/core';
+import { envValidationSchema } from './config.validation';
+import { RequestIdMiddleware } from './middleware/request-id.middleware';
 
 @Module({
   imports: [
-    ThrottlerModule.forRoot([
-      {
-        ttl: 60000,
-        limit: 20,
-      },
-    ]),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: ['apps/be-bg/.env', '.env'],
+      validationSchema: envValidationSchema,
+    }),
     LibraryModule,
     AuthModule,
     SeancesModule,
     ListsModule,
     NatsModule,
   ],
-  controllers: [AppController, TestController, NatsExempleController],
-  providers: [
-    AppService,
-    {
-      provide: APP_GUARD,
-      useClass: ThrottlerGuard,
-    },
-  ],
+  controllers: [AppController],
+  providers: [],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(RequestIdMiddleware).forRoutes('*');
+  }
+}

@@ -1,4 +1,5 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import axios, { AxiosError } from 'axios';
 import { RedisService } from '../redis/redis.service';
 import {
@@ -10,6 +11,7 @@ import {
   TmdbMovie,
   TmdbStatusMessage,
 } from '../../../../types/library.types';
+import { logExternalApi, logSuccess, logError, logCustom, LOG_EMOJI } from '@workspace/logger';
 
 @Injectable()
 export class LibraryService {
@@ -17,9 +19,15 @@ export class LibraryService {
   private readonly urltmdb = 'https://api.themoviedb.org/3';
   // Base URL pour construire les URLs d'affiches
   private readonly imageBaseUrl = 'https://image.tmdb.org/t/p/w500';
+  private readonly tmdbApiKey: string;
 
   // Redis est utilisé comme cache pour éviter des appels TMDB répétés.
-  constructor(private readonly redisService: RedisService) {}
+  constructor(
+    private readonly redisService: RedisService,
+    private readonly configService: ConfigService,
+  ) {
+    this.tmdbApiKey = this.configService.getOrThrow<string>('TMDB_API_KEY');
+  }
 
   // Transforme un poster_path TMDB en URL complète exploitable par le front.
   private buildPosterUrl(posterPath: string | null | undefined): string | null {
@@ -48,7 +56,7 @@ export class LibraryService {
   }
 
   // Normalise les erreurs axios/TMDB en HttpException NestJS avec status cohérent.
-  private handleTmdbError(error: unknown): never {
+  private handleTmdbError(error: unknown, requestId?: string): never {
     // Traitement:
     // si erreur Axios => lit status + message TMDB
     // mappe certains status connus (404/401/429)
@@ -59,28 +67,32 @@ export class LibraryService {
       const message = err.response?.data?.status_message ?? 'Erreur library';
 
       if (status === 404) {
+        logError('ms-library', 'TMDB API - Film not found (404)', requestId);
         throw new HttpException('Film introuvable', HttpStatus.NOT_FOUND);
       }
       if (status === 401) {
+        logError('ms-library', 'TMDB API - Invalid API key (401)', requestId);
         throw new HttpException(
           'Clé library invalide',
           HttpStatus.UNAUTHORIZED,
         );
       }
       if (status === 429) {
+        logError('ms-library', 'TMDB API - Rate limit exceeded (429)', requestId);
         throw new HttpException(
           'Trop de requêtes (rate limit)',
           HttpStatus.TOO_MANY_REQUESTS,
         );
       }
 
+      logError('ms-library', `TMDB API error (${status}): ${message}`, requestId);
       throw new HttpException(
         message,
         status ?? HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
 
-    console.error('library unknown error:', error);
+    logError('ms-library', 'TMDB unknown error', requestId, error);
     throw new HttpException(
       'Erreur lors de la communication avec library',
       HttpStatus.INTERNAL_SERVER_ERROR,
@@ -105,7 +117,7 @@ export class LibraryService {
         `${this.urltmdb}/genre/movie/list`,
         {
           params: {
-            api_key: process.env.TMDB_API_KEY,
+            api_key: this.tmdbApiKey,
             language: 'fr-FR',
           },
         },
@@ -136,20 +148,24 @@ export class LibraryService {
   // lecture cache
   // fallback TMDB /movie/:id
   // réécriture cache
-  async obtenirDetailsFilm(id: number): Promise<DetailsFilm> {
+  async obtenirDetailsFilm(id: number, requestId?: string): Promise<DetailsFilm> {
     const cleCache = `library:film:${id}`;
 
     // 1) lecture cache
     const enCache = await this.redisService.get<DetailsFilm>(cleCache);
-    if (enCache) return enCache;
+    if (enCache) {
+      logCustom(LOG_EMOJI.REDIS, 'ms-library', `Cache hit for movie ID: ${id}`, requestId);
+      return enCache;
+    }
 
     try {
       // 2) appel TMDB si cache manquant
+      logExternalApi('ms-library', 'TMDB', `/movie/${id}`, requestId);
       const reponse = await axios.get<TmdbMovie>(
         `${this.urltmdb}/movie/${id}`,
         {
           params: {
-            api_key: process.env.TMDB_API_KEY,
+            api_key: this.tmdbApiKey,
             language: 'fr-FR',
           },
         },
@@ -168,33 +184,38 @@ export class LibraryService {
 
       // 3) mise en cache du résultat puis retour au caller
       await this.redisService.set(cleCache, film, 7200);
+      logCustom(LOG_EMOJI.REDIS, 'ms-library', `Cached movie ID: ${id}`, requestId);
       return film;
     } catch (error) {
-      this.handleTmdbError(error);
+      this.handleTmdbError(error, requestId);
     }
   }
 
   // Récupère plusieurs détails en parallèle (Promise.all).
-  async obtenirPlusieursFilms(ids: number[]): Promise<DetailsFilm[]> {
+  async obtenirPlusieursFilms(ids: number[], requestId?: string): Promise<DetailsFilm[]> {
     // Traitement: exécute obtenirDetailsFilm(id) pour chaque id en parallèle.
-    return Promise.all(ids.map((id) => this.obtenirDetailsFilm(id)));
+    return Promise.all(ids.map((id) => this.obtenirDetailsFilm(id, requestId)));
   }
 
   // Liste des films populaires TMDB (cache 2h).
-  async obtenirFilmsPopulaires(): Promise<DetailsFilm[]> {
+  async obtenirFilmsPopulaires(requestId?: string): Promise<DetailsFilm[]> {
     const cleCache = 'library:films:populaires';
 
     // tente le cache
     const enCache = await this.redisService.get<DetailsFilm[]>(cleCache);
-    if (enCache) return enCache;
+    if (enCache) {
+      logCustom(LOG_EMOJI.REDIS, 'ms-library', 'Cache hit for popular movies', requestId);
+      return enCache;
+    }
 
     try {
       // appelle TMDB /movie/popular
+      logExternalApi('ms-library', 'TMDB', '/movie/popular', requestId);
       const reponse = await axios.get<TmdbListResponse<TmdbMovie>>(
         `${this.urltmdb}/movie/popular`,
         {
           params: {
-            api_key: process.env.TMDB_API_KEY,
+            api_key: this.tmdbApiKey,
             language: 'fr-FR',
             page: 1,
           },
@@ -204,29 +225,34 @@ export class LibraryService {
       // mappe, cache puis retourne
       const films = this.mapperFilmsTmdb(reponse.data.results);
       await this.redisService.set(cleCache, films, 7200);
+      logCustom(LOG_EMOJI.REDIS, 'ms-library', 'Cached popular movies', requestId);
       return films;
     } catch (error) {
-      this.handleTmdbError(error);
+      this.handleTmdbError(error, requestId);
     }
   }
 
   // Recherche texte simple sur /search/movie (cache 2h par requête normalisée).
-  async rechercherFilms(query: string): Promise<DetailsFilm[]> {
+  async rechercherFilms(query: string, requestId?: string): Promise<DetailsFilm[]> {
     // Normalisation de la requête pour stabiliser la clé cache.
     const requete = query.toLowerCase().trim();
     const cleCache = `library:recherche:${requete}`;
 
     // lecture cache
     const enCache = await this.redisService.get<DetailsFilm[]>(cleCache);
-    if (enCache) return enCache;
+    if (enCache) {
+      logCustom(LOG_EMOJI.REDIS, 'ms-library', `Cache hit for search: ${query}`, requestId);
+      return enCache;
+    }
 
     try {
       // appel TMDB /search/movie
+      logExternalApi('ms-library', 'TMDB', `/search/movie?query=${query}`, requestId);
       const reponse = await axios.get<TmdbListResponse<TmdbMovie>>(
         `${this.urltmdb}/search/movie`,
         {
           params: {
-            api_key: process.env.TMDB_API_KEY,
+            api_key: this.tmdbApiKey,
             language: 'fr-FR',
             query,
             page: 1,
@@ -237,9 +263,10 @@ export class LibraryService {
       // mappe, cache puis retourne
       const films = this.mapperFilmsTmdb(reponse.data.results);
       await this.redisService.set(cleCache, films, 7200);
+      logCustom(LOG_EMOJI.REDIS, 'ms-library', `Cached search results: ${query}`, requestId);
       return films;
     } catch (error) {
-      this.handleTmdbError(error);
+      this.handleTmdbError(error, requestId);
     }
   }
 
@@ -248,6 +275,7 @@ export class LibraryService {
   // sans titre: /discover/movie avec filtres genre/année côté TMDB
   async rechercherFilmsAvancee(
     filtres: RechercheAvanceeFiltres,
+    requestId?: string,
   ): Promise<DetailsFilm[]> {
     // On normalise les filtres d'entrée
     const titre = filtres.titre?.trim();
@@ -262,16 +290,20 @@ export class LibraryService {
 
     // lecture cache selon la combinaison de filtres
     const enCache = await this.redisService.get<DetailsFilm[]>(cleCache);
-    if (enCache) return enCache;
+    if (enCache) {
+      logCustom(LOG_EMOJI.REDIS, 'ms-library', 'Cache hit for advanced search', requestId);
+      return enCache;
+    }
 
     try {
       // 1) Cas "titre renseigné" : endpoint search
       if (titre) {
+        logExternalApi('ms-library', 'TMDB', `/search/movie (advanced)`, requestId);
         const reponse = await axios.get<TmdbListResponse<TmdbMovie>>(
           `${this.urltmdb}/search/movie`,
           {
             params: {
-              api_key: process.env.TMDB_API_KEY,
+              api_key: this.tmdbApiKey,
               language: 'fr-FR',
               query: titre,
               page: 1,
@@ -299,12 +331,13 @@ export class LibraryService {
         // Mapping + cache + retour
         const films = this.mapperFilmsTmdb(results);
         await this.redisService.set(cleCache, films, 7200);
+        logCustom(LOG_EMOJI.REDIS, 'ms-library', 'Cached advanced search results', requestId);
         return films;
       }
 
       // 2) Cas "sans titre" : endpoint discover avec paramètres structurés
       const params: DiscoverMovieParams = {
-        api_key: process.env.TMDB_API_KEY ?? '',
+        api_key: this.tmdbApiKey,
         language: 'fr-FR',
         sort_by: 'popularity.desc',
         page: 1,
@@ -322,6 +355,7 @@ export class LibraryService {
         params.with_genres = genreId;
       }
 
+      logExternalApi('ms-library', 'TMDB', '/discover/movie', requestId);
       const reponse = await axios.get<TmdbListResponse<TmdbMovie>>(
         `${this.urltmdb}/discover/movie`,
         {
@@ -332,9 +366,10 @@ export class LibraryService {
       // Mapping + cache + retour
       const films = this.mapperFilmsTmdb(reponse.data.results ?? []);
       await this.redisService.set(cleCache, films, 7200);
+      logCustom(LOG_EMOJI.REDIS, 'ms-library', 'Cached discover results', requestId);
       return films;
     } catch (error) {
-      this.handleTmdbError(error);
+      this.handleTmdbError(error, requestId);
     }
   }
 }

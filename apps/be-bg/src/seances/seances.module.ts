@@ -1,23 +1,10 @@
 import { Module } from '@nestjs/common';
 import { SeancesController } from './seances.controller';
-import { ClientsModule, Transport } from '@nestjs/microservices';
-import { AuthGuard } from '../auth/auth.guard';
+import { AuthModule } from '../auth/auth.module';
+import { NatsModule } from '../nats/nats.module';
 
 @Module({
-  imports: [
-    ClientsModule.registerAsync([
-      {
-        name: 'NATS_SERVICE',
-        useFactory: () => ({
-          transport: Transport.NATS,
-          options: {
-            servers: [process.env.NATS_URL!],
-          },
-        }),
-      },
-    ]),
-  ],
+  imports: [NatsModule, AuthModule],
   controllers: [SeancesController],
-  providers: [AuthGuard],
 })
 export class SeancesModule {}

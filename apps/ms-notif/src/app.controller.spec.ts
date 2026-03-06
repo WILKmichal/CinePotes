@@ -1,8 +1,7 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { AppController } from "./app.controller";
 import { MailService } from "./mail.service";
-import { ConfirmEmailDto } from "./dto/confirm-email.dto";
-import { ResetPasswordDto } from "./dto/reset-password.dto";
+import type { ConfirmEmailDto, ResetPasswordDto } from "@workspace/dtos/notifications";
 
 describe("AppController", () => {
   let controller: AppController;
@@ -38,7 +37,8 @@ describe("AppController", () => {
       confirmUrl: "http://localhost/confirm",
     };
 
-    await controller.handleConfirmEmail(data);
+    const mockContext = { getArgs: () => [] } as any;
+    await controller.handleConfirmEmail(data, mockContext);
 
     expect(handleConfirmEmail).toHaveBeenCalledWith(
       "user@test.com",
@@ -55,7 +55,8 @@ describe("AppController", () => {
       expiresInMinutes: 30,
     };
 
-    await controller.handleResetPassword(data);
+    const mockContext = { getArgs: () => [] } as any;
+    await controller.handleResetPassword(data, mockContext);
 
     expect(handleResetPassword).toHaveBeenCalledWith(
       "user@test.com",

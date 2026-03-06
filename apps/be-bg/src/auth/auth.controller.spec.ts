@@ -148,7 +148,7 @@ describe('AuthController', () => {
       redirect: jest.fn(),
     };
 
-    await controller.confirmEmail('bad-token', res as any);
+    await controller.confirmEmail({ token: 'bad-token' }, res as any);
 
     expect(mockNatsClient.send).toHaveBeenCalledWith(
       'auth.confirm-email',
@@ -170,7 +170,7 @@ describe('AuthController', () => {
       redirect: jest.fn(),
     };
 
-    await controller.confirmEmail('good-token', res as any);
+    await controller.confirmEmail({ token: 'good-token' }, res as any);
 
     expect(mockNatsClient.send).toHaveBeenCalledWith(
       'auth.confirm-email',
@@ -178,7 +178,7 @@ describe('AuthController', () => {
     );
 
     expect(res.redirect).toHaveBeenCalledWith(
-      'http://localhost:3000/?redirect=http%3A%2F%2Flocalhost%3A3001%2Fauth%2Fcallback',
+      'http://localhost:3001/auth/callback',
     );
   });
 
@@ -193,7 +193,7 @@ describe('AuthController', () => {
       redirect: jest.fn(),
     };
 
-    await controller.confirmEmail('error-token', res as any);
+    await controller.confirmEmail({ token: 'error-token' }, res as any);
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.send).toHaveBeenCalledWith('Lien invalide ou expiré');
@@ -209,7 +209,7 @@ describe('AuthController', () => {
       }),
     );
 
-    const result = await controller.forgotPassword('mehdi@gmail.com');
+    const result = await controller.forgotPassword({ email: 'mehdi@gmail.com' });
 
     expect(mockNatsClient.send).toHaveBeenCalledWith(
       'auth.forgot-password',

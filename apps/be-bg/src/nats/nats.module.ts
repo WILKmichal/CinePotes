@@ -1,20 +1,23 @@
 import { Module } from '@nestjs/common';
-import { ClientsModule, Transport } from '@nestjs/microservices';
+import { ConfigService } from '@nestjs/config';
+import { ClientProxyFactory, Transport } from '@nestjs/microservices';
+import { NatsClientWrapper } from './nats-client-wrapper.service';
 
 @Module({
-  imports: [
-    // ClientsModule = permet à be-bg d'ENVOYER des messages via NATS
-    // Sans ça, il peut seulement recevoir
-    ClientsModule.register([
-      {
-        name: 'NATS_SERVICE', // token d'injection, on l'utilise avec @Inject('NATS_SERVICE')
-        transport: Transport.NATS,
-        options: {
-          servers: [process.env.NATS_URL!],
-        },
-      },
-    ]),
+  providers: [
+    {
+      provide: 'NATS_SERVICE',
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) =>
+        ClientProxyFactory.create({
+          transport: Transport.NATS,
+          options: {
+            servers: [configService.getOrThrow<string>('NATS_URL')],
+          },
+        }),
+    },
+    NatsClientWrapper,
   ],
-  exports: [ClientsModule], // on exporte pour que les autres modules de be-bg puissent l'utiliser
+  exports: ['NATS_SERVICE', NatsClientWrapper],
 })
 export class NatsModule {}

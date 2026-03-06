@@ -1,12 +1,10 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import JoinLobbyModal from "./JoinLobbyModal";
 
-const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL;
-const CALLBACK_URL = "http://localhost:3001/auth/callback";
-
-const signInUrl = `${ADMIN_URL}/login-client?redirect=${encodeURIComponent(CALLBACK_URL)}&mode=login`;
-const signUpUrl = `${ADMIN_URL}/login-client?redirect=${encodeURIComponent(CALLBACK_URL)}&mode=register`;
+const signInUrl = "/login?mode=login";
+const signUpUrl = "/login?mode=register";
 
 
 export interface DetailsFilm {
@@ -51,18 +49,38 @@ function getDisplayName(): string | null {
   return payload?.username ?? null;
 }
 
+function getGuestStatus(): boolean {
+  if (globalThis.window === undefined) return false;
+  return sessionStorage.getItem("is_guest") === "true";
+}
+
 const emptySubscribe = () => () => {};
 
 export default function Header() {
   const router = useRouter();
+  const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
   const displayName = useSyncExternalStore(
     emptySubscribe,
     getDisplayName,
     () => null
   );
+  const isGuest = useSyncExternalStore(
+    emptySubscribe,
+    getGuestStatus,
+    () => false
+  );
 
   const handleLogout = () => {
+    // If guest, clear their session data from localStorage
+    const isGuest = sessionStorage.getItem("is_guest") === "true";
+    if (isGuest) {
+      localStorage.removeItem("current_session_id");
+      localStorage.removeItem("joined_seance");
+    }
+    
     sessionStorage.removeItem("access_token");
+    sessionStorage.removeItem("is_guest");
+    sessionStorage.removeItem("display_name");
     router.replace("/");
   };
 
@@ -86,7 +104,7 @@ export default function Header() {
               className="inline-block rounded-lg px-2 py-1 text-sm font-medium text-gray-900 hover:bg-gray-100"
               href="/"
             >
-              Home
+              Accueil
             </Link>
             <Link
               className="inline-block rounded-lg px-2 py-1 text-sm font-medium text-gray-900 hover:bg-gray-100"
@@ -98,9 +116,9 @@ export default function Header() {
               className="inline-block rounded-lg px-2 py-1 text-sm font-medium text-gray-900 hover:bg-gray-100"
               href="/about"
             >
-              About us
+              À propos
             </Link>
-            {displayName && (
+            {displayName && !isGuest && (
               <Link
                 className="inline-block rounded-lg px-2 py-1 text-sm font-medium text-gray-900 transition-all duration-200 hover:bg-gray-100 hover:text-gray-900"
                 href="/mes-listes"
@@ -111,21 +129,34 @@ export default function Header() {
           </div>
 
           <div className="flex items-center justify-end gap-3">
+            <button
+              onClick={() => setIsJoinModalOpen(true)}
+              className="rounded-xl bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow ring-1 ring-gray-300 hover:bg-gray-50 transition-colors"
+            >
+              Rejoindre un lobby
+            </button>
+
             {displayName ? (
               <>
-                <Link href="/profile">
-                  <img
-                    src="https://img.icons8.com/fluent/48/000000/user-male-circle.png"
-                    alt="Profile"
-                    className="h-9 w-9 rounded-full object-cover cursor-pointer border border-gray-300 hover:scale-105 transition"
-                  />
-                </Link>
+                {isGuest ? (
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-100 text-indigo-700 text-sm font-semibold">
+                    👤 {displayName}
+                  </div>
+                ) : (
+                  <Link href="/profile">
+                    <img
+                      src="https://img.icons8.com/fluent/48/000000/user-male-circle.png"
+                      alt="Profil"
+                      className="h-9 w-9 rounded-full object-cover cursor-pointer border border-gray-300 hover:scale-105 transition"
+                    />
+                  </Link>
+                )}
 
                 <button
                   onClick={handleLogout}
                   className="rounded-xl bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-800"
                 >
-                  Log out
+                  Déconnexion
                 </button>
               </>
             ) : (
@@ -134,20 +165,21 @@ export default function Header() {
                   className="rounded-xl bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow ring-1 ring-gray-300 hover:bg-gray-50"
                   href={signInUrl}
                 >
-                  Sign in
+                  Se connecter
                 </Link>
 
                 <Link
                   className="rounded-xl bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-500"
                   href={signUpUrl}
                 >
-                  Sign up
+                  S'inscrire
                 </Link>
               </>
             )}
           </div>
         </div>
       </div>
+      <JoinLobbyModal isOpen={isJoinModalOpen} onClose={() => setIsJoinModalOpen(false)} />
     </header>
   );
 }
@@ -157,9 +189,9 @@ function Footer() {
     <footer className="w-full flex justify-center mt-16">
   <div className="flex flex-col items-center w-full bg-white border-t border-gray-200 shadow-lg p-8 space-y-8">
     <nav className="flex justify-center flex-wrap gap-6 text-gray-500 font-medium">
-      <Link className="hover:text-gray-900" href="/">Home</Link>
+      <Link className="hover:text-gray-900" href="/">Accueil</Link>
       <Link className="hover:text-gray-900" href="/Lobby">Lobby</Link>
-      <Link className="hover:text-gray-900" href="/about">About</Link>
+      <Link className="hover:text-gray-900" href="/about">À propos</Link>
       <Link className="hover:text-gray-900" href="/Service">Services</Link>
     </nav>
     <div className="flex justify-center space-x-5">
@@ -167,7 +199,7 @@ function Footer() {
       <a href="https://twitter.com"><img src="https://img.icons8.com/fluent/30/000000/twitter.png" alt="Twitter"/></a>
     </div>
     <p className="text-center text-gray-700 font-medium">
-      &copy; 2025 Company Ltd. All rights reserved.
+      &copy; 2025 Company Ltd. Tous droits réservés.
     </p>
   </div>
 </footer>
@@ -210,7 +242,7 @@ function useRechercheFilms(
           `${API_URL}/library/recherche/avancee?${params.toString()}`
         );
         if (!response.ok) {
-          throw new Error('Failed to fetch films');
+          throw new Error('Échec de récupération des films');
         }
         const data: DetailsFilm[] = await response.json();
         setResultats(data);
@@ -338,7 +370,7 @@ function BarreRecherche() {
                       />
                     ) : (
                       <div className="w-10 h-14 bg-gray-200 rounded flex items-center justify-center text-xs">
-                        N/A
+                        N/D
                       </div>
                     )}
                     <div>
@@ -346,7 +378,7 @@ function BarreRecherche() {
                       <p className="text-xs text-gray-500">
                         {film.date_sortie
                           ? new Date(film.date_sortie).getFullYear()
-                          : "N/A"}{" "}
+                          : "N/D"}{" "}
                         • ⭐ {film.note_moyenne.toFixed(1)}
                       </p>
                     </div>
@@ -416,7 +448,7 @@ function CarteFilms({ id, titre, resume, date_sortie, affiche_url, note_moyenne 
             <img src={affiche_url} alt={titre} className="w-24 h-36 object-cover rounded flex-shrink-0" />
           ) : (
             <div className="w-24 h-36 bg-gray-200 rounded flex items-center justify-center text-gray-500 flex-shrink-0">
-              No Image
+              Aucune image
             </div>
           )}
           <div className="flex-1">
@@ -424,10 +456,10 @@ function CarteFilms({ id, titre, resume, date_sortie, affiche_url, note_moyenne 
             <p className="text-sm text-gray-600 mt-1 line-clamp-3">{resume}</p>
             <div className="mt-3 flex items-center justify-between">
               <span className="text-sm text-gray-500">
-                {date_sortie ? new Date(date_sortie).toLocaleDateString() : "N/A"}
+                {date_sortie ? new Date(date_sortie).toLocaleDateString() : "N/D"}
               </span>
               <span className="text-sm font-medium text-yellow-500">
-                {typeof note_moyenne === "number" ? note_moyenne.toFixed(1) : "N/A"}/10
+                {typeof note_moyenne === "number" ? note_moyenne.toFixed(1) : "N/D"}/10
               </span>
             </div>
           </div>

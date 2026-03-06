@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { Header, Footer } from "@/components/utils";
@@ -54,6 +54,36 @@ function ClassementContent() {
   const [submitted, setSubmitted] = useState(false);
   const [waitingOthers, setWaitingOthers] = useState(false);
   const [resultat, setResultat] = useState<FilmClasse[] | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [isMaster, setIsMaster] = useState(false);
+  const [isPartialResults, setIsPartialResults] = useState(false);
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Early auth check on mount - redirect before rendering content
+  useEffect(() => {
+    const token = getToken();
+    if (!token) {
+      setIsAuthenticated(false);
+      router.replace("/");
+    }
+  }, [router]);
+
+  // Check if current user is session master
+  useEffect(() => {
+    const proprietaireId = sessionStorage.getItem("seance_proprietaire_id");
+    if (proprietaireId) {
+      const token = getToken();
+      if (token) {
+        try {
+          const payload = JSON.parse(atob(token.split(".")[1]));
+          const currentUserId = payload.sub;
+          setIsMaster(currentUserId === proprietaireId);
+        } catch {
+          setIsMaster(false);
+        }
+      }
+    }
+  }, []);
 
   // Polling : si la séance disparaît (hôte l'a supprimée), rediriger vers /lobby
   useEffect(() => {
@@ -183,7 +213,7 @@ function ClassementContent() {
     setSubmitted(true);
     setWaitingOthers(true);
 
-    const poll = setInterval(async () => {
+    pollIntervalRef.current = setInterval(async () => {
       const statusRes = await fetch(
         `${API_URL}/seances/${seanceId}/classement/status`,
         { headers: { Authorization: `Bearer ${getToken()}` } }
@@ -192,7 +222,7 @@ function ClassementContent() {
       const allDone: boolean = await statusRes.json();
       if (!allDone) return;
 
-      clearInterval(poll);
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
 
       const resultatRes = await fetch(
         `${API_URL}/seances/${seanceId}/classement/resultat`,
@@ -212,9 +242,39 @@ function ClassementContent() {
 
       setResultat(final);
       setWaitingOthers(false);
+      setIsPartialResults(false);
       // Mémoriser qu'on a un résultat actif → pour que /lobby redirige ici
       sessionStorage.setItem("classement_seance_id", seanceId);
     }, 3000);
+  };
+
+  // Force show results early (master only)
+  const handleForceShowResults = async () => {
+    const token = getToken();
+    
+    const resultatRes = await fetch(
+      `${API_URL}/seances/${seanceId}/classement/resultat`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (!resultatRes.ok) return;
+
+    const scores: { tmdb_id: number; rang_moyen: number }[] = await resultatRes.json();
+    const filmMap = new Map(films.map((f) => [f.id, f]));
+    const final: FilmClasse[] = scores
+      .map((s) => {
+        const film = filmMap.get(s.tmdb_id);
+        if (!film) return null;
+        return { ...film, rang_moyen: s.rang_moyen };
+      })
+      .filter((f): f is FilmClasse => f !== null);
+
+    setResultat(final);
+    setWaitingOthers(false);
+    setIsPartialResults(true);
+    sessionStorage.setItem("classement_seance_id", seanceId);
+    
+    // Keep polling to update results when others submit
+    // Don't clear the interval - let it continue checking for completion
   };
 
   const handleQuit = async () => {
@@ -234,6 +294,16 @@ function ClassementContent() {
     if (resultat) {
       return (
         <div className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
+          {isPartialResults && (
+            <div className="bg-amber-50 border-2 border-amber-300 rounded-xl p-4 text-center">
+              <p className="text-amber-800 font-semibold text-sm">
+                ⚠️ Résultats Partiels - Tous les participants n'ont pas encore classé leurs films
+              </p>
+              <p className="text-amber-600 text-xs mt-1">
+                Les résultats seront mis à jour automatiquement au fur et à mesure des soumissions
+              </p>
+            </div>
+          )}
           <div className="text-center space-y-2">
             <div className="text-5xl">🏆</div>
             <h2 className="text-2xl font-black text-gray-900 uppercase tracking-wide">
@@ -282,6 +352,22 @@ function ClassementContent() {
           <div className="flex justify-center pt-2">
             <div className="w-8 h-8 border-4 border-[#C84B31] border-t-transparent rounded-full animate-spin" />
           </div>
+          {isMaster && (
+            <div className="pt-6 border-t border-gray-100">
+              <p className="text-xs text-amber-600 font-semibold uppercase tracking-widest mb-3">
+                ⚡ Maître de Session
+              </p>
+              <button
+                onClick={handleForceShowResults}
+                className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-xl font-semibold text-sm transition-colors shadow-md hover:shadow-lg"
+              >
+                ⚡ Afficher les résultats maintenant
+              </button>
+              <p className="text-xs text-gray-400 mt-2">
+                Voir les résultats avec les soumissions actuelles uniquement
+              </p>
+            </div>
+          )}
         </div>
       );
     }
@@ -365,6 +451,11 @@ function ClassementContent() {
         <div className="w-12 h-12 border-4 border-[#C84B31] border-t-transparent rounded-full animate-spin" />
       </div>
     );
+  }
+
+  // Prevent rendering if user is not authenticated
+  if (!isAuthenticated) {
+    return null;
   }
 
   return (

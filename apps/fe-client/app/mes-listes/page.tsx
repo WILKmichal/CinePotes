@@ -80,9 +80,22 @@ export default function MesListesPage() {
   };
 
   useEffect(() => {
+    const token = getToken();
+    const isGuest = sessionStorage.getItem("is_guest") === "true";
+    
+    if (!token) {
+      router.push("/");
+      return;
+    }
+
+    if (isGuest) {
+      router.push("/");
+      return;
+    }
+
     fetchListes();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [router]);
 
   const fetchFilmInfo = async (tmdbId: number) => {
     try {

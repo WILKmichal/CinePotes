@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Liste } from 'schemas/liste.entity';
 import { ListeFilm } from 'schemas/liste-film.entity';
+import { logAction, logSuccess, logError } from '@workspace/logger';
 
 @Injectable()
 export class ListsService {
@@ -44,13 +45,16 @@ export class ListsService {
     nom: string,
     description?: string,
   ): Promise<Liste> {
+    logAction('ms-list', `Creating list "${nom}" for user ${userId}`);
     const liste = this.listesRepository.create({
       nom,
       description,
       utilisateur_id: userId,
     });
 
-    return this.listesRepository.save(liste);
+    const saved = await this.listesRepository.save(liste);
+    logSuccess('ms-list', `List ${saved.id} created successfully`);
+    return saved;
   }
 
   // Modifier une liste (nom, description)
@@ -60,23 +64,36 @@ export class ListsService {
     nom?: string,
     description?: string,
   ): Promise<Liste | null> {
+    logAction('ms-list', `Updating list ${listeId} for user ${userId}`);
     const liste = await this.findOne(listeId, userId);
-    if (!liste) return null;
+    if (!liste) {
+      logError('ms-list', `List ${listeId} not found for user ${userId}`);
+      return null;
+    }
 
     if (nom) liste.nom = nom;
     if (description !== undefined) liste.description = description;
 
-    return this.listesRepository.save(liste);
+    const updated = await this.listesRepository.save(liste);
+    logSuccess('ms-list', `List ${listeId} updated successfully`);
+    return updated;
   }
 
   // Supprimer une liste
   async delete(listeId: string, userId: string): Promise<boolean> {
+    logAction('ms-list', `Deleting list ${listeId} for user ${userId}`);
     const res = await this.listesRepository.delete({
       id: listeId,
       utilisateur_id: userId,
     });
 
-    return (res.affected ?? 0) > 0;
+    const success = (res.affected ?? 0) > 0;
+    if (success) {
+      logSuccess('ms-list', `List ${listeId} deleted successfully`);
+    } else {
+      logError('ms-list', `Failed to delete list ${listeId} for user ${userId}`);
+    }
+    return success;
   }
 
   // Ajouter un film a une liste
@@ -85,8 +102,12 @@ export class ListsService {
     tmdbId: number,
     userId: string,
   ): Promise<ListeFilm | null> {
+    logAction('ms-list', `Adding film ${tmdbId} to list ${listeId}`);
     const liste = await this.findOne(listeId, userId);
-    if (!liste) return null;
+    if (!liste) {
+      logError('ms-list', `List ${listeId} not found for user ${userId}`);
+      return null;
+    }
 
     const film = this.listeFilmsRepository.create({
       liste_id: listeId,
@@ -94,8 +115,11 @@ export class ListsService {
     });
 
     try {
-      return await this.listeFilmsRepository.save(film);
-    } catch {
+      const saved = await this.listeFilmsRepository.save(film);
+      logSuccess('ms-list', `Film ${tmdbId} added to list ${listeId}`);
+      return saved;
+    } catch (error) {
+      logError('ms-list', `Failed to add film ${tmdbId} to list ${listeId} (probably duplicate)`);
       return film;
     }
   }
@@ -106,15 +130,23 @@ export class ListsService {
     tmdbId: number,
     userId: string,
   ): Promise<boolean> {
+    logAction('ms-list', `Removing film ${tmdbId} from list ${listeId}`);
     const liste = await this.findOne(listeId, userId);
-    if (!liste) return false;
+    if (!liste) {
+      logError('ms-list', `List ${listeId} not found for user ${userId}`);
+      return false;
+    }
 
     const res = await this.listeFilmsRepository.delete({
       liste_id: listeId,
       tmdb_id: tmdbId,
     });
 
-    return (res.affected ?? 0) > 0;
+    const success = (res.affected ?? 0) > 0;
+    if (success) {
+      logSuccess('ms-list', `Film ${tmdbId} removed from list ${listeId}`);
+    }
+    return success;
   }
 
   // Recuperer les films d'une liste

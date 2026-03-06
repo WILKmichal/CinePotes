@@ -1,4 +1,5 @@
 import { Module, OnModuleInit } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { User } from 'schemas/user.entity';
@@ -6,18 +7,28 @@ import { Seance } from 'schemas/seance.entity';
 import { Participant } from 'schemas/participant.entity';
 import { Liste } from 'schemas/liste.entity';
 import { ListeFilm } from 'schemas/liste-film.entity';
+import { PropositionFilm } from 'schemas/proposition-film.entity';
+import { VoteClassement } from 'schemas/vote-classement.entity';
+import { envValidationSchema } from './config.validation';
+import { logAction, logSuccess, logError } from '@workspace/logger';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: ['apps/ms-schema/.env', '.env'],
+      validationSchema: envValidationSchema,
+    }),
     TypeOrmModule.forRootAsync({
-      useFactory: () => ({
-        type: 'postgres',
-        host: process.env.DB_HOST!,
-        port: Number.parseInt(process.env.DB_PORT!, 10),
-        username: process.env.DB_USER!,
-        password: process.env.DB_PASSWORD!,
-        database: process.env.DB_NAME!,
-        entities: [User, Seance, Participant, Liste, ListeFilm],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres' as const,
+        host: configService.getOrThrow<string>('DB_HOST'),
+        port: configService.getOrThrow<number>('DB_PORT'),
+        username: configService.getOrThrow<string>('DB_USER'),
+        password: configService.getOrThrow<string>('DB_PASSWORD'),
+        database: configService.getOrThrow<string>('DB_NAME'),
+        entities: [User, Seance, Participant, Liste, ListeFilm, PropositionFilm, VoteClassement],
         synchronize: true,
         logging: ['error', 'warn', 'info'],
       }),
@@ -29,21 +40,19 @@ export class AppModule implements OnModuleInit {
 
   async onModuleInit() {
     try {
-      // Create UUID extension
+      // Create UUID extension (raw SQL required for PostgreSQL extensions)
       await this.dataSource.query('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"');
-      console.log('✓ UUID extension created successfully');
+      logSuccess('ms-schema', 'UUID extension created successfully');
 
-      // Verify tables were created
-      const tables = await this.dataSource.query(`
-        SELECT table_name FROM information_schema.tables 
-        WHERE table_schema = 'public'
-      `);
-      console.log(`✓ Database schema initialized with ${tables.length} tables`);
+      // Verify tables were created using TypeORM metadata
+      const entityMetadatas = this.dataSource.entityMetadatas;
+      const tableCount = entityMetadatas.filter(metadata => metadata.tableType === 'regular').length;
+      logSuccess('ms-schema', `Database schema initialized with ${tableCount} tables`);
 
-      console.log('Database initialization complete. Exiting...');
+      logSuccess('ms-schema', 'Database initialization complete. Exiting...');
       process.exit(0);
     } catch (error) {
-      console.error('✗ Failed to initialize database:', error);
+      logError('ms-schema', 'Failed to initialize database', undefined, error);
       process.exit(1);
     }
   }

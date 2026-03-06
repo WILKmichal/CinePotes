@@ -1,25 +1,15 @@
-export function validateEnvironmentVariables(): void {
-  const requiredVars = {
-    APP_PORT: 'Application port (e.g., 3002)',
-    NATS_URL: '⚠️  REQUIRED - NATS server URL (e.g., nats://localhost:4222)',
-    DB_HOST: 'Database host (e.g., localhost)',
-    DB_PORT: 'Database port (e.g., 5432)',
-    DB_USER: 'Database user (e.g., postgres)',
-    DB_PASSWORD: 'Database password',
-    DB_NAME: 'Database name (e.g., mydatabase)',
-    JWT_SECRET: '⚠️  REQUIRED - JWT secret for token signing',
-    RESET_PASSWORD_EXPIRES_MINUTES: '⚠️  REQUIRED - Password reset token expiration in minutes',
-    FRONT_RESET_PASSWORD_URL: 'Frontend URL for password reset (e.g., http://localhost:3000/reset-password)',
-    VERIFICATION_MAIL: 'Enable verification mail (TRUE or FALSE)',
-  };
+import * as Joi from 'joi';
 
-  const missing = Object.entries(requiredVars)
-    .filter(([key]) => !process.env[key])
-    .map(([key, description]) => `  • ${key}: ${description}`);
-
-  if (missing.length > 0) {
-    console.error('\n❌ Missing required environment variables:\n');
-    console.error(missing.join('\n'));
-    process.exit(1);
-  }
-}
+export const envValidationSchema = Joi.object({
+  APP_PORT: Joi.number().integer().positive().required(),
+  NATS_URL: Joi.string().pattern(/^nats:\/\/.+/).required(),
+  DB_HOST: Joi.string().required(),
+  DB_PORT: Joi.number().integer().positive().required(),
+  DB_USER: Joi.string().required(),
+  DB_PASSWORD: Joi.string().required(),
+  DB_NAME: Joi.string().required(),
+  JWT_SECRET: Joi.string().min(16).required(),
+  RESET_PASSWORD_EXPIRES_MINUTES: Joi.number().integer().positive().required(),
+  FRONT_RESET_PASSWORD_URL: Joi.string().uri().required(),
+  VERIFICATION_MAIL: Joi.string().valid('TRUE', 'FALSE', 'true', 'false').required(),
+});
