@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import {Header,Footer,BarreRecherche,CarteFilms,DetailsFilm,} from "../components/utils";
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3333";
 
-export function useFilms() {
+function useFilms() {
   const [films, setFilms] = useState<DetailsFilm[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
