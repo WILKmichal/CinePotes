@@ -1,23 +1,19 @@
-import * as dotenv from "dotenv";
-dotenv.config();
-
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
-import { validateEnvironmentVariables } from "./config.validation";
+import { logStart, logError, logAction } from "@workspace/logger";
 
 async function bootstrap() {
-  validateEnvironmentVariables();
-
   const app = await NestFactory.createApplicationContext(AppModule);
 
-  console.log("worker-gmail demarre et ecoute la queue mail");
+  logStart('worker-gmail', 'Worker started and listening to mail queue');
 
   process.on("SIGTERM", () => {
+    logAction('worker-gmail', 'Received SIGTERM, shutting down gracefully');
     void app.close().then(() => process.exit(0));
   });
 }
 
 bootstrap().catch((err) => {
-  console.error(err);
+  logError('worker-gmail', 'Failed to start worker', undefined, err);
   process.exit(1);
 });

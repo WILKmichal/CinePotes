@@ -4,16 +4,16 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
-import { jwtConstants } from './constants';
+import { firstValueFrom } from 'rxjs';
+import { NatsClientWrapper } from '../nats/nats-client-wrapper.service';
 
 /**
  * Payload JWT typé
  * (doit matcher ce que tu mets dans JwtStrategy)
  */
 interface JwtPayload {
-  sub: number;
+  sub: string;
   email?: string;
   username?: string;
 }
@@ -27,7 +27,9 @@ interface RequestWithUser extends Request {
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(
+    private readonly natsClient: NatsClientWrapper,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<RequestWithUser>();
@@ -38,9 +40,9 @@ export class AuthGuard implements CanActivate {
     }
 
     try {
-      const payload = await this.jwtService.verifyAsync<JwtPayload>(token, {
-        secret: jwtConstants.secret,
-      });
+      const payload = await firstValueFrom(
+        this.natsClient.send<JwtPayload>('auth.verify-token', { token }),
+      );
 
       request.user = payload;
     } catch {

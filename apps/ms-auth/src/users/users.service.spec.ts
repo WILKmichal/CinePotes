@@ -3,6 +3,7 @@ import { UsersService } from './users.service';
 import { Repository } from 'typeorm';
 import { User, UserRole } from '../../../../packages/schemas/user.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 import { randomUUID, randomBytes, createHash } from 'node:crypto';
 
@@ -22,11 +23,20 @@ jest.mock('node:crypto', () => ({
 describe('UsersService', () => {
   let service: UsersService;
   let usersRepository: jest.Mocked<Repository<User>>;
+  let configService: { get: jest.Mock };
 
   beforeEach(async () => {
+    configService = {
+      get: jest.fn().mockImplementation((key: string) => {
+        if (key === 'VERIFICATION_MAIL') return 'true';
+        return undefined;
+      }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsersService,
+        { provide: ConfigService, useValue: configService },
         {
           provide: getRepositoryToken(User),
           useValue: { findOne: jest.fn(), save: jest.fn(), create: jest.fn(), delete: jest.fn() },
@@ -78,7 +88,10 @@ describe('UsersService', () => {
     });
 
     it('doit auto-verifier quand VERIFICATION_MAIL est FALSE', async () => {
-      process.env.VERIFICATION_MAIL = 'FALSE';
+      configService.get.mockImplementation((key: string) => {
+        if (key === 'VERIFICATION_MAIL') return 'FALSE';
+        return undefined;
+      });
 
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashedpassword');
       (randomUUID as jest.Mock).mockReturnValue('uuid-token');
@@ -99,8 +112,6 @@ describe('UsersService', () => {
 
       expect(result.email_verifie).toBe(true);
       expect(result.email_verification_token).toBeNull();
-
-      delete process.env.VERIFICATION_MAIL;
     });
   });
 

@@ -15,7 +15,11 @@
     "outDir": "./dist",
     "baseUrl": "./",
     "paths": {
-      "schemas/*": ["../../packages/schemas/*"]
+      "schemas/*": ["../../packages/schemas/*"],
+      "@workspace/logger": ["../../packages/logger/index.ts"],
+      "@workspace/logger/*": ["../../packages/logger/*"],
+      "@workspace/dtos": ["../../packages/dtos/index.ts"],
+      "@workspace/dtos/*": ["../../packages/dtos/*"]
     },
     "incremental": true,
     "skipLibCheck": true,

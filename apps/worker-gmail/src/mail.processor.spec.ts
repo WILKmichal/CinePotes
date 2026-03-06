@@ -1,4 +1,5 @@
 import { MailProcessor } from "./mail.processor";
+import { ConfigService } from "@nestjs/config";
 import { Job } from "bullmq";
 
 interface SendMailData {
@@ -16,14 +17,22 @@ jest.mock("nodemailer", () => ({
 describe("MailProcessor", () => {
   let processor: MailProcessor;
   let sendMailMock: jest.Mock;
+  let configService: ConfigService;
 
   beforeEach(() => {
-    process.env.SMTP_HOST = "smtp.test.com";
-    process.env.SMTP_PORT = "587";
-    process.env.SMTP_USER = "test@test.com";
-    process.env.SMTP_PASSWORD = "password";
+    configService = {
+      getOrThrow: jest.fn((key: string) => {
+        const config: Record<string, string | number> = {
+          SMTP_HOST: "smtp.test.com",
+          SMTP_PORT: 587,
+          SMTP_USER: "test@test.com",
+          SMTP_PASSWORD: "password",
+        };
+        return config[key];
+      }),
+    } as unknown as ConfigService;
 
-    processor = new MailProcessor();
+    processor = new MailProcessor(configService);
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     sendMailMock = (processor as any).transporter.sendMail;
   });

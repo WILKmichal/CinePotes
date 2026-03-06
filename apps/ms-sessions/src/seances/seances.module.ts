@@ -5,6 +5,7 @@ import { Seance } from 'schemas/seance.entity';
 import { Participant } from 'schemas/participant.entity';
 import { PropositionFilm } from 'schemas/proposition-film.entity';
 import { VoteClassement } from 'schemas/vote-classement.entity';
+import { User } from 'schemas/user.entity';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { VoteClassement } from 'schemas/vote-classement.entity';
       Participant,
       PropositionFilm,
       VoteClassement,
+      User,
     ]),
   ],
   providers: [SeancesService],

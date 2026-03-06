@@ -1,19 +1,18 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { InjectQueue } from "@nestjs/bullmq";
 import { Queue } from "bullmq";
 import { confirmEmailTemplate } from "./templates/confirm-email.template";
 import { resetPasswordTemplate } from "./templates/reset-password.template";
+import { logAction, logSuccess } from "@workspace/logger";
 
 @Injectable()
 export class MailService {
-  private readonly logger = new Logger(MailService.name);
-
   constructor(@InjectQueue("mail") private readonly mailQueue: Queue) {}
 
-  async handleConfirmEmail(email: string, nom: string, confirmUrl: string) {
+  async handleConfirmEmail(email: string, nom: string, confirmUrl: string, requestId?: string) {
     const html = confirmEmailTemplate(nom, confirmUrl);
 
-    this.logger.log(`[confirm-email] Template construit pour ${email}`);
+    logAction('ms-notif', `Building confirmation email template for ${email}`, requestId);
 
     await this.mailQueue.add(
       "send-mail",
@@ -21,6 +20,7 @@ export class MailService {
         to: email,
         subject: "CinéPotes - Confirmez votre email",
         html,
+        requestId,
       },
       {
         removeOnComplete: { age: 3600 }, // supprime après 1h
@@ -28,17 +28,18 @@ export class MailService {
       },
     );
 
-    this.logger.log(`[confirm-email] Job ajouté dans la queue pour ${email}`);
+    logSuccess('ms-notif', `Confirmation email job added to queue for ${email}`, requestId);
   }
 
   async handleResetPassword(
     email: string,
     resetUrl: string,
     expiresInMinutes: number,
+    requestId?: string,
   ) {
     const html = resetPasswordTemplate(resetUrl, expiresInMinutes);
 
-    this.logger.log(`[reset-password] Template construit pour ${email}`);
+    logAction('ms-notif', `Building password reset email template for ${email}`, requestId);
 
     await this.mailQueue.add(
       "send-mail",
@@ -46,6 +47,7 @@ export class MailService {
         to: email,
         subject: "CinéPotes - Réinitialisation du mot de passe",
         html,
+        requestId,
       },
       {
         removeOnComplete: { age: 3600 }, // supprime après 1h
@@ -53,6 +55,6 @@ export class MailService {
       },
     );
 
-    this.logger.log(`[reset-password] Job ajouté dans la queue pour ${email}`);
+    logSuccess('ms-notif', `Password reset email job added to queue for ${email}`, requestId);
   }
 }

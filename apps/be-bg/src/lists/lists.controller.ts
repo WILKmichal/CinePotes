@@ -27,21 +27,33 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { AuthGuard } from '../auth/auth.guard';
-import { CreateListDto } from './dto/create-list.dto';
-import { AddFilmDto } from './dto/add-film.dto';
 import {
+  AddFilmDto,
+  AddFilmResponseDto,
+  CreateListDto,
+  FilmsInListResponseDto,
   ListResponseDto,
   ListWithFilmsResponseDto,
-  FilmsInListResponseDto,
-  AddFilmResponseDto,
-} from './dto/list-response.dto';
+} from '@workspace/dtos/lists';
+import {
+  AddFilmToListPayload,
+  CreateListPayload,
+  DeleteListPayload,
+  FindAllByUserPayload,
+  FindAllByUserWithFilmsPayload,
+  FindOnePayload,
+  GetFilmsInListPayload,
+  RemoveFilmFromListPayload,
+  UpdateListPayload,
+} from '@workspace/dtos/lists';
+import { NatsClientWrapper } from '../nats/nats-client-wrapper.service';
 
 @ApiTags('Lists')
 @ApiBearerAuth()
 @Controller('lists')
 @UseGuards(AuthGuard)
 export class ListsController {
-  constructor(@Inject('NATS_SERVICE') private readonly nats: ClientProxy) {}
+  constructor(private readonly nats: NatsClientWrapper) {}
 
   @Get()
   @ApiOperation({ summary: "Récupérer toutes les listes de l'utilisateur" })
@@ -53,7 +65,8 @@ export class ListsController {
   @ApiResponse({ status: 401, description: 'Non authentifié' })
   async findAll(@Request() req: { user: { sub: string } }) {
     const userId = req.user.sub;
-    return firstValueFrom(this.nats.send('list.findAllByUser', { userId }));
+    const payload: FindAllByUserPayload = { userId };
+    return firstValueFrom(this.nats.send('list.findAllByUser', payload));
   }
 
   @Get('with-films')
@@ -66,8 +79,9 @@ export class ListsController {
   @ApiResponse({ status: 401, description: 'Non authentifié' })
   async findAllWithFilms(@Request() req: { user: { sub: string } }) {
     const userId = req.user.sub;
+    const payload: FindAllByUserWithFilmsPayload = { userId };
     return firstValueFrom(
-      this.nats.send('list.findAllByUserWithFilms', { userId }),
+      this.nats.send('list.findAllByUserWithFilms', payload),
     );
   }
 
@@ -86,8 +100,9 @@ export class ListsController {
     @Request() req: { user: { sub: string } },
   ) {
     const userId = req.user.sub;
+    const payload: FindOnePayload = { listeId: id, userId };
     const liste = await firstValueFrom(
-      this.nats.send('list.findOne', { listeId: id, userId }),
+      this.nats.send('list.findOne', payload),
     );
     if (!liste) {
       throw new NotFoundException('Liste non trouvée');
@@ -110,15 +125,13 @@ export class ListsController {
     @Request() req: { user: { sub: string } },
   ) {
     const userId = req.user.sub;
-    const liste = await firstValueFrom(
-      this.nats.send('list.findOne', { listeId: id, userId }),
-    );
+    const findOnePayload: FindOnePayload = { listeId: id, userId };
+    const liste = await firstValueFrom(this.nats.send('list.findOne', findOnePayload));
     if (!liste) {
       throw new NotFoundException('Liste non trouvée');
     }
-    const films = await firstValueFrom(
-      this.nats.send('list.getFilmsInList', { listeId: id, userId }),
-    );
+    const filmsPayload: GetFilmsInListPayload = { listeId: id, userId };
+    const films = await firstValueFrom(this.nats.send('list.getFilmsInList', filmsPayload));
     return { listeId: id, films };
   }
 
@@ -141,12 +154,14 @@ export class ListsController {
       throw new BadRequestException('Le nom de la liste est requis');
     }
 
+    const payload: CreateListPayload = {
+      userId,
+      nom: createListDto.nom.trim(),
+      description: createListDto.description?.trim(),
+    };
+
     return firstValueFrom(
-      this.nats.send('list.create', {
-        userId,
-        nom: createListDto.nom.trim(),
-        description: createListDto.description?.trim(),
-      }),
+      this.nats.send('list.create', payload),
     );
   }
 
@@ -172,12 +187,14 @@ export class ListsController {
       throw new BadRequestException('tmdbId est requis');
     }
 
+    const payload: AddFilmToListPayload = {
+      listeId: id,
+      tmdbId: addFilmDto.tmdbId,
+      userId,
+    };
+
     const result = await firstValueFrom(
-      this.nats.send('list.addFilmToList', {
-        listeId: id,
-        tmdbId: addFilmDto.tmdbId,
-        userId,
-      }),
+      this.nats.send('list.addFilmToList', payload),
     );
 
     if (!result) {
@@ -209,13 +226,15 @@ export class ListsController {
       throw new BadRequestException('Le nom de la liste est requis');
     }
 
+    const payload: UpdateListPayload = {
+      listeId: id,
+      userId,
+      nom: updateListDto.nom.trim(),
+      description: updateListDto.description?.trim(),
+    };
+
     const updated = await firstValueFrom(
-      this.nats.send('list.update', {
-        listeId: id,
-        userId,
-        nom: updateListDto.nom.trim(),
-        description: updateListDto.description?.trim(),
-      }),
+      this.nats.send('list.update', payload),
     );
 
     if (!updated) {
@@ -237,8 +256,9 @@ export class ListsController {
     @Request() req: { user: { sub: string } },
   ) {
     const userId = req.user.sub;
+    const payload: DeleteListPayload = { listeId: id, userId };
     const deleted = await firstValueFrom(
-      this.nats.send('list.delete', { listeId: id, userId }),
+      this.nats.send('list.delete', payload),
     );
     if (!deleted) {
       throw new NotFoundException('Liste non trouvée');
@@ -259,12 +279,13 @@ export class ListsController {
     @Request() req: { user: { sub: string } },
   ) {
     const userId = req.user.sub;
+    const payload: RemoveFilmFromListPayload = {
+      listeId: id,
+      tmdbId: Number.parseInt(tmdbId, 10),
+      userId,
+    };
     const removed = await firstValueFrom(
-      this.nats.send('list.removeFilmFromList', {
-        listeId: id,
-        tmdbId: Number.parseInt(tmdbId, 10),
-        userId,
-      }),
+      this.nats.send('list.removeFilmFromList', payload),
     );
     if (!removed) {
       throw new NotFoundException('Film ou liste non trouvé');

@@ -1,17 +1,7 @@
-export function validateEnvironmentVariables(): void {
-  const requiredVars = {
-    NATS_URL: "URL du broker NATS (e.g., nats://localhost:4222)",
-    REDIS_HOST: "Host Redis pour BullMQ (e.g., localhost)",
-    REDIS_PORT: "Port Redis pour BullMQ (e.g., 6379)",
-  };
+import * as Joi from 'joi';
 
-  const missing = Object.entries(requiredVars)
-    .filter(([key]) => !process.env[key])
-    .map(([key, description]) => `  • ${key}: ${description}`);
-
-  if (missing.length > 0) {
-    console.error("\n❌ Missing required environment variables:\n");
-    console.error(missing.join("\n"));
-    process.exit(1);
-  }
-}
+export const envValidationSchema = Joi.object({
+  NATS_URL: Joi.string().pattern(/^nats:\/\/.+/).required(),
+  REDIS_HOST: Joi.string().required(),
+  REDIS_PORT: Joi.number().integer().positive().required(),
+});

@@ -1,29 +1,25 @@
-import * as dotenv from 'dotenv';
-dotenv.config();
-
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
-import { validateEnvironmentVariables } from './config.validation';
+import { logStart, logError } from '@workspace/logger';
 
 async function bootstrap() {
-  validateEnvironmentVariables();
+  const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
 
-  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
-    AppModule,
-    {
-      transport: Transport.NATS,
-      options: {
-        servers: [process.env.NATS_URL!],
-      },
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.NATS,
+    options: {
+      servers: [configService.getOrThrow<string>('NATS_URL')],
     },
-  );
+  });
 
-  await app.listen();
-  console.log('ms-list connecte a NATS et en ecoute');
+  await app.startAllMicroservices();
+  logStart('ms-list', 'Connected to NATS and listening for messages');
 }
 
 bootstrap().catch((err: unknown) => {
-  console.error(err);
+  logError('ms-list', 'Failed to start microservice', undefined, err);
   process.exit(1);
 });

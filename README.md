@@ -40,26 +40,17 @@ JWT_EXPIRES_IN=3600s
 ### Backend principal (`apps/be-bg/.env`)
 
 ```env
-# Serveur
 APP_PORT=3002
-
-DB_NAME=mydatabase
-JWT_SECRET=une_clef_complexe_a_changer
-JWT_EXPIRES_IN=3600s
-APP_PORT=3002
-VERIFICATION_MAIL=TRUE
+NATS_URL=nats://localhost:4222
 ```
 
 ### Microservice Library (`apps/ms-library/.env`)
 
 ```env
-PORT=3333
-TMDB_API_KEY=
-REDIS_URL=redis://localhost:6379
+NATS_URL=nats://localhost:4222
 REDIS_HOST=localhost
 REDIS_PORT=6379
-TMDB_MS_URL=http://localhost:3333/
-NATS_URL=nats://localhost:4222
+TMDB_API_KEY=
 ```
 
 > Generez votre propre cle TMDB sur [themoviedb.org](https://www.themoviedb.org/).
@@ -98,23 +89,10 @@ SMTP_PASSWORD=
 
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:3002
-NEXT_PUBLIC_ADMIN_URL=http://localhost:3000
+NEXT_PUBLIC_ADMIN_URL=http://localhost:3002
 ```
 
----
-
-### Ms-Library (`apps/ms-library/.env`)
-
-```env
-PORT=3333
-TMDB_API_KEY=
-REDIS_URL=redis://localhost:6379
-REDIS_HOST=localhost
-REDIS_PORT=6379
-TMDB_MS_URL=http://localhost:3333
-NATS_URL=nats://localhost:4222
-```
-### Ms-Auth(`apps/ms-auth/.env`)
+### Ms-Auth (`apps/ms-auth/.env`)
 ```env
 APP_PORT=3002
 NATS_URL=nats://localhost:4222
@@ -125,18 +103,27 @@ DB_PASSWORD=
 DB_NAME=mydatabase
 JWT_SECRET=
 RESET_PASSWORD_EXPIRES_MINUTES=30
-FRONT_RESET_PASSWORD_URL=http://localhost:3000/reset-password
+FRONT_RESET_PASSWORD_URL=http://localhost:3001/reset-password
 VERIFICATION_MAIL=TRUE
 ```
 
-### Ms-session(`apps/ms-session/.env`)
+### Ms-sessions (`apps/ms-sessions/.env`)
+```env
+NATS_URL=nats://localhost:4222
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=
+DB_NAME=mydatabase
+```
+
+### Ms-schema (`apps/ms-schema/.env`)
 ```env
 DB_HOST=localhost
 DB_PORT=5432
 DB_USER=postgres
 DB_PASSWORD=
 DB_NAME=mydatabase
-NATS_URL=nats://localhost:4222
 ```
 
 ---

@@ -1,24 +1,25 @@
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
+import { logStart, logError } from '@workspace/logger';
 
 async function bootstrap() {
-  // createMicroservice au lieu de create : on se connecte à NATS, pas de port HTTP
-  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
-    AppModule,
-    {
-      transport: Transport.NATS,
-      options: {
-        servers: [process.env.NATS_URL ?? 'nats://localhost:4222'],
-      },
-    },
-  );
+  const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
 
-  await app.listen();
-  console.log('ms-sessions connecte a NATS et en ecoute');
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.NATS,
+    options: {
+      servers: [configService.getOrThrow<string>('NATS_URL')],
+    },
+  });
+
+  await app.startAllMicroservices();
+  logStart('ms-sessions', 'Connected to NATS and listening for messages');
 }
 
 bootstrap().catch((err) => {
-  console.error(err);
+  logError('ms-sessions', 'Failed to start microservice', undefined, err);
   process.exit(1);
 });

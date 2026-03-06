@@ -1,32 +1,33 @@
 import { AuthGuard } from './auth.guard';
-import { JwtService } from '@nestjs/jwt';
+import { ClientProxy } from '@nestjs/microservices';
+import { of, throwError } from 'rxjs';
 
 describe('AuthGuard', () => {
   let guard: AuthGuard;
 
-  const mockJwtService = {
-    verifyAsync: jest.fn(),
+  const mockNatsClient = {
+    send: jest.fn(),
   };
 
   beforeEach(() => {
-    guard = new AuthGuard(mockJwtService as unknown as JwtService);
+    // eslint-disable-next-line no-console
+    guard = new AuthGuard(mockNatsClient as unknown as ClientProxy);
   });
 
   afterEach(() => jest.clearAllMocks());
 
-  it('should return true when user is attached to request', async () => {
+  it('should return true when token is verified successfully', async () => {
     const context: any = {
       switchToHttp: () => ({
         getRequest: () => ({
-          user: { id: 1 },
           headers: {
-            authorization: 'Bearer token',
+            authorization: 'Bearer validtoken',
           },
         }),
       }),
     };
 
-    mockJwtService.verifyAsync.mockResolvedValue({ sub: 1 });
+    mockNatsClient.send.mockReturnValue(of({ sub: '123', username: 'test@example.com' }));
 
     expect(await guard.canActivate(context)).toBe(true);
   });
@@ -43,7 +44,7 @@ describe('AuthGuard', () => {
     await expect(guard.canActivate(context)).rejects.toThrow();
   });
 
-  it('should throw when jwt verification fails', async () => {
+  it('should throw when token verification fails', async () => {
     const context: any = {
       switchToHttp: () => ({
         getRequest: () => ({
@@ -54,7 +55,7 @@ describe('AuthGuard', () => {
       }),
     };
 
-    mockJwtService.verifyAsync.mockRejectedValue(new Error('Invalid token'));
+    mockNatsClient.send.mockReturnValue(throwError(() => new Error('Invalid token')));
 
     await expect(guard.canActivate(context)).rejects.toThrow();
   });

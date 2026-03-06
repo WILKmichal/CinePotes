@@ -1,4 +1,5 @@
 import { HttpStatus } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { LibraryService } from './library.service';
 import { RedisService } from '../redis/redis.service';
 import axios from 'axios';
@@ -16,17 +17,22 @@ describe('LibraryService', () => {
     onModuleInit: jest.fn(),
   } satisfies Pick<RedisService, 'get' | 'set' | 'onModuleInit'>;
 
+  const configMock = {
+    getOrThrow: jest.fn((key: string) => {
+      if (key === 'TMDB_API_KEY') return 'fake_key';
+      return '';
+    }),
+  } as unknown as ConfigService;
+
   beforeEach(() => {
     jest.clearAllMocks();
 
     jest.spyOn(console, 'log').mockImplementation(() => undefined);
     jest.spyOn(console, 'error').mockImplementation(() => undefined);
 
-    process.env.TMDB_API_KEY = 'fake_key';
-
     jest.spyOn(mockedAxios, 'isAxiosError').mockReturnValue(false);
 
-    service = new LibraryService(redisMock as unknown as RedisService);
+    service = new LibraryService(redisMock as unknown as RedisService, configMock);
   });
 
   afterEach(() => {

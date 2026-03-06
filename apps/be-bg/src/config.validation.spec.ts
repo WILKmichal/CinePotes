@@ -25,28 +25,18 @@ describe('validateEnvironmentVariables', () => {
   it('does nothing when all required variables are present', () => {
     process.env = {
       ...process.env,
-      DB_HOST: 'localhost',
-      DB_PORT: '5432',
-      DB_USER: 'postgres',
-      DB_PASSWORD: 'example',
-      DB_NAME: 'mydatabase',
       APP_PORT: '3002',
-      VERIFICATION_MAIL: 'FALSE',
+      NATS_URL: 'nats://localhost:4222',
     };
     expect(() => validateEnvironmentVariables()).not.toThrow();
     expect(process.exit).not.toHaveBeenCalled();
     expect(console.error).not.toHaveBeenCalled();
   });
 
-  it('logs errors and exits when a required variable is missing', () => {
+  it('logs errors and exits when required variables are missing', () => {
     process.env = {
       ...process.env,
-      DB_PORT: '5432',
-      DB_USER: 'postgres',
-      DB_PASSWORD: 'example',
-      DB_NAME: 'mydatabase',
-      APP_PORT: '3002',
-      // DB_HOST missing
+      // Missing all critical vars
     };
 
     expect(() => validateEnvironmentVariables()).toThrow(

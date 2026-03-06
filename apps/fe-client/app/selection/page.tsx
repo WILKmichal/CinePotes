@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, Suspense } from "react";
+import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Header, Footer } from "@/components/utils";
 
@@ -14,6 +14,13 @@ interface Film {
   date_sortie: string;
   affiche_url: string | null;
   note_moyenne: number;
+}
+
+interface ListWithFilms {
+  id: string;
+  nom: string;
+  description?: string;
+  films: number[];
 }
 
 const getToken = () =>
@@ -34,6 +41,21 @@ function SelectionContent() {
   const [validated, setValidated] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [slotIndex, setSlotIndex] = useState<number | null>(null);
+  const [lists, setLists] = useState<ListWithFilms[]>([]);
+  const [showListImport, setShowListImport] = useState(false);
+  const [importingList, setImportingList] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [isMaster, setIsMaster] = useState(false);
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Early auth check on mount - redirect before rendering content
+  useEffect(() => {
+    const token = getToken();
+    if (!token) {
+      setIsAuthenticated(false);
+      router.replace("/");
+    }
+  }, [router]);
 
   // Récupérer max_films depuis la séance
   useEffect(() => {
@@ -51,12 +73,38 @@ function SelectionContent() {
         // Stocker pour que /classement sache si on est l'hôte
         if (data?.proprietaire_id) {
           sessionStorage.setItem("seance_proprietaire_id", data.proprietaire_id);
+          // Check if current user is the session master
+          const token = getToken();
+          if (token) {
+            try {
+              const payload = JSON.parse(atob(token.split(".")[1]));
+              const currentUserId = payload.sub;
+              setIsMaster(currentUserId === data.proprietaire_id);
+            } catch {
+              setIsMaster(false);
+            }
+          }
         }
       })
       .catch(() => {
         setSelected(new Array(3).fill(null));
       });
   }, [seanceId]);
+
+  // Récupérer les listes de l'utilisateur
+  useEffect(() => {
+    const token = getToken();
+    fetch(`${API_URL}/lists/with-films`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((data: ListWithFilms[]) => {
+        setLists(data);
+      })
+      .catch(() => {
+        // Échec silencieux, les listes ne seront pas disponibles
+      });
+  }, []);
 
   const handleSearch = useCallback(async (q: string) => {
     if (q.trim().length < 2) { setResults([]); return; }
@@ -103,6 +151,68 @@ function SelectionContent() {
     });
   };
 
+  const importFromList = async (list: ListWithFilms) => {
+    if (importingList) return;
+    setImportingList(true);
+
+    try {
+      // Calculer les slots vides disponibles
+      const emptySlots = selected.reduce<number[]>((acc, film, idx) => {
+        if (!film) acc.push(idx);
+        return acc;
+      }, []);
+
+      if (emptySlots.length === 0) {
+        // Tous les slots sont pleins
+        setImportingList(false);
+        return;
+      }
+
+      // Filtrer les films de la liste qui ne sont pas déjà sélectionnés
+      const selectedTmdbIds = new Set(
+        selected.filter(Boolean).map((f) => f!.id)
+      );
+      const filmsToImport = list.films.filter(
+        (tmdbId) => !selectedTmdbIds.has(tmdbId)
+      );
+
+      // Prendre seulement le nombre de films nécessaires pour remplir les slots vides
+      const filmIdsToFetch = filmsToImport.slice(0, emptySlots.length);
+
+      if (filmIdsToFetch.length === 0) {
+        // Aucun nouveau film à importer
+        setImportingList(false);
+        return;
+      }
+
+      // Récupérer les détails des films depuis l'API library
+      const res = await fetch(
+        `${API_URL}/library/movies?ids=${filmIdsToFetch.join(",")}`,
+        { headers: { Authorization: `Bearer ${getToken()}` } }
+      );
+
+      if (res.ok) {
+        const films: Film[] = await res.json();
+        
+        // Remplir les slots vides avec les films importés
+        setSelected((prev) => {
+          const next = [...prev];
+          films.forEach((film, idx) => {
+            if (idx < emptySlots.length) {
+              next[emptySlots[idx]] = film;
+            }
+          });
+          return next;
+        });
+      }
+    } catch (error) {
+      console.error("Erreur lors de l'import:", error);
+    } finally {
+      setImportingList(false);
+      setShowListImport(false);
+    }
+  };
+
   const filledCount = selected.filter(Boolean).length;
   const allFilled = filledCount === maxFilms;
 
@@ -139,14 +249,14 @@ function SelectionContent() {
       if (!res.ok) return;
       setValidated(true);
       // Poll until all participants have submitted → redirect to /classement
-      const pollInterval = setInterval(async () => {
+      pollIntervalRef.current = setInterval(async () => {
         const statusRes = await fetch(
           `${API_URL}/seances/${seanceId}/propositions/status`,
           { headers: { Authorization: `Bearer ${getToken()}` } }
         );
         if (!statusRes.ok) {
           // Séance supprimée → retourner au lobby
-          clearInterval(pollInterval);
+          if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
           localStorage.removeItem("joined_seance");
           sessionStorage.removeItem("classement_seance_id");
           sessionStorage.removeItem("seance_proprietaire_id");
@@ -155,7 +265,7 @@ function SelectionContent() {
         }
         const allDone: boolean = await statusRes.json();
         if (allDone) {
-          clearInterval(pollInterval);
+          if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
           router.push(`/classement?seanceId=${seanceId}`);
         }
       }, 3000);
@@ -163,6 +273,11 @@ function SelectionContent() {
       // silent
     }
   };
+
+  // Prevent rendering if user is not authenticated
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -216,6 +331,25 @@ function SelectionContent() {
                 />
               ))}
             </div>
+            {isMaster && (
+              <div className="pt-6 border-t border-gray-100">
+                <p className="text-xs text-amber-600 font-semibold uppercase tracking-widest mb-3">
+                  ⚡ Maître de Session
+                </p>
+                <button
+                  onClick={() => {
+                    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+                    router.push(`/classement?seanceId=${seanceId}`);
+                  }}
+                  className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-xl font-semibold text-sm transition-colors shadow-md hover:shadow-lg"
+                >
+                  ⚡ Forcer l'étape suivante - Aller au classement
+                </button>
+                <p className="text-xs text-gray-400 mt-2">
+                  Passer l'attente et continuer avec les films soumis uniquement
+                </p>
+              </div>
+            )}
           </div>
         ) : (
           <>
@@ -231,6 +365,16 @@ function SelectionContent() {
               </div>
 
               <div className="flex items-center gap-3">
+                {/* Bouton Import depuis liste */}
+                {lists.length > 0 && filledCount < maxFilms && (
+                  <button
+                    onClick={() => setShowListImport(true)}
+                    className="flex items-center gap-2 bg-white text-[#1B3A5C] border-2 border-[#1B3A5C] px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#1B3A5C] hover:text-white transition-colors"
+                  >
+                    📋 Importer depuis une liste
+                  </button>
+                )}
+
                 {/* Mini aperçu des slots */}
                 <div className="flex gap-1">
                   {selected.map((f, i) => (
@@ -363,6 +507,90 @@ function SelectionContent() {
                     </div>
                   </button>
                 ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Modal import depuis liste ── */}
+        {showListImport && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden">
+              <div className="p-5 border-b border-gray-100">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-black text-gray-900 uppercase tracking-wide text-sm">
+                    Importer depuis une liste
+                  </h3>
+                  <button
+                    onClick={() => setShowListImport(false)}
+                    className="text-gray-400 hover:text-gray-600 text-xl font-bold"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500">
+                  {filledCount < maxFilms 
+                    ? `${maxFilms - filledCount} slot${maxFilms - filledCount > 1 ? 's' : ''} disponible${maxFilms - filledCount > 1 ? 's' : ''}`
+                    : "Tous les slots sont remplis"}
+                </p>
+              </div>
+
+              <div className="overflow-y-auto flex-1">
+                {importingList && (
+                  <div className="flex justify-center py-8">
+                    <div className="w-8 h-8 border-4 border-[#C84B31] border-t-transparent rounded-full animate-spin" />
+                  </div>
+                )}
+                {!importingList && lists.length === 0 && (
+                  <p className="text-center text-gray-400 text-sm py-8">Aucune liste disponible</p>
+                )}
+                {!importingList && lists.map((list) => {
+                  const availableFilms = list.films.filter(
+                    (tmdbId) => !selected.some((f) => f?.id === tmdbId)
+                  );
+                  const willImport = Math.min(availableFilms.length, maxFilms - filledCount);
+
+                  return (
+                    <button
+                      key={list.id}
+                      onClick={() => importFromList(list)}
+                      disabled={willImport === 0}
+                      className="w-full flex flex-col gap-2 p-4 hover:bg-gray-50 transition-colors border-b border-gray-50 text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-gray-900 text-sm truncate">{list.nom}</p>
+                          {list.description && (
+                            <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{list.description}</p>
+                          )}
+                        </div>
+                        <div className="ml-3 flex-shrink-0">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-[#C84B31] text-white">
+                            {list.films.length} film{list.films.length > 1 ? 's' : ''}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs">
+                        {willImport > 0 ? (
+                          <>
+                            <span className="text-green-600 font-semibold">
+                              ✓ Importera {willImport} film{willImport > 1 ? 's' : ''}
+                            </span>
+                            {availableFilms.length > willImport && (
+                              <span className="text-gray-400">
+                                ({availableFilms.length - willImport} ignoré{availableFilms.length - willImport > 1 ? 's' : ''})
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-gray-400">
+                            Aucun nouveau film disponible
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
