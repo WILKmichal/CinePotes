@@ -11,7 +11,7 @@
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
     "@repo/ui": "workspace:*",
-    "next": "16.0.3",
+    "next": "15.2.2",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "schemas": "workspace:*"
@@ -23,7 +23,7 @@
     "@types/react-dom": "^19",
     "baseline-browser-mapping": "^2.9.15",
     "eslint": "^9",
-    "eslint-config-next": "16.0.3",
+    "eslint-config-next": "15.2.2",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
